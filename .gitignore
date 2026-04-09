@@ -1,0 +1,38 @@
+# ─── OS / Editor ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.iml
+
+# ─── Flutter / Dart ──────────────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+coverage/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+app.*.symbols
+app.*.map.json
+
+# Android build artifacts
+Frontend/android/app/debug
+Frontend/android/app/profile
+Frontend/android/app/release
+
+# ─── Secrets ─────────────────────────────────────────────────────────────────
+*.key
+*.jks
+*.keystore
+.env
+.env.*
+
+# ─── Logs / Temp ─────────────────────────────────────────────────────────────
+*.log
+*.pyc
+__pycache__/

@@ -68,6 +68,23 @@ Based on the user interview, fill in these components:
 - **compatibility**: Required tools, dependencies (optional, rarely needed)
 - **the rest of the skill :)**
 
+>**MANDATORY — Context Load Section**: Every skill you write MUST include the following section **verbatim** at the **very beginning** of its SKILL.md body (right after any intro paragraph, before any other sections). This instructs the AI that *uses* the skill to check for saved context before doing any research or analysis:
+
+```markdown
+## Context Load (MANDATORY — run this first)
+
+Before doing any analysis, research, or implementation, check for a saved context file:
+
+1. Look for `.context/<skill-name>_context.md` at the project root.
+2. If the file **exists**: read it in full. Use the Architecture, Affected Project Files, Code Reference, and Key Design Decisions sections to restore your working context. Skip any research or codebase exploration that would duplicate what is already documented there. Inform the user:
+   > "Context restored from `.context/<skill-name>_context.md` (v<N>, last updated <date>). Continuing from previous session."
+3. If the file **does not exist**: proceed normally — explore the codebase, gather context, and document it at the end via the Context Storage step.
+
+> **Rule:** Never ignore an existing context file. It exists precisely to avoid re-analysis. Trust it, and update it if the implementation changes.
+```
+
+---
+
 >**MANDATORY — Context Storage Section**: Every skill you write MUST include the following section **verbatim** at the very end of its SKILL.md body (before any closing notes). This instructs the AI that *uses* the skill to document what it built:
 
 ```markdown
@@ -132,6 +149,10 @@ Key functions/classes implemented, with inline explanations:
 After writing the file, tell the user:
 > "Context saved to `.context/<skill-name>_context.md` — future sessions can load this file to restore full context instantly, without re-reading the codebase."
 ```
+
+> ❌ **NEVER create the `.context/<skill-name>_context.md` file while authoring the skill itself.**
+> The `.context/` file is written by the AI **when it uses the skill** to implement real features in the project.
+> Authoring a skill only produces one file: the `SKILL.md`. The context file is the artifact of *usage*, not of *creation*.
 
 ### Skill Writing Guide
 
@@ -470,7 +491,33 @@ Take `best_description` from the JSON output and update the skill's SKILL.md fro
 
 ---
 
->**Reminder:** The Context Storage section that every generated skill must contain is defined in the "Write the SKILL.md" step above. Do not skip it — every skill you create must instruct its future users to write `.context/<skill-name>_context.md` after completing an implementation.
+>**Reminder:** Every skill you create must include **both** the Context Load section (at the start) and the Context Storage section (at the end). These sections **live inside the generated SKILL.md** as instructions for whoever *uses* the skill later. Context Load restores prior session state instantly; Context Storage persists new work for future sessions. Neither is optional — together they form the skill's persistent memory contract.
+>
+> ❌ **Do NOT create `.context/<skill-name>_context.md` yourself** while authoring or editing a skill. That file is the artifact of *using* the skill to implement real features — not of writing it. Skill authoring produces only `SKILL.md`.
+
+---
+
+### Document in DOT_AGENTS_MANUAL.md (MANDATORY)
+
+After the skill is finalized (SKILL.md written and user is satisfied), you **must** add or update the skill's entry in `DOT_AGENTS_MANUAL.md`.
+
+**Steps:**
+
+1. Open `DOT_AGENTS_MANUAL.md` and locate the Skills section (Part 2, sections 3.5–3.11+).
+2. If the skill is **new**: add a new entry at the end of the last Skills Lote, or create a new Lote section if the previous one is full. Also increment the skill count in the directory description at the top of the file.
+3. If the skill **already exists** in the manual: update its entry to reflect the new purpose or restrictions.
+4. Follow the exact format used by all other skills in the manual:
+
+```markdown
+#### Skill Name
+- **Localização**: `.agent/skills/<skill-name>/SKILL.md`
+- **Propósito/Regras Mestra**: [One paragraph describing what the skill does and its core principles]
+- **Restrições Ocultas**: [The constraints, prohibitions, or hidden rules the skill enforces — the "secret sauce" that makes it powerful]
+```
+
+5. Add a new entry to section **10. Histórico de Versões** at the bottom of the file documenting the addition.
+
+> The `DOT_AGENTS_MANUAL.md` is the single source of truth for the entire `.agent/` ecosystem. A skill that exists in the filesystem but not in the manual is effectively invisible to anyone onboarding the project.
 
 ---
 

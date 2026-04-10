@@ -65,7 +65,6 @@ CREATE TABLE IF NOT EXISTS quarto (
     id                  SERIAL          PRIMARY KEY,
     categoria_quarto_id INT             REFERENCES categoria_quarto(id) ON DELETE RESTRICT,
     numero              VARCHAR(10)     NOT NULL UNIQUE,
-    andar               INT,
     disponivel          BOOLEAN         NOT NULL DEFAULT TRUE,
     descricao           VARCHAR(500),                          -- descrição individual do quarto
     valor_override      DECIMAL(10, 2),                       -- preço customizado (sobrescreve preco_base do perfil)
@@ -104,10 +103,11 @@ CREATE TABLE IF NOT EXISTS reserva (
     observacoes     TEXT,                                     -- pedidos especiais do hóspede
     status          VARCHAR(20)     NOT NULL DEFAULT 'PENDENTE',
     criado_em       TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-    CONSTRAINT chk_datas        CHECK (data_checkout > data_checkin),
-    CONSTRAINT chk_valor        CHECK (valor_total > 0),
-    CONSTRAINT chk_num_hosp     CHECK (num_hospedes > 0),
-    CONSTRAINT chk_status       CHECK (status IN ('PENDENTE', 'CONFIRMADA', 'CANCELADA', 'CONCLUIDA'))
+    p_turisticos    JSONB           NOT NULL,
+    CONSTRAINT chk_datas            CHECK (data_checkout > data_checkin),
+    CONSTRAINT chk_valor            CHECK (valor_total > 0),
+    CONSTRAINT chk_num_hosp         CHECK (num_hospedes > 0),
+    CONSTRAINT chk_status           CHECK (status IN ('PENDENTE', 'CONFIRMADA', 'CANCELADA', 'CONCLUIDA'))
 );
 
 -- 10. Avaliações (apenas após reserva concluída)
@@ -118,8 +118,9 @@ CREATE TABLE IF NOT EXISTS avaliacao (
     nota_limpeza            INT             NOT NULL,
     nota_atendimento        INT             NOT NULL,
     nota_conforto           INT             NOT NULL,
-    nota_custo_beneficio    INT             NOT NULL,
+    nota_organizacao        INT             NOT NULL,
     nota_localizacao        INT             NOT NULL,
+    nota_total              INT             NOT NULL,
     comentario              TEXT,
     criado_em               TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
     UNIQUE (user_id, reserva_id),                              -- uma avaliação por estadia

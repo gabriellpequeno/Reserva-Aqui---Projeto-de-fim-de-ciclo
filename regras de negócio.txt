@@ -1,0 +1,37 @@
+usuario {
+    senha = letra maiuscula, minuscula, caracteres especiais (@) e número
+    email = @ e .com
+    cpf = 11 números
+    data de nascimento = dd/mm/aaaa
+    num celular = (xx) x xxxx-xxxx ou (xx) xxxxx-xxxx 
+}
+
+anfitriao {
+    senha = letra maiuscula, minuscula, caracteres especiais (@) e número
+    email = @ e .com
+    cnpj = 14 números
+    cep = 7 números
+    telefone = (xx) x xxxx-xxxx ou (xx) xxxxx-xxxx 
+    uf = 2 letras
+    telefone_recepcao = (xx) x xxxx-xxxx ou (xx) xxxxx-xxxx 
+}
+
+reservas {
+    data_checkin = dd/mm/aaaa
+    data_checkout = dd/mm/aaaa
+    valor_total = decimal
+    num_hospedes = int
+    observacoes = texto
+    status = PENDENTE, CONFIRMADA, CANCELADA, CONCLUIDA
+    p_turisticos = jsonb
+}
+
+avaliação {
+    nota_geral = int 1 - 5
+    nota_limpeza = int 1 - 5
+    nota_conforto = int 1 - 5
+    nota_organizacao = int 1 - 5
+    nota_localizacao = int 1 - 5
+    nota_total = int 1 - 5
+    comentario = texto, não permitir: < > 
+}

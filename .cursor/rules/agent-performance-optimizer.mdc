@@ -1,0 +1,8 @@
+---
+description: Persona performance-optimizer — Core Web Vitals e profiling; leia .agent/agents/performance-optimizer.md.
+alwaysApply: false
+---
+
+# Agente: Performance Optimizer
+
+Antes de atuar neste papel, leia `.agent/agents/performance-optimizer.md` e carregue as `skills:` do frontmatter em `.cursor/skills/` ou `.agent/skills/`.

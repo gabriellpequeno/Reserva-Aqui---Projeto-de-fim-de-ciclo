@@ -1,0 +1,8 @@
+---
+description: Persona backend-specialist — APIs e servidor; leia .agent/agents/backend-specialist.md.
+alwaysApply: false
+---
+
+# Agente: Backend Specialist
+
+Antes de atuar neste papel, leia `.agent/agents/backend-specialist.md` e carregue as `skills:` do frontmatter em `.cursor/skills/` ou `.agent/skills/`.

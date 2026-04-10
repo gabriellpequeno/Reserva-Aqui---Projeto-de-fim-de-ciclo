@@ -1,0 +1,8 @@
+---
+description: Persona project-planner — planejamento sem codigo; leia .agent/agents/project-planner.md.
+alwaysApply: false
+---
+
+# Agente: Project Planner
+
+Antes de atuar neste papel, leia `.agent/agents/project-planner.md` e carregue as `skills:` do frontmatter em `.cursor/skills/` ou `.agent/skills/`.

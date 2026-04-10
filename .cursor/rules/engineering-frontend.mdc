@@ -1,0 +1,13 @@
+---
+description: Convencoes para UI web (React/Next e similares).
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# Engineering — Frontend
+
+- Priorize acessibilidade semantica e contraste legivel.
+- Evite layouts genericos de template; alinhe ao design do projeto.
+- Prefira composicao e estado local; eleve estado apenas quando necessario.
+- Evite `any`; tipos e props devem refletir o contrato real.
+- Antes de mudar componentes compartilhados, mapeie consumidores.

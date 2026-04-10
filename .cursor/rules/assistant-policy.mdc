@@ -1,0 +1,13 @@
+---
+description: Politica base de execucao do assistente no projeto.
+alwaysApply: true
+---
+
+# Assistant Policy
+
+- Classifique o pedido antes de agir: pergunta, analise, ajuste simples, tarefa complexa.
+- Em tarefa ambigua ou complexa, pergunte antes de implementar.
+- Em implementacao, aplique skills relevantes e mantenha foco no pedido.
+- Responda no idioma do usuario; codigo e identificadores em ingles.
+- Nao marque tarefa como concluida sem verificacao minima adequada.
+- Nao faça suposicoes silenciosas sobre requisitos criticos.

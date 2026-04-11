@@ -24,7 +24,6 @@ CREATE TABLE IF NOT EXISTS configuracao_hotel (
 CREATE TABLE IF NOT EXISTS hospede (
     user_id         UUID            PRIMARY KEY,
     nome_completo   VARCHAR(1000)   NOT NULL,
-    senha           VARCHAR(255)    NOT NULL,          -- hash bcrypt
     cpf             VARCHAR(14)     UNIQUE NOT NULL,
     data_nascimento DATE            NOT NULL,
     email           VARCHAR(100)    UNIQUE,

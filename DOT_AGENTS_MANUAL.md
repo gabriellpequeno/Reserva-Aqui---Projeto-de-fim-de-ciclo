@@ -12,13 +12,13 @@ A pasta do assistente possui as seguintes áreas principais, além do diretório
 .agent/
 ├── agents/                  # Contém as definições e comportamento de 20 Agentes Especialistas (Personas de IA).
 ├── skills/                  # Contém 37 Módulos de Conhecimento Específico (Skills) carregáveis em tempo de contexto pela IA.
-├── workflows/               # Contém 11 Comandos Slash (Workflows) interativos.
+├── workflows/               # Contém 12 Comandos Slash (Workflows) interativos.
 ├── rules/                   # Scripts com ordens críticas em tier-0 de arquitetura do núcleo.
 ├── scripts/                 # Scripts Python e utilitários que checam qualidade com pipeline unificada.
 └── ARCHITECTURE.md          # Resumo macro inicial e listagem estática em formato tabela da plataforma.
 
 .context/                    # (raiz do projeto) Memória persistente por skill. Criado automaticamente
-└── <skill-name>_context.md  # após cada sessão de implementação. Restaurado pela skill no início da próxima.
+└── <skill-name>_context.md  # após cada sessão de implementação. Restaurado pela skill no início da próxima. (A Skill usada deve usar o arquivo de contexto se ele existir, e deve criar o arquivo de contexto se ele não existir)
 ```
 
 ## 3. Descrição dos Agentes, Skills e Workflows
@@ -433,6 +433,11 @@ Workflows (`.md`) são gatilhos executáveis chamados através de "Slash Command
 - **Localização**: `.agent/workflows/create-feature.md`
 - **Propósito**: Micro-comando que delega rapidamente e ativamente o desenvolvimento de uma feature específica lendo um prompt centralizador (`documentation/prompts/create-feature-prompt.md`).
 
+#### /auth_create-edit
+- **Localização**: `.agent/workflows/auth_create-edit.md`
+- **Propósito**: Orquestrador interativo especializado no ciclo de vida do sistema de autenticação (login, registro, sessão, middlewares). Diferente do `/create`, não escreve código diretamente — guia o desenvolvedor pelas decisões de segurança e delega a implementação à skill `auth-flow`.
+- **Protocolo de Saída**: Executa 4 fases sequenciais com gate obrigatório. **Fase 1** restaura contexto (`.context/auth-flow_context.md`) ou lê arquivos de referência. **Fase 2** apresenta dois tracks paralelos: Track A (confirmação das regras de negócio via `regras de negócio.txt`) e Track B (tabelas de decisão de segurança — hash de senha, estratégia de sessão, proteções adicionais). **Fase 3** mostra resumo das decisões para aprovação final. **Fase 4** delega para a skill `auth-flow` com todas as decisões já resolvidas, evitando que a skill precise re-perguntar ao usuário.
+
 #### /debug
 - **Localização**: `.agent/workflows/debug.md`
 - **Propósito**: Investigação policial sistêmica sobre falhas em produção ou local.
@@ -526,6 +531,7 @@ A IA deste projeto age passivamente, lendo o projeto a seu dispor. Algumas chama
 
 - **1.0.0**: Criação Inicial Automatizada por GenAI. Levantamento dos 67 ativos.
 - **1.1.0**: Adicionada skill `auth-flow` (Lote 7 — Skills de Domínio). Contagem de skills atualizada para 37.
+- **1.2.0**: Workflow `/auth_create-edit` reescrito como orquestrador de segurança especializado. Agora guia o dev pelas decisões (hash, sessão, proteções) antes de delegar à skill `auth-flow`. Contagem de workflows atualizada para 12.
 
 ## 11. Manual de Prompt
 

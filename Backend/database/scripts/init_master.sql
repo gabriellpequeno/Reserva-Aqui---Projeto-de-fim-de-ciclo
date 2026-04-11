@@ -20,6 +20,19 @@ CREATE TABLE IF NOT EXISTS usuario (
     ativo           BOOLEAN         NOT NULL DEFAULT TRUE
 );
 
+-- 3. Refresh Tokens (JWT — server-side revocation)
+--    Cada login emite um refresh token armazenado aqui.
+--    O logout, o change-password e a desativação da conta invalidam todos os tokens do user.
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id          UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     UUID            NOT NULL REFERENCES usuario(user_id) ON DELETE CASCADE,
+    token_hash  VARCHAR(255)    NOT NULL UNIQUE,   -- SHA-256 do token (nunca armazenar o token raw)
+    expires_at  TIMESTAMPTZ     NOT NULL,
+    criado_em   TIMESTAMPTZ     NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens (user_id);
+
 -- 2. Hotéis / Anfitriões
 --    Cada hotel registra UMA única conta (o próprio hotel é o anfitriao).
 --    O registo aqui provisiona automaticamente o banco tenant exclusivo do hotel.

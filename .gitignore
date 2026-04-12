@@ -20,6 +20,11 @@ coverage/
 app.*.symbols
 app.*.map.json
 
+# ─── Node ────────────────────────────────────────────────────────────────────
+Backend/node_modules
+Backend/bancos
+Backend/package-lock.json
+
 # Android build artifacts
 Frontend/android/app/debug
 Frontend/android/app/profile

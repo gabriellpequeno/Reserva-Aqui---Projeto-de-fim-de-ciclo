@@ -1,4 +1,4 @@
-# Product Requirements Document (PRD) — Little's Petshop
+# Product Requirements Document (PRD) — ReservAqui
 
 ## 1. Introdução e Objetivo
 
@@ -16,30 +16,10 @@ O sistema possui dois níveis de acesso baseados em roles (funções).
 
 | Ator | Descrição | Permissões Chave |
 | --- | --- | --- |
-| **Cliente (Usuário Comum)** | Dono do animal que deseja contratar serviços. | • Cadastrar-se e fazer login.
-
-<br>
-
-<br>• Cadastrar seus Pets.<br>
-
-<br>• Visualizar serviços disponíveis.<br>
-
-<br>• Agendar e cancelar serviços.<br>
-
-<br>• Visualizar histórico de agendamentos. 
-
- |
-| **Administrador (Atendente)** | Gerente ou funcionário do PetShop. | • Todas as permissões do Cliente.
-
-<br>
-
-<br>• Criar, editar e excluir Serviços.<br>
-
-<br>• Visualizar todos os agendamentos.<br>
-
-<br>• Registrar horários de início/término de serviços. 
-
- |
+| **Cliente (Usuário Comum)** | Cliente que predente se hospedar | • Cadastrar-se e fazer login.
+| --- | --- | --- |
+| **Administrador (Atendente)** | Gerente ou funcionário do Hotel. | • Todas as permissões do Cliente.
+| --- | --- | --- |
 
 ---
 
@@ -61,23 +41,23 @@ O sistema possui dois níveis de acesso baseados em roles (funções).
 
 ## 6. Requisitos Técnicos (Não Funcionais)
 
-* 
+ 
 **Linguagem:** 
 
-* **Framework Web:** 
-* 
+
+ 
 **Banco de Dados:** 
 
 
-* 
+ 
 **Autenticação:** 
 
 
-* 
+ 
 **Testes:** 
 
 
-* 
+ 
 **Configuração:** 
 
 

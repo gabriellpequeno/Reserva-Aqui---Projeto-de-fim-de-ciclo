@@ -20,8 +20,8 @@ const PORT = process.env.PORT || 3000;
 
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`🛣️  Rota padrão (API_PREFIX): ${API_PREFIX}`);
+    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Rota padrão (API_PREFIX): ${API_PREFIX}`);
   });
 }
 

@@ -6,16 +6,19 @@ Este documento serve como a documentação central e unificada para todo o ecoss
 
 ## 2. Estrutura de Diretórios
 
-A pasta do assistente possui as seguintes áreas principais:
+A pasta do assistente possui as seguintes áreas principais, além do diretório de contexto persistente na raiz do projeto:
 
 ```
 .agent/
 ├── agents/                  # Contém as definições e comportamento de 20 Agentes Especialistas (Personas de IA).
-├── skills/                  # Contém 36 Módulos de Conhecimento Específico (Skills) carregáveis em tempo de contexto pela IA.
-├── workflows/               # Contém 11 Comandos Slash (Workflows) interativos.
+├── skills/                  # Contém 37 Módulos de Conhecimento Específico (Skills) carregáveis em tempo de contexto pela IA.
+├── workflows/               # Contém 12 Comandos Slash (Workflows) interativos.
 ├── rules/                   # Scripts com ordens críticas em tier-0 de arquitetura do núcleo.
 ├── scripts/                 # Scripts Python e utilitários que checam qualidade com pipeline unificada.
 └── ARCHITECTURE.md          # Resumo macro inicial e listagem estática em formato tabela da plataforma.
+
+.context/                    # (raiz do projeto) Memória persistente por skill. Criado automaticamente
+└── <skill-name>_context.md  # após cada sessão de implementação. Restaurado pela skill no início da próxima. (A Skill usada deve usar o arquivo de contexto se ele existir, e deve criar o arquivo de contexto se ele não existir)
 ```
 
 ## 3. Descrição dos Agentes, Skills e Workflows
@@ -399,6 +402,17 @@ A pasta do assistente possui as seguintes áreas principais:
 - **Propósito/Regras Mestra**: Metodologias práticas e pesadas para varreduras Deep Audit e E2E via automação browser Playwright (Chromium).
 - **Restrições Ocultas**: Impossibilita as IAs de dependerem falsamente de atrasos brutos instáveis de timers como `waitForTimeout(5000)`, exigindo escrutínio às métricas automáticas do auto-waiter embutido do Playwright. Exige preferencialmente escaneamento das interações focadas em rótulos estáveis como `data-testid` em vez de CSS nativo sensível à re-estilização.
 
+### 3.11 Skills (Lote 7 — Skills de Domínio do Projeto)
+
+> Skills desta seção são especializadas no domínio de negócio do ReservAqui e criadas pelo `skill-creator` conforme o projeto evolui.
+
+#### Auth Flow
+- **Localização**: `.agent/skills/auth-flow/SKILL.md`
+- **Propósito/Regras Mestra**: Especialista no fluxo de login e cadastro do backend ReservAqui. Cobre `usuario` (hóspede global, master DB), `anfitriao` (hotel/host, master DB + provisionamento tenant) e `hospede` (hóspede local por hotel, tenant DB). Garante arquitetura de 3 camadas estrita: Entity (validação) → Service (bcrypt + queries) → Controller (HTTP mapping).
+- **Restrições Ocultas**: Impõe **Step 0 obrigatório** antes de qualquer código: Track A confirma regras de negócio com o usuário via `regras de negócio.txt`; Track B pesquisa boas práticas OWASP 2025 e apresenta opções de hashing (bcrypt/Argon2id) e sessão (JWT/cookie/server-side) aguardando decisão explícita. Proíbe implementar estratégia de token/sessão sem aprovação do usuário. Exige Context Load no início (restaura `.context/auth-flow_context.md` se existir) e Context Storage ao fim (persiste o que foi implementado).
+
+---
+
 ## ⚡ PARTE 3: WORKFLOWS
 
 Workflows (`.md`) são gatilhos executáveis chamados através de "Slash Commands" (Ex: `/deploy`). Eles configuram protocolos transacionais de atuação em que múltiplos agentes e skills atuarão sob um trilho orquestrado.
@@ -418,6 +432,11 @@ Workflows (`.md`) são gatilhos executáveis chamados através de "Slash Command
 #### /create-feature
 - **Localização**: `.agent/workflows/create-feature.md`
 - **Propósito**: Micro-comando que delega rapidamente e ativamente o desenvolvimento de uma feature específica lendo um prompt centralizador (`documentation/prompts/create-feature-prompt.md`).
+
+#### /auth_create-edit
+- **Localização**: `.agent/workflows/auth_create-edit.md`
+- **Propósito**: Orquestrador interativo especializado no ciclo de vida do sistema de autenticação (login, registro, sessão, middlewares). Diferente do `/create`, não escreve código diretamente — guia o desenvolvedor pelas decisões de segurança e delega a implementação à skill `auth-flow`.
+- **Protocolo de Saída**: Executa 4 fases sequenciais com gate obrigatório. **Fase 1** restaura contexto (`.context/auth-flow_context.md`) ou lê arquivos de referência. **Fase 2** apresenta dois tracks paralelos: Track A (confirmação das regras de negócio via `regras de negócio.txt`) e Track B (tabelas de decisão de segurança — hash de senha, estratégia de sessão, proteções adicionais). **Fase 3** mostra resumo das decisões para aprovação final. **Fase 4** delega para a skill `auth-flow` com todas as decisões já resolvidas, evitando que a skill precise re-perguntar ao usuário.
 
 #### /debug
 - **Localização**: `.agent/workflows/debug.md`
@@ -511,6 +530,8 @@ A IA deste projeto age passivamente, lendo o projeto a seu dispor. Algumas chama
 ## 10. Histórico de Versões
 
 - **1.0.0**: Criação Inicial Automatizada por GenAI. Levantamento dos 67 ativos.
+- **1.1.0**: Adicionada skill `auth-flow` (Lote 7 — Skills de Domínio). Contagem de skills atualizada para 37.
+- **1.2.0**: Workflow `/auth_create-edit` reescrito como orquestrador de segurança especializado. Agora guia o dev pelas decisões (hash, sessão, proteções) antes de delegar à skill `auth-flow`. Contagem de workflows atualizada para 12.
 
 ## 11. Manual de Prompt
 

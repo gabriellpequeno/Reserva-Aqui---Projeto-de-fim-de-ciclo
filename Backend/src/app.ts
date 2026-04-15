@@ -18,6 +18,10 @@ import {
 } from './routes/avaliacao.routes';
 import dispositivoFcmRoutes    from './routes/dispositivoFcm.routes';
 import notificacaoHotelRoutes  from './routes/notificacaoHotel.routes';
+import {
+  hotelPagamentoRouter,
+  webhookPagamentoRouter,
+} from './routes/pagamentoReserva.routes';
 
 // Carrega as variáveis de ambiente
 dotenv.config();
@@ -43,7 +47,9 @@ app.use(`${API_PREFIX}/reservas`,          publicReservaRouter);
 app.use(`${API_PREFIX}/usuarios/avaliacoes`,       usuarioAvaliacaoRouter);
 app.use(`${API_PREFIX}/hotel/:hotel_id/avaliacoes`, publicAvaliacaoRouter);
 app.use(`${API_PREFIX}/dispositivos-fcm`,           dispositivoFcmRoutes);
-app.use(`${API_PREFIX}/hotel/notificacoes`,          notificacaoHotelRoutes);
+app.use(`${API_PREFIX}/hotel/notificacoes`,                      notificacaoHotelRoutes);
+app.use(`${API_PREFIX}/hotel/reservas/:reserva_id/pagamentos`,   hotelPagamentoRouter);
+app.use(`${API_PREFIX}/pagamentos/webhook`,                       webhookPagamentoRouter);
 
 // Exporta e/ou inicia o servidor
 const PORT = process.env.PORT || 3000;

@@ -1,7 +1,7 @@
 # Context: CRUD API
 
-> Last updated: 2026-04-15T06:00:00Z
-> Version: 7
+> Last updated: 2026-04-15T08:00:00Z
+> Version: 8
 
 ## Purpose
 Rastreamento das implementações de CRUD realizadas no backend ReservAqui via skill `crud-api`.

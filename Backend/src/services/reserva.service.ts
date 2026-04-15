@@ -1,6 +1,8 @@
 import { masterPool } from '../database/masterDb';
 import { withTenant } from '../database/schemaWrapper';
 import { setQuartoDisponivel } from './quarto.service';
+import { sendPush, getHotelTokens, getUserTokens } from './fcm.service';
+import { insertNotificacao } from './notificacaoHotel.service';
 import {
   Reserva,
   ReservaSafe,
@@ -244,6 +246,23 @@ async function _createReservaUsuario(
       String(input.valor_total), 'SOLICITADA',
     );
 
+    // Notificações — fire-and-forget (falhas não interrompem o fluxo)
+    Promise.all([
+      getHotelTokens(input.hotel_id).then(tokens =>
+        sendPush(tokens, {
+          title: 'Nova reserva recebida',
+          body:  `Nova solicitação para ${input.data_checkin} até ${input.data_checkout}.`,
+          data:  { reserva_id: String(reserva.id), tipo: 'NOVA_RESERVA' },
+        }),
+      ),
+      insertNotificacao(input.hotel_id, {
+        titulo:   'Nova reserva recebida',
+        mensagem: `Solicitação de reserva para ${input.data_checkin} até ${input.data_checkout}.`,
+        tipo:     'NOVA_RESERVA',
+        payload:  { reserva_id: reserva.id, codigo_publico: reserva.codigo_publico },
+      }),
+    ]).catch(() => {});
+
     return reserva;
   });
 }
@@ -475,6 +494,26 @@ async function _updateStatus(
       );
     }
 
+    // Notificações — fire-and-forget
+    if (input.status === 'APROVADA' && atualizada.user_id) {
+      // TODO: adicionar checkout_url ao data quando InfinitePay for integrado
+      Promise.all([
+        getUserTokens(atualizada.user_id).then(tokens =>
+          sendPush(tokens, {
+            title: 'Reserva aprovada!',
+            body:  `Sua reserva em ${nome_hotel} foi aprovada. Em breve você receberá o link de pagamento.`,
+            data:  { codigo_publico: atualizada.codigo_publico, tipo: 'APROVACAO_RESERVA' },
+          }),
+        ),
+        insertNotificacao(hotelId, {
+          titulo:   'Reserva aprovada',
+          mensagem: `Reserva #${atualizada.id} aprovada para ${String(atualizada.data_checkin)}.`,
+          tipo:     'APROVACAO_RESERVA',
+          payload:  { reserva_id: atualizada.id, codigo_publico: atualizada.codigo_publico },
+        }),
+      ]).catch(() => {});
+    }
+
     return atualizada;
   });
 }
@@ -635,5 +674,29 @@ async function _cancelarReservaUsuario(userId: string, codigoPublico: string): P
       reserva.valor_total,
       'CANCELADA',
     );
+
+    // Notificações — fire-and-forget
+    Promise.all([
+      getHotelTokens(hotel_id).then(tokens =>
+        sendPush(tokens, {
+          title: 'Reserva cancelada pelo hóspede',
+          body:  `A reserva #${reserva.id} foi cancelada pelo hóspede.`,
+          data:  { reserva_id: String(reserva.id), tipo: 'RESERVA_CANCELADA' },
+        }),
+      ),
+      insertNotificacao(hotel_id, {
+        titulo:   'Reserva cancelada pelo hóspede',
+        mensagem: `A reserva #${reserva.id} foi cancelada. Quarto liberado.`,
+        tipo:     'RESERVA_CANCELADA',
+        payload:  { reserva_id: reserva.id, codigo_publico: reserva.codigo_publico },
+      }),
+      getUserTokens(userId).then(tokens =>
+        sendPush(tokens, {
+          title: 'Cancelamento confirmado',
+          body:  'Sua reserva foi cancelada com sucesso.',
+          data:  { codigo_publico: reserva.codigo_publico, tipo: 'RESERVA_CANCELADA' },
+        }),
+      ),
+    ]).catch(() => {});
   });
 }

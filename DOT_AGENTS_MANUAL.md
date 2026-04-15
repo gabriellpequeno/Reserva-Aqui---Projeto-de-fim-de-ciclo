@@ -11,7 +11,7 @@ A pasta do assistente possui as seguintes áreas principais, além do diretório
 ```
 .agent/
 ├── agents/                  # Contém as definições e comportamento de 20 Agentes Especialistas (Personas de IA).
-├── skills/                  # Contém 38 Módulos de Conhecimento Específico (Skills) carregáveis em tempo de contexto pela IA.
+├── skills/                  # Contém 39 Módulos de Conhecimento Específico (Skills) carregáveis em tempo de contexto pela IA.
 ├── workflows/               # Contém 12 Comandos Slash (Workflows) interativos.
 ├── rules/                   # Scripts com ordens críticas em tier-0 de arquitetura do núcleo.
 ├── scripts/                 # Scripts Python e utilitários que checam qualidade com pipeline unificada.
@@ -416,6 +416,11 @@ A pasta do assistente possui as seguintes áreas principais, além do diretório
 - **Propósito/Regras Mestra**: Especialista em implementação segura e otimizada de sistemas de armazenamento de arquivos (object storage, CDN, uploads). Antes de qualquer implementação, conduz obrigatoriamente uma **Fase de Discovery** (5 perguntas sobre tipo de dado, controle de acesso, infraestrutura, volume e compliance) e apresenta um **Proposal formal** aguardando aprovação. Suporta Firebase Storage, AWS S3, GCS, Supabase Storage, MinIO e disco local, cada um com reference file dedicado em `references/`.
 - **Restrições Ocultas**: Proíbe absolutamente iniciar código sem aprovação do Proposal. Bane URLs públicas permanentes para arquivos privados (exige signed/expiring URLs). Veda armazenar credenciais de storage no client. Impõe validação de MIME por magic bytes (não apenas header do request) e sanitização de filenames com UUID. Exige cleanup de ficheiros temporários e rate limiting nos endpoints de upload. Consulta arquivos de referência por provider (`firebase-storage.md`, `s3-patterns.md`, `self-hosted.md`) em vez de embutir toda a lógica no SKILL.md.
 
+#### CRUD API
+- **Localização**: `.agent/skills/crud-api/SKILL.md`
+- **Propósito/Regras Mestra**: Especialista em implementar operações CRUD no backend ReservAqui respeitando a arquitetura em 4 camadas do projeto: Entity (validação pura) → Service (lógica + DB) → Controller (HTTP mapping) → Routes (middleware chain). Conduz uma **Fase de Discovery obrigatória** (7 perguntas de regras de negócio + análise do schema SQL) antes de qualquer código, e apresenta uma **proposta de arquitetura** para aprovação. Suporta tanto o master DB (dados globais) quanto os schemas tenant (dados por hotel via `withTenant()`).
+- **Restrições Ocultas**: Impõe o **Wrapper Pattern** intransigentemente: funções exportadas são apenas wrappers que chamam as implementações privadas `_functionName()` — proibido exportar diretamente a implementação completa. Bane interpolação de strings em SQL (exige queries parametrizadas). Exige guard correto em cada endpoint (`authGuard` para usuário, `hotelGuard` para hotel). Proíbe retornar campos sensíveis (senha, hash) no output. Impõe `withTenant()` para toda operação em schema tenant, nunca acessando diretamente. Checklist de segurança e escalabilidade obrigatório antes de entregar a implementação.
+
 ---
 
 ## ⚡ PARTE 3: WORKFLOWS
@@ -538,6 +543,7 @@ A IA deste projeto age passivamente, lendo o projeto a seu dispor. Algumas chama
 - **1.1.0**: Adicionada skill `auth-flow` (Lote 7 — Skills de Domínio). Contagem de skills atualizada para 37.
 - **1.2.0**: Workflow `/auth_create-edit` reescrito como orquestrador de segurança especializado. Agora guia o dev pelas decisões (hash, sessão, proteções) antes de delegar à skill `auth-flow`. Contagem de workflows atualizada para 12.
 - **1.3.0**: Adicionada skill `secure-storage` (Lote 7 — Skills de Domínio). Skill com methodology security-first: Discovery → Proposal → Implementation. Suporta Firebase, S3, GCS, Supabase, MinIO e disco local. Contagem de skills atualizada para 38.
+- **1.4.0**: Adicionada skill `crud-api` (Lote 7 — Skills de Domínio). Skill especializada na arquitetura 4-camadas do ReservAqui (Entity → Service → Controller → Routes). Obriga Discovery de negócio + análise de schema SQL antes de implementar. Impõe Wrapper Pattern nos services e checklist de segurança/escalabilidade. Contagem de skills atualizada para 39.
 
 ## 11. Manual de Prompt
 

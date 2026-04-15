@@ -20,14 +20,12 @@ CREATE TABLE IF NOT EXISTS configuracao_hotel (
     CONSTRAINT chk_max_dias CHECK (max_dias_reserva > 0)
 );
 
--- 2. Hóspedes (registo local do hotel)
+-- 2. Hóspedes (registro de membership local do hotel)
+--    Dados pessoais (nome, CPF, email, etc.) ficam no master em public.usuario.
+--    Esta tabela indica que o usuário já realizou ao menos uma reserva neste hotel.
+--    Para dados pessoais: JOIN public.usuario ON public.usuario.user_id = hospede.user_id
 CREATE TABLE IF NOT EXISTS hospede (
     user_id         UUID            PRIMARY KEY REFERENCES public.usuario(user_id) ON DELETE CASCADE,
-    nome_completo   VARCHAR(1000)   NOT NULL,
-    cpf             VARCHAR(14)     UNIQUE NOT NULL,
-    data_nascimento DATE            NOT NULL,
-    email           VARCHAR(100)    UNIQUE,
-    telefone        VARCHAR(20),
     criado_em       TIMESTAMPTZ     NOT NULL DEFAULT NOW()
 );
 
@@ -73,43 +71,82 @@ CREATE TABLE IF NOT EXISTS quarto (
     CONSTRAINT chk_valor_override CHECK (valor_override IS NULL OR valor_override > 0)
 );
 
--- 7. Cômodos do Quarto (quarto ↔ itens do catálogo com categoria 'COMODO')
---    Ex: Suíte 101 possui 2 banheiros, 1 sala de estar, 3 quartos
-CREATE TABLE IF NOT EXISTS comodos_do_quarto (
+-- 7. Itens do Quarto (quarto ↔ itens do catálogo com categoria 'COMODO' ou 'COMODIDADE')
+--    Unifica cômodos e comodidades em uma só tabela — o campo catalogo.categoria discrimina o tipo.
+--    Ex: Suíte 101 → 2 banheiros (COMODO), 2 camas king (COMODIDADE), 1 ar condicionado (COMODIDADE)
+--
+--    Filtrar cômodos:     JOIN catalogo WHERE categoria = 'COMODO'
+--    Filtrar comodidades: JOIN catalogo WHERE categoria = 'COMODIDADE'
+--    Listar tudo:         JOIN catalogo (sem WHERE, ordenado por categoria)
+--
+--    Nota: itens de categoria 'LAZER' pertencem ao hotel (via categoria_item), não ao quarto físico.
+CREATE TABLE IF NOT EXISTS itens_do_quarto (
     quarto_id   INT     NOT NULL REFERENCES quarto(id)   ON DELETE CASCADE,
     catalogo_id INT     NOT NULL REFERENCES catalogo(id) ON DELETE RESTRICT,
     quantidade  INT     NOT NULL DEFAULT 1,
     PRIMARY KEY (quarto_id, catalogo_id),
-    CONSTRAINT chk_qtd_comodo CHECK (quantidade > 0)
+    CONSTRAINT chk_qtd_item CHECK (quantidade > 0)
 );
 
--- 8. Comodidades do Quarto (quarto ↔ itens do catálogo com categoria 'COMODIDADE')
---    Ex: Suíte 101 possui 2 camas king, 1 ar condicionado, Wi-Fi, kit de higiene
-CREATE TABLE IF NOT EXISTS comodidades_do_quarto (
-    quarto_id   INT     NOT NULL REFERENCES quarto(id)   ON DELETE CASCADE,
-    catalogo_id INT     NOT NULL REFERENCES catalogo(id) ON DELETE RESTRICT,
-    quantidade  INT     NOT NULL DEFAULT 1,
-    PRIMARY KEY (quarto_id, catalogo_id),
-    CONSTRAINT chk_qtd_comodidade CHECK (quantidade > 0)
-);
-
--- 9. Reservas
+-- 8. Reservas (Unificada — cobre hóspedes registrados e walk-ins)
+--
+--    Hóspede registrado:  user_id preenchido, user_id IS NOT NULL
+--    Walk-in:             user_id = NULL, usa nome_hospede + cpf_hospede como identificador
+--    Quarto atribuído:    quarto_id preenchido
+--    Quarto não definido: quarto_id = NULL, usa tipo_quarto como texto livre
+--
+--    Acesso ao ticket:
+--      - Por hóspede registrado:    WHERE user_id = ?
+--      - Por walk-in (CPF):         WHERE cpf_hospede = ?
+--      - Por link público (app/WA): WHERE codigo_publico = ?  (+ lookup em reserva_routing no master)
+--      - Por hotel:                 todas as reservas no próprio schema
 CREATE TABLE IF NOT EXISTS reserva (
-    id              SERIAL          PRIMARY KEY,
-    user_id         UUID            NOT NULL REFERENCES hospede(user_id)  ON DELETE RESTRICT,
-    quarto_id       INT             NOT NULL REFERENCES quarto(id)        ON DELETE RESTRICT,
-    data_checkin    DATE            NOT NULL,
-    data_checkout   DATE            NOT NULL,
-    valor_total     DECIMAL(10, 2)  NOT NULL,
-    num_hospedes    INT             NOT NULL DEFAULT 1,
-    observacoes     TEXT,                                     -- pedidos especiais do hóspede
-    status          VARCHAR(20)     NOT NULL DEFAULT 'SOLICITADA',
-    criado_em       TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-    p_turisticos    JSONB           NOT NULL,
-    CONSTRAINT chk_datas            CHECK (data_checkout > data_checkin),
-    CONSTRAINT chk_valor            CHECK (valor_total > 0),
-    CONSTRAINT chk_num_hosp         CHECK (num_hospedes > 0),
-    CONSTRAINT chk_status           CHECK (status IN ('SOLICITADA', 'AGUARDANDO_PAGAMENTO', 'APROVADA', 'CANCELADA', 'CONCLUIDA'))
+    id                  SERIAL          PRIMARY KEY,
+    codigo_publico      UUID            UNIQUE NOT NULL DEFAULT gen_random_uuid(), -- link de acesso público (walk-in / app)
+
+    -- Identificação do hóspede (registrado OU walk-in — pelo menos um campo obrigatório)
+    user_id             UUID            REFERENCES hospede(user_id)  ON DELETE RESTRICT, -- NULL para walk-ins
+    nome_hospede        VARCHAR(200),                                                     -- walk-in: nome completo
+    cpf_hospede         VARCHAR(14),                                                      -- walk-in: CPF (identificador)
+    telefone_contato    VARCHAR(20),                                                      -- walk-in: WhatsApp / telefone
+
+    -- Origem da reserva
+    canal_origem        VARCHAR(20)     NOT NULL DEFAULT 'APP',               -- 'APP', 'WHATSAPP', 'BALCAO'
+    sessao_chat_id      UUID            REFERENCES public.sessao_chat(id) ON DELETE SET NULL,
+
+    -- Quarto (atribuído OU textual — pelo menos um campo obrigatório)
+    quarto_id           INT             REFERENCES quarto(id) ON DELETE RESTRICT, -- NULL até atribuição
+    tipo_quarto         VARCHAR(100),                                               -- fallback textual (walk-in / pré-atribuição)
+
+    -- Dados da estadia
+    num_hospedes        INT             NOT NULL DEFAULT 1,
+    data_checkin        DATE            NOT NULL,
+    data_checkout       DATE            NOT NULL,
+    hora_checkin_real   TIMESTAMPTZ,                                 -- preenchido na chegada real
+    hora_checkout_real  TIMESTAMPTZ,                                 -- preenchido na saída real
+    valor_total         DECIMAL(10, 2)  NOT NULL,
+    observacoes         TEXT,
+    p_turisticos        JSONB,                                       -- pontos turísticos (nullable para walk-ins)
+    status              VARCHAR(20)     NOT NULL DEFAULT 'SOLICITADA',
+    criado_em           TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+
+    -- Integridade
+    CONSTRAINT chk_datas        CHECK (data_checkout > data_checkin),
+    CONSTRAINT chk_valor        CHECK (valor_total > 0),
+    CONSTRAINT chk_num_hosp     CHECK (num_hospedes > 0),
+    CONSTRAINT chk_status       CHECK (status IN ('SOLICITADA', 'AGUARDANDO_PAGAMENTO', 'APROVADA', 'CANCELADA', 'CONCLUIDA')),
+    CONSTRAINT chk_canal        CHECK (canal_origem IN ('APP', 'WHATSAPP', 'BALCAO')),
+
+    -- Garante identificação mínima do hóspede
+    CONSTRAINT chk_hospede_identificado CHECK (
+        user_id IS NOT NULL
+        OR (nome_hospede IS NOT NULL AND (cpf_hospede IS NOT NULL OR telefone_contato IS NOT NULL))
+    ),
+
+    -- Garante que o quarto pode ser determinado
+    CONSTRAINT chk_quarto_identificado CHECK (
+        quarto_id IS NOT NULL OR tipo_quarto IS NOT NULL
+    )
 );
 
 -- 10. Avaliações (apenas após reserva concluída)
@@ -118,7 +155,7 @@ CREATE TABLE IF NOT EXISTS avaliacao (
     user_id                 UUID            NOT NULL REFERENCES hospede(user_id)  ON DELETE CASCADE,
     reserva_id              INT             NOT NULL REFERENCES reserva(id)       ON DELETE CASCADE,
     nota_limpeza            INT             NOT NULL,
-    nota_geral              INT             NOT NULL,
+    nota_atendimento        INT             NOT NULL,
     nota_conforto           INT             NOT NULL,
     nota_organizacao        INT             NOT NULL,
     nota_localizacao        INT             NOT NULL,
@@ -127,7 +164,7 @@ CREATE TABLE IF NOT EXISTS avaliacao (
     criado_em               TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
     UNIQUE (user_id, reserva_id),                              -- uma avaliação por estadia
     CONSTRAINT chk_nota_limpeza         CHECK (nota_limpeza         BETWEEN 1 AND 5),
-    CONSTRAINT chk_nota_geral           CHECK (nota_geral           BETWEEN 1 AND 5),
+    CONSTRAINT chk_nota_atendimento     CHECK (nota_atendimento     BETWEEN 1 AND 5),
     CONSTRAINT chk_nota_conforto        CHECK (nota_conforto        BETWEEN 1 AND 5),
     CONSTRAINT chk_nota_organizacao     CHECK (nota_organizacao     BETWEEN 1 AND 5),
     CONSTRAINT chk_nota_localizacao     CHECK (nota_localizacao     BETWEEN 1 AND 5)
@@ -137,21 +174,27 @@ CREATE TABLE IF NOT EXISTS avaliacao (
 -- ÍNDICES DE PERFORMANCE
 -- ============================================================
 
--- Reservas: busca por hóspede, quarto e intervalo de datas (queries mais frequentes)
-CREATE INDEX IF NOT EXISTS idx_reserva_user         ON reserva (user_id);
-CREATE INDEX IF NOT EXISTS idx_reserva_quarto       ON reserva (quarto_id);
-CREATE INDEX IF NOT EXISTS idx_reserva_datas        ON reserva (data_checkin, data_checkout);
-CREATE INDEX IF NOT EXISTS idx_reserva_status       ON reserva (status);
+-- Reservas: busca por hóspede, quarto, datas, status e acesso público
+CREATE INDEX IF NOT EXISTS idx_reserva_user            ON reserva (user_id);
+CREATE INDEX IF NOT EXISTS idx_reserva_quarto          ON reserva (quarto_id);
+CREATE INDEX IF NOT EXISTS idx_reserva_datas           ON reserva (data_checkin, data_checkout);
+CREATE INDEX IF NOT EXISTS idx_reserva_status          ON reserva (status);
+CREATE INDEX IF NOT EXISTS idx_reserva_codigo_publico  ON reserva (codigo_publico);   -- acesso por link público
+CREATE INDEX IF NOT EXISTS idx_reserva_cpf_hospede     ON reserva (cpf_hospede);      -- walk-in: busca por CPF
+CREATE INDEX IF NOT EXISTS idx_reserva_canal           ON reserva (canal_origem);
 
 -- Quartos: busca por disponibilidade e perfil
-CREATE INDEX IF NOT EXISTS idx_quarto_disponivel    ON quarto (disponivel);
-CREATE INDEX IF NOT EXISTS idx_quarto_categoria     ON quarto (categoria_quarto_id);
+CREATE INDEX IF NOT EXISTS idx_quarto_disponivel       ON quarto (disponivel);
+CREATE INDEX IF NOT EXISTS idx_quarto_categoria        ON quarto (categoria_quarto_id);
 
 -- Catálogo: busca por categoria (COMODO / COMODIDADE / LAZER)
-CREATE INDEX IF NOT EXISTS idx_catalogo_categoria   ON catalogo (categoria);
+CREATE INDEX IF NOT EXISTS idx_catalogo_categoria      ON catalogo (categoria);
+
+-- Itens do Quarto: busca por quarto
+CREATE INDEX IF NOT EXISTS idx_itens_quarto_id         ON itens_do_quarto (quarto_id);
 
 -- Avaliações: média por aspecto (relatórios de qualidade do hotel)
-CREATE INDEX IF NOT EXISTS idx_avaliacao_reserva    ON avaliacao (reserva_id);
+CREATE INDEX IF NOT EXISTS idx_avaliacao_reserva       ON avaliacao (reserva_id);
 
 -- 11. Pagamento de Reservas (Tracking Financeiro do Hotel)
 CREATE TABLE IF NOT EXISTS pagamento_reserva (
@@ -191,3 +234,18 @@ CREATE TABLE IF NOT EXISTS notificacao_hotel (
 );
 
 CREATE INDEX IF NOT EXISTS idx_notificacao_pendente ON notificacao_hotel (lida_em) WHERE lida_em IS NULL;
+
+-- 13. Fotos dos Quartos
+--    Cada quarto pode ter até 10 fotos (sem distincão de orientação).
+--    O Flutter exibe as fotos em carrossel indistintamente.
+--    Limite total controlado via UPLOAD_MAX_ROOM_PHOTOS no .env (default: 10).
+CREATE TABLE IF NOT EXISTS quarto_foto (
+    id              UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    quarto_id       INT             NOT NULL REFERENCES quarto(id) ON DELETE CASCADE,
+    storage_path    TEXT            NOT NULL,     -- caminho relativo a UPLOAD_DIR (nunca URL pública)
+    ordem           INT             NOT NULL DEFAULT 0,  -- ordem de exibição (0 = primeiro)
+    criado_em       TIMESTAMPTZ     NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_quarto_foto_quarto_id   ON quarto_foto (quarto_id);
+

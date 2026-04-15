@@ -7,6 +7,15 @@ import configuracaoRoutes    from './routes/configuracao.routes';
 import categoriaQuartoRoutes from './routes/categoriaQuarto.routes';
 import quartoRoutes          from './routes/quarto.routes';
 import uploadRoutes    from './routes/upload.routes';
+import {
+  hotelReservaRouter,
+  usuarioReservaRouter,
+  publicReservaRouter,
+} from './routes/reserva.routes';
+import {
+  usuarioAvaliacaoRouter,
+  publicAvaliacaoRouter,
+} from './routes/avaliacao.routes';
 
 // Carrega as variáveis de ambiente
 dotenv.config();
@@ -26,6 +35,11 @@ app.use(`${API_PREFIX}/hotel`,    configuracaoRoutes);
 app.use(`${API_PREFIX}/hotel`,    categoriaQuartoRoutes);
 app.use(`${API_PREFIX}/hotel`,    quartoRoutes);
 app.use(`${API_PREFIX}/uploads`,  uploadRoutes);
+app.use(`${API_PREFIX}/hotel/reservas`,    hotelReservaRouter);
+app.use(`${API_PREFIX}/usuarios/reservas`, usuarioReservaRouter);
+app.use(`${API_PREFIX}/reservas`,          publicReservaRouter);
+app.use(`${API_PREFIX}/usuarios/avaliacoes`,       usuarioAvaliacaoRouter);
+app.use(`${API_PREFIX}/hotel/:hotel_id/avaliacoes`, publicAvaliacaoRouter);
 
 // Exporta e/ou inicia o servidor
 const PORT = process.env.PORT || 3000;

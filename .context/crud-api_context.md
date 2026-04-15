@@ -1,7 +1,7 @@
 # Context: CRUD API
 
-> Last updated: 2026-04-15T04:00:00Z
-> Version: 5
+> Last updated: 2026-04-15T06:00:00Z
+> Version: 7
 
 ## Purpose
 Rastreamento das implementações de CRUD realizadas no backend ReservAqui via skill `crud-api`.
@@ -41,6 +41,14 @@ Rastreamento das implementações de CRUD realizadas no backend ReservAqui via s
 | `Backend/src/services/quarto.service.ts` | Yes | CRUD + _syncItens + setQuartoDisponivel para uso interno |
 | `Backend/src/controllers/quarto.controller.ts` | Yes | Handlers HTTP → service calls |
 | `Backend/src/routes/quarto.routes.ts` | Yes | Todos os endpoints com hotelGuard |
+| `Backend/src/entities/Reserva.ts` | Yes | Validação de criação (usuário e walk-in), status e atribuição de quarto |
+| `Backend/src/services/reserva.service.ts` | Yes | CRUD de reserva + side effects (hospede, reserva_routing, historico_reserva_global, setQuartoDisponivel) |
+| `Backend/src/controllers/reserva.controller.ts` | Yes | 11 handlers HTTP para hotel, usuário e público |
+| `Backend/src/routes/reserva.routes.ts` | Yes | 3 routers: hotelReservaRouter, usuarioReservaRouter, publicReservaRouter |
+| `Backend/src/entities/Avaliacao.ts` | Yes | Valida 5 notas (1-5), comentário, partial update; calcularTotal() estático |
+| `Backend/src/services/avaliacao.service.ts` | Yes | Criar, editar (merge + recalculo nota_total), listar por hotel |
+| `Backend/src/controllers/avaliacao.controller.ts` | Yes | 3 handlers: criar, editar, listar |
+| `Backend/src/routes/avaliacao.routes.ts` | Yes | usuarioAvaliacaoRouter + publicAvaliacaoRouter (mergeParams) |
 
 ## Code Reference
 
@@ -87,6 +95,26 @@ async function _deleteCatalogo(hotelId: string, catalogoId: number): Promise<voi
 - **`validate` aceita `unknown`:** Entity methods aceitam `unknown` e fazem cast interno, permitindo chamar tanto com `req.body` (any) quanto com tipos já estruturados.
 
 ## Changelog
+
+### v7 — 2026-04-15
+- CRUD de `avaliacao` implementado (tenant DB via reserva_routing)
+- 3 endpoints: `POST /api/usuarios/avaliacoes`, `PATCH /api/usuarios/avaliacoes/:codigo_publico`, `GET /api/hotel/:hotel_id/avaliacoes` (público)
+- `nota_total` calculado automaticamente via `Avaliacao.calcularTotal()` — nunca recebido no body
+- PATCH parcial: mescla valores enviados com valores atuais do banco antes de recalcular total
+- Roteamento via `codigo_publico` → `reserva_routing` → tenant (mesmo padrão do cancelamento)
+- Walk-ins (user_id = null) bloqueados por verificação de ownership da reserva
+- TypeScript compilando sem erros
+
+### v6 — 2026-04-15
+- CRUD de `reserva` implementado (tenant DB + side effects no master)
+- 11 endpoints: 7 hotelGuard (`/api/hotel/reservas`), 3 authGuard (`/api/usuarios/reservas`), 1 público (`/api/reservas/:codigo_publico`)
+- Walk-in criado como `APROVADA`; usuário como `SOLICITADA`
+- Checkin/checkout físicos: `PATCH /:id/checkin` e `PATCH /:id/checkout` (checkout → status CONCLUIDA)
+- Side effects automáticos: `hospede` (ensure first reservation), `reserva_routing` (routing público), `historico_reserva_global` (UPSERT em criação e mudança de status), `setQuartoDisponivel` (aprovação/cancelamento/checkout)
+- `listReservasUsuario` lê de `historico_reserva_global` (master) — não itera tenants
+- `cancelarReservaUsuario` usa `codigo_publico` para lookup via `reserva_routing`
+- `HistoricoReservaSafe` exportado como tipo separado (diferente de `ReservaSafe`)
+- TypeScript compilando sem erros
 
 ### v5 — 2026-04-15
 - CRUD de `quarto` implementado (tenant DB, todos os endpoints com hotelGuard)

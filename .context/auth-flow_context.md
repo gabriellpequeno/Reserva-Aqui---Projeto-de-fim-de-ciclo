@@ -1,7 +1,7 @@
 # Context: Auth Flow — ReservAqui Backend
 
-> Last updated: 2026-04-11T18:25:00
-> Version: 1.1
+> Last updated: 2026-04-14T18:25:00
+> Version: 1.2
 
 ## Purpose
 Login and registration system for usuarios (global guests) and anfitrioes (hotels).
@@ -22,8 +22,9 @@ Multi-tenant PostgreSQL architecture: master DB for global entities, tenant DB p
 | `src/services/usuario.service.ts` | Yes | Register + login + CRUD + JWT |
 | `src/controllers/usuario.controller.ts` | Yes | HTTP layer for Usuario |
 | `src/middlewares/authGuard.ts` | Yes | Protects auth-required routes |
-| `src/middlewares/rateLimiter.ts` | Yes | Prevents brute force on login |
+| `src/middlewares/rateLimiter.ts` | Yes | Prevents brute force on login (now uses .env) |
 | `src/middlewares/validateBody.ts` | Yes | Validates payload shape |
+| `src/middlewares/httpsEnforcer.ts` | Yes | Enforces HTTPS proxy headers in production |
 | `src/routes/usuario.routes.ts` | Yes | Express router definition |
 | `src/app.ts` | Yes | Express app entry point & default route setup |
 | `.env.example` & `.env` | Yes | Environment configuration (JWT, Argon2, Routes) |
@@ -48,6 +49,11 @@ Multi-tenant PostgreSQL architecture: master DB for global entities, tenant DB p
 - Main App Initialization: `src/app.ts` securely mounts `API_PREFIX` explicitly from environment variables allowing for flexible API versioning.
 
 ## Changelog
+
+### v1.2 — 2026-04-14
+- Reestruturada a camada de serviço `usuario.service.ts`: as lógicas de negócio agora vivem em funções privadas `_functionName()` para isolamento, sendo expostas apenas via wrappers.
+- `Usuario` Entity validator methods transformados em `private static` mantendo apenas a interface root `validate`.
+- Adicionada proteção com suporte à `.env`: `RATE_LIMIT_LOGIN_MAX` e `RATE_LIMIT_LOGIN_WINDOW_MS` no middleware de rate limiting nativo e criado force proxy check com `httpsEnforcer.ts`.
 
 ### v1.1 — 2026-04-11
 - Extracted cryptographic constraints (`Argon2` memory cost, time cost, and parallelism) to `.env`.

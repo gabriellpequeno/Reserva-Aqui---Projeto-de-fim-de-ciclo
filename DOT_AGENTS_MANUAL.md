@@ -11,7 +11,7 @@ A pasta do assistente possui as seguintes áreas principais, além do diretório
 ```
 .agent/
 ├── agents/                  # Contém as definições e comportamento de 20 Agentes Especialistas (Personas de IA).
-├── skills/                  # Contém 37 Módulos de Conhecimento Específico (Skills) carregáveis em tempo de contexto pela IA.
+├── skills/                  # Contém 38 Módulos de Conhecimento Específico (Skills) carregáveis em tempo de contexto pela IA.
 ├── workflows/               # Contém 12 Comandos Slash (Workflows) interativos.
 ├── rules/                   # Scripts com ordens críticas em tier-0 de arquitetura do núcleo.
 ├── scripts/                 # Scripts Python e utilitários que checam qualidade com pipeline unificada.
@@ -411,6 +411,11 @@ A pasta do assistente possui as seguintes áreas principais, além do diretório
 - **Propósito/Regras Mestra**: Especialista no fluxo de login e cadastro do backend ReservAqui. Cobre `usuario` (hóspede global, master DB), `anfitriao` (hotel/host, master DB + provisionamento tenant) e `hospede` (hóspede local por hotel, tenant DB). Garante arquitetura de 3 camadas estrita: Entity (validação) → Service (bcrypt + queries) → Controller (HTTP mapping).
 - **Restrições Ocultas**: Impõe **Step 0 obrigatório** antes de qualquer código: Track A confirma regras de negócio com o usuário via `regras de negócio.txt`; Track B pesquisa boas práticas OWASP 2025 e apresenta opções de hashing (bcrypt/Argon2id) e sessão (JWT/cookie/server-side) aguardando decisão explícita. Proíbe implementar estratégia de token/sessão sem aprovação do usuário. Exige Context Load no início (restaura `.context/auth-flow_context.md` se existir) e Context Storage ao fim (persiste o que foi implementado).
 
+#### Secure Storage
+- **Localização**: `.agent/skills/secure-storage/SKILL.md`
+- **Propósito/Regras Mestra**: Especialista em implementação segura e otimizada de sistemas de armazenamento de arquivos (object storage, CDN, uploads). Antes de qualquer implementação, conduz obrigatoriamente uma **Fase de Discovery** (5 perguntas sobre tipo de dado, controle de acesso, infraestrutura, volume e compliance) e apresenta um **Proposal formal** aguardando aprovação. Suporta Firebase Storage, AWS S3, GCS, Supabase Storage, MinIO e disco local, cada um com reference file dedicado em `references/`.
+- **Restrições Ocultas**: Proíbe absolutamente iniciar código sem aprovação do Proposal. Bane URLs públicas permanentes para arquivos privados (exige signed/expiring URLs). Veda armazenar credenciais de storage no client. Impõe validação de MIME por magic bytes (não apenas header do request) e sanitização de filenames com UUID. Exige cleanup de ficheiros temporários e rate limiting nos endpoints de upload. Consulta arquivos de referência por provider (`firebase-storage.md`, `s3-patterns.md`, `self-hosted.md`) em vez de embutir toda a lógica no SKILL.md.
+
 ---
 
 ## ⚡ PARTE 3: WORKFLOWS
@@ -532,6 +537,7 @@ A IA deste projeto age passivamente, lendo o projeto a seu dispor. Algumas chama
 - **1.0.0**: Criação Inicial Automatizada por GenAI. Levantamento dos 67 ativos.
 - **1.1.0**: Adicionada skill `auth-flow` (Lote 7 — Skills de Domínio). Contagem de skills atualizada para 37.
 - **1.2.0**: Workflow `/auth_create-edit` reescrito como orquestrador de segurança especializado. Agora guia o dev pelas decisões (hash, sessão, proteções) antes de delegar à skill `auth-flow`. Contagem de workflows atualizada para 12.
+- **1.3.0**: Adicionada skill `secure-storage` (Lote 7 — Skills de Domínio). Skill com methodology security-first: Discovery → Proposal → Implementation. Suporta Firebase, S3, GCS, Supabase, MinIO e disco local. Contagem de skills atualizada para 38.
 
 ## 11. Manual de Prompt
 

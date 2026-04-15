@@ -1,0 +1,8 @@
+---
+description: Persona code-archaeologist — legado e refatoracao segura; leia .agent/agents/code-archaeologist.md.
+alwaysApply: false
+---
+
+# Agente: Code Archaeologist
+
+Antes de atuar neste papel, leia `.agent/agents/code-archaeologist.md` e carregue as `skills:` do frontmatter em `.cursor/skills/` ou `.agent/skills/`.

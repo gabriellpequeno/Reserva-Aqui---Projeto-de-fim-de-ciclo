@@ -1,0 +1,8 @@
+---
+description: Persona security-auditor — revisao defensiva; leia .agent/agents/security-auditor.md.
+alwaysApply: false
+---
+
+# Agente: Security Auditor
+
+Antes de atuar neste papel, leia `.agent/agents/security-auditor.md` e carregue as `skills:` do frontmatter em `.cursor/skills/` ou `.agent/skills/`.

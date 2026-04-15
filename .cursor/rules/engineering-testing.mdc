@@ -1,0 +1,13 @@
+---
+description: Convencoes para testes automatizados.
+globs: "**/*.{test,spec}.{ts,tsx}"
+alwaysApply: false
+---
+
+# Engineering — Testing
+
+- Teste comportamento observavel; evite acoplar a detalhe de implementacao.
+- Use Arrange — Act — Assert; um foco claro por teste quando possivel.
+- Priorize piramide: muitos testes rapidos, poucos E2E criticos.
+- Mocks apenas para fronteiras externas; nao mockar o codigo sob teste sem motivo.
+- Nomeie testes de forma que a falha seja autoexplicativa.

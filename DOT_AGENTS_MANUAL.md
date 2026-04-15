@@ -21,6 +21,17 @@ A pasta do assistente possui as seguintes áreas principais, além do diretório
 └── <skill-name>_context.md  # após cada sessão de implementação. Restaurado pela skill no início da próxima. (A Skill usada deve usar o arquivo de contexto se ele existir, e deve criar o arquivo de contexto se ele não existir)
 ```
 
+### 2.1 Uso no Cursor (`.cursor/`)
+
+No editor Cursor, o repositório também expõe:
+
+- **Regras:** `.cursor/rules/*.mdc` — núcleo (`architecture-core`, `assistant-policy`), engenharia por domínio e atalhos `agent-*.mdc` que apontam para `.agent/agents/*.md`.
+- **Skills (resumo):** `.cursor/skills/<nome>/SKILL.md` — alinhadas às pastas homônimas em `.agent/skills/` (versão completa e scripts permanecem na `.agent`).
+- **Playbooks:** `.cursor/playbooks/*.md` — fluxos operacionais equivalentes aos workflows slash documentados abaixo.
+- **Índice:** `.cursor/AGENTS.md` — mapa rápido entre `.cursor` e `.agent`.
+
+A pasta `.agent/` continua sendo a fonte detalhada de personas, anexos e scripts; veja `MIGRATION_AGENT_TO_CURSOR.md` para o histórico de migração.
+
 ## 3. Descrição dos Agentes, Skills e Workflows
 
 ### 3.1 Agentes (Lote 1)

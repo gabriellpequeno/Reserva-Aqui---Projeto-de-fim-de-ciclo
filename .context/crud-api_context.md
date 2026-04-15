@@ -1,7 +1,7 @@
 # Context: CRUD API
 
-> Last updated: 2026-04-15T02:00:00Z
-> Version: 3
+> Last updated: 2026-04-15T03:00:00Z
+> Version: 4
 
 ## Purpose
 Rastreamento das implementações de CRUD realizadas no backend ReservAqui via skill `crud-api`.
@@ -33,6 +33,10 @@ Rastreamento das implementações de CRUD realizadas no backend ReservAqui via s
 | `Backend/src/services/configuracao.service.ts` | Yes | Lógica de configuração no tenant DB |
 | `Backend/src/controllers/configuracao.controller.ts` | Yes | Handlers HTTP → service calls |
 | `Backend/src/routes/configuracao.routes.ts` | Yes | GET público + POST/PATCH com hotelGuard |
+| `Backend/src/entities/CategoriaQuarto.ts` | Yes | Valida nome, preco_base, capacidade_pessoas e itens |
+| `Backend/src/services/categoriaQuarto.service.ts` | Yes | CRUD de categoria + gestão de categoria_item |
+| `Backend/src/controllers/categoriaQuarto.controller.ts` | Yes | Handlers para categoria e sub-recurso itens |
+| `Backend/src/routes/categoriaQuarto.routes.ts` | Yes | GET público + escrita com hotelGuard, sub-rotas de itens |
 
 ## Code Reference
 
@@ -79,6 +83,14 @@ async function _deleteCatalogo(hotelId: string, catalogoId: number): Promise<voi
 - **`validate` aceita `unknown`:** Entity methods aceitam `unknown` e fazem cast interno, permitindo chamar tanto com `req.body` (any) quanto com tipos já estruturados.
 
 ## Changelog
+
+### v4 — 2026-04-15
+- CRUD de `categoria_quarto` + gestão de `categoria_item` implementados (tenant DB)
+- Endpoints em `/api/hotel`: GET público por `:hotel_id`, POST/PATCH/DELETE com hotelGuard
+- Sub-rotas de itens: `POST /categorias/:id/itens`, `DELETE /categorias/:id/itens/:catalogo_id`
+- GET retorna itens agregados em JSON (json_agg) — uma única query sem N+1
+- DELETE bloqueado com 409 se existirem quartos ativos vinculados
+- TypeScript compilando sem erros
 
 ### v3 — 2026-04-15
 - CRUD de `configuracao_hotel` implementado (tenant DB, 1 row por hotel)

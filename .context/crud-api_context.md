@@ -1,7 +1,7 @@
 # Context: CRUD API
 
-> Last updated: 2026-04-15T03:00:00Z
-> Version: 4
+> Last updated: 2026-04-15T04:00:00Z
+> Version: 5
 
 ## Purpose
 Rastreamento das implementações de CRUD realizadas no backend ReservAqui via skill `crud-api`.
@@ -37,6 +37,10 @@ Rastreamento das implementações de CRUD realizadas no backend ReservAqui via s
 | `Backend/src/services/categoriaQuarto.service.ts` | Yes | CRUD de categoria + gestão de categoria_item |
 | `Backend/src/controllers/categoriaQuarto.controller.ts` | Yes | Handlers para categoria e sub-recurso itens |
 | `Backend/src/routes/categoriaQuarto.routes.ts` | Yes | GET público + escrita com hotelGuard, sub-rotas de itens |
+| `Backend/src/entities/Quarto.ts` | Yes | Valida numero, categoria_quarto_id, valor_override, itens inline |
+| `Backend/src/services/quarto.service.ts` | Yes | CRUD + _syncItens + setQuartoDisponivel para uso interno |
+| `Backend/src/controllers/quarto.controller.ts` | Yes | Handlers HTTP → service calls |
+| `Backend/src/routes/quarto.routes.ts` | Yes | Todos os endpoints com hotelGuard |
 
 ## Code Reference
 
@@ -83,6 +87,14 @@ async function _deleteCatalogo(hotelId: string, catalogoId: number): Promise<voi
 - **`validate` aceita `unknown`:** Entity methods aceitam `unknown` e fazem cast interno, permitindo chamar tanto com `req.body` (any) quanto com tipos já estruturados.
 
 ## Changelog
+
+### v5 — 2026-04-15
+- CRUD de `quarto` implementado (tenant DB, todos os endpoints com hotelGuard)
+- Itens inline: POST/PATCH aceitam array `itens[]`; PATCH com itens substitui todos (_syncItens)
+- `setQuartoDisponivel(hotelId, quartoId, disponivel)` exportado para uso interno pelo service de reservas
+- `valor_override: null` no PATCH remove o override do preço
+- Soft delete: cascade em itens_do_quarto e quarto_foto pelo DB
+- TypeScript compilando sem erros
 
 ### v4 — 2026-04-15
 - CRUD de `categoria_quarto` + gestão de `categoria_item` implementados (tenant DB)

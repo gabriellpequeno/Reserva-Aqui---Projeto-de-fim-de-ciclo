@@ -5,6 +5,7 @@ import anfitriaoRoutes from './routes/anfitriao.routes';
 import catalogoRoutes      from './routes/catalogo.routes';
 import configuracaoRoutes    from './routes/configuracao.routes';
 import categoriaQuartoRoutes from './routes/categoriaQuarto.routes';
+import quartoRoutes          from './routes/quarto.routes';
 import uploadRoutes    from './routes/upload.routes';
 
 // Carrega as variáveis de ambiente
@@ -23,6 +24,7 @@ app.use(`${API_PREFIX}/hotel`,    anfitriaoRoutes);
 app.use(`${API_PREFIX}/hotel`,    catalogoRoutes);
 app.use(`${API_PREFIX}/hotel`,    configuracaoRoutes);
 app.use(`${API_PREFIX}/hotel`,    categoriaQuartoRoutes);
+app.use(`${API_PREFIX}/hotel`,    quartoRoutes);
 app.use(`${API_PREFIX}/uploads`,  uploadRoutes);
 
 // Exporta e/ou inicia o servidor

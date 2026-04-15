@@ -35,7 +35,6 @@ Frontend/android/app/release
 *.jks
 *.keystore
 .env
-.env.*
 
 # ─── Logs / Temp ─────────────────────────────────────────────────────────────
 *.log

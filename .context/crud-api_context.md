@@ -1,7 +1,7 @@
 # Context: CRUD API
 
-> Last updated: 2026-04-15T01:00:00Z
-> Version: 2
+> Last updated: 2026-04-15T02:00:00Z
+> Version: 3
 
 ## Purpose
 Rastreamento das implementações de CRUD realizadas no backend ReservAqui via skill `crud-api`.
@@ -29,6 +29,10 @@ Rastreamento das implementações de CRUD realizadas no backend ReservAqui via s
 | `Backend/src/services/favorito.service.ts` | Yes | Lógica de favoritos no master DB |
 | `Backend/src/controllers/favorito.controller.ts` | Yes | Handlers HTTP → service calls |
 | `Backend/src/routes/usuario.routes.ts` | Yes | Rotas de favoritos adicionadas |
+| `Backend/src/entities/ConfiguracaoHotel.ts` | Yes | Validação pura (TIME format, int > 0, boolean) |
+| `Backend/src/services/configuracao.service.ts` | Yes | Lógica de configuração no tenant DB |
+| `Backend/src/controllers/configuracao.controller.ts` | Yes | Handlers HTTP → service calls |
+| `Backend/src/routes/configuracao.routes.ts` | Yes | GET público + POST/PATCH com hotelGuard |
 
 ## Code Reference
 
@@ -75,6 +79,14 @@ async function _deleteCatalogo(hotelId: string, catalogoId: number): Promise<voi
 - **`validate` aceita `unknown`:** Entity methods aceitam `unknown` e fazem cast interno, permitindo chamar tanto com `req.body` (any) quanto com tipos já estruturados.
 
 ## Changelog
+
+### v3 — 2026-04-15
+- CRUD de `configuracao_hotel` implementado (tenant DB, 1 row por hotel)
+- Endpoints em `/api/hotel`: `GET /:hotel_id/configuracao` (público), `POST /configuracao`, `PATCH /configuracao` (hotelGuard)
+- `telefone_recepcao` omitido intencionalmente da API (campo existe no DB mas não exposto)
+- POST insere com defaults da aplicação para campos não informados (matching DB defaults)
+- PATCH dinâmico — só atualiza campos presentes no body; `politica_cancelamento` aceita `null` explícito
+- TypeScript compilando sem erros
 
 ### v2 — 2026-04-15
 - CRUD de `hotel_favorito` implementado (Master DB, sem tenant)

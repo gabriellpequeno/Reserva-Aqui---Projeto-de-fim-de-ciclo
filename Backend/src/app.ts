@@ -2,7 +2,8 @@ import express from 'express';
 import dotenv from 'dotenv';
 import usuarioRoutes   from './routes/usuario.routes';
 import anfitriaoRoutes from './routes/anfitriao.routes';
-import catalogoRoutes  from './routes/catalogo.routes';
+import catalogoRoutes      from './routes/catalogo.routes';
+import configuracaoRoutes  from './routes/configuracao.routes';
 import uploadRoutes    from './routes/upload.routes';
 
 // Carrega as variáveis de ambiente
@@ -19,6 +20,7 @@ const API_PREFIX = process.env.API_PREFIX || '/api';
 app.use(`${API_PREFIX}/usuarios`, usuarioRoutes);
 app.use(`${API_PREFIX}/hotel`,    anfitriaoRoutes);
 app.use(`${API_PREFIX}/hotel`,    catalogoRoutes);
+app.use(`${API_PREFIX}/hotel`,    configuracaoRoutes);
 app.use(`${API_PREFIX}/uploads`,  uploadRoutes);
 
 // Exporta e/ou inicia o servidor

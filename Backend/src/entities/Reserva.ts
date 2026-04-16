@@ -19,7 +19,7 @@ export interface CreateReservaUsuarioInput {
   num_hospedes:  number;
   data_checkin:  string; // ISO date: YYYY-MM-DD
   data_checkout: string;
-  valor_total:   number;
+  valor_total?:  number; // calculado automaticamente se quarto_id fornecido
   observacoes?:  string | null;
   p_turisticos?: unknown;
 }
@@ -38,7 +38,7 @@ export interface CreateReservaWalkinInput {
   num_hospedes:      number;
   data_checkin:      string;
   data_checkout:     string;
-  valor_total:       number;
+  valor_total?:      number; // calculado automaticamente se quarto_id fornecido
   observacoes?:      string | null;
   sessao_chat_id?:   string | null;
 }
@@ -144,14 +144,17 @@ export class Reserva {
     if (data.quarto_id === undefined && !data.tipo_quarto)
       throw new Error('Informe quarto_id ou tipo_quarto');
 
+    if (data.quarto_id === undefined && data.valor_total === undefined)
+      throw new Error('Informe valor_total quando não há quarto_id');
+
     const result: CreateReservaUsuarioInput = {
       hotel_id,
       num_hospedes,
       data_checkin,
       data_checkout,
-      valor_total,
     };
 
+    if (data.valor_total !== undefined) result.valor_total = valor_total;
     if (data.quarto_id  !== undefined) result.quarto_id  = this.validateQuartoId(data.quarto_id);
     if (data.tipo_quarto !== undefined) {
       if (typeof data.tipo_quarto !== 'string' || data.tipo_quarto.trim().length === 0)
@@ -189,8 +192,12 @@ export class Reserva {
     if (data.quarto_id === undefined && !data.tipo_quarto)
       throw new Error('Informe quarto_id ou tipo_quarto');
 
-    const result: CreateReservaWalkinInput = { num_hospedes, data_checkin, data_checkout, valor_total };
+    if (data.quarto_id === undefined && data.valor_total === undefined)
+      throw new Error('Informe valor_total quando não há quarto_id');
 
+    const result: CreateReservaWalkinInput = { num_hospedes, data_checkin, data_checkout };
+
+    if (data.valor_total !== undefined)    result.valor_total      = valor_total;
     if (hasUserId)                        result.user_id          = this.validateUserId(data.user_id);
     if (hasNome)                          result.nome_hospede     = (data.nome_hospede as string).trim();
     if (typeof data.cpf_hospede === 'string' && data.cpf_hospede.trim())

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-import { AuthRequest } from '../middlewares/authGuard';
+import { HotelRequest } from '../middlewares/hotelGuard';
 import {
   buildHotelCoverPath,
   buildRoomPhotoPath,
@@ -51,7 +51,7 @@ async function validateMagicBytes(filePath: string): Promise<boolean> {
  * Body: multipart/form-data — campo "foto" + campo "orientacao" (portrait|landscape)
  * Autorização: anfitriao dono do hotel_id
  */
-export async function uploadHotelCover(req: AuthRequest, res: Response): Promise<void> {
+export async function uploadHotelCover(req: HotelRequest, res: Response): Promise<void> {
   const file = (req as Request & { file?: Express.Multer.File }).file;
 
   if (!file) {
@@ -78,7 +78,7 @@ export async function uploadHotelCover(req: AuthRequest, res: Response): Promise
   // Verifica que o anfitrião é dono do hotel
   const hotelCheck = await masterPool.query(
     'SELECT hotel_id FROM anfitriao WHERE hotel_id = $1 AND email = $2 AND ativo = TRUE',
-    [hotel_id, req.userEmail]
+    [hotel_id, req.hotelEmail]
   );
   if (hotelCheck.rowCount === 0) {
     fs.unlinkSync(file.path);
@@ -125,12 +125,12 @@ export async function uploadHotelCover(req: AuthRequest, res: Response): Promise
  * DELETE /api/uploads/hotels/:hotel_id/cover/:foto_id
  * Remove uma foto de capa específica do hotel.
  */
-export async function deleteHotelCover(req: AuthRequest, res: Response): Promise<void> {
+export async function deleteHotelCover(req: HotelRequest, res: Response): Promise<void> {
   const { hotel_id, foto_id } = req.params;
 
   const hotelCheck = await masterPool.query(
     'SELECT hotel_id FROM anfitriao WHERE hotel_id = $1 AND email = $2 AND ativo = TRUE',
-    [hotel_id, req.userEmail]
+    [hotel_id, req.hotelEmail]
   );
   if (hotelCheck.rowCount === 0) {
     res.status(403).json({ error: 'Acesso negado' });
@@ -212,9 +212,10 @@ export async function listHotelCovers(req: Request, res: Response): Promise<void
 
 /**
  * POST /api/uploads/hotels/:hotel_id/rooms/:quarto_id
- * Body: multipart/form-data — campo "foto" + campo "orientacao" (portrait|landscape)
+ * Body: multipart/form-data — campo "foto"
+ * Limite: UPLOAD_MAX_ROOM_PHOTOS fotos por quarto no total (sem distinção de orientação)
  */
-export async function uploadRoomPhoto(req: AuthRequest, res: Response): Promise<void> {
+export async function uploadRoomPhoto(req: HotelRequest, res: Response): Promise<void> {
   const file = (req as Request & { file?: Express.Multer.File }).file;
 
   if (!file) {
@@ -234,7 +235,7 @@ export async function uploadRoomPhoto(req: AuthRequest, res: Response): Promise<
   // Verifica ownership do hotel e recupera o schema do tenant
   const hotelCheck = await masterPool.query(
     'SELECT schema_name FROM anfitriao WHERE hotel_id = $1 AND email = $2 AND ativo = TRUE',
-    [hotel_id, req.userEmail]
+    [hotel_id, req.hotelEmail]
   );
   if (hotelCheck.rowCount === 0) {
     fs.unlinkSync(file.path);
@@ -295,12 +296,12 @@ export async function uploadRoomPhoto(req: AuthRequest, res: Response): Promise<
 /**
  * DELETE /api/uploads/hotels/:hotel_id/rooms/:quarto_id/:foto_id
  */
-export async function deleteRoomPhoto(req: AuthRequest, res: Response): Promise<void> {
+export async function deleteRoomPhoto(req: HotelRequest, res: Response): Promise<void> {
   const { hotel_id, quarto_id, foto_id } = req.params;
 
   const hotelCheck = await masterPool.query(
     'SELECT schema_name FROM anfitriao WHERE hotel_id = $1 AND email = $2 AND ativo = TRUE',
-    [hotel_id, req.userEmail]
+    [hotel_id, req.hotelEmail]
   );
   if (hotelCheck.rowCount === 0) {
     res.status(403).json({ error: 'Acesso negado' });

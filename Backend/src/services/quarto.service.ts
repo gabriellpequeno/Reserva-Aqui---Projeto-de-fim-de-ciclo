@@ -62,7 +62,7 @@ const SELECT_QUARTO_COM_ITENS = `
     q.categoria_quarto_id,
     q.disponivel,
     q.descricao,
-    q.valor_override,
+    COALESCE(q.valor_override, cq.preco_base) AS valor_diaria,
     COALESCE(
       json_agg(
         json_build_object(
@@ -75,6 +75,7 @@ const SELECT_QUARTO_COM_ITENS = `
       '[]'
     ) AS itens
   FROM quarto q
+  LEFT JOIN categoria_quarto cq ON cq.id = q.categoria_quarto_id
   LEFT JOIN itens_do_quarto iq ON iq.quarto_id = q.id
   LEFT JOIN catalogo c ON c.id = iq.catalogo_id AND c.deleted_at IS NULL
 `;
@@ -175,8 +176,8 @@ async function _createQuarto(hotelId: string, input: CreateQuartoInput): Promise
       [
         input.numero,
         input.categoria_quarto_id,
-        input.descricao      ?? null,
-        input.valor_override ?? null,
+        input.descricao     ?? null,
+        input.valor_diaria  ?? null,
         input.disponivel     ?? true,
       ],
     );
@@ -232,7 +233,7 @@ async function _updateQuarto(hotelId: string, quartoId: number, input: UpdateQua
     if (input.numero              !== undefined) { fields.push(`numero = $${idx++}`);              values.push(input.numero); }
     if (input.categoria_quarto_id !== undefined) { fields.push(`categoria_quarto_id = $${idx++}`); values.push(input.categoria_quarto_id); }
     if (input.descricao           !== undefined) { fields.push(`descricao = $${idx++}`);           values.push(input.descricao); }
-    if (input.valor_override      !== undefined) { fields.push(`valor_override = $${idx++}`);      values.push(input.valor_override); }
+    if (input.valor_diaria        !== undefined) { fields.push(`valor_override = $${idx++}`);      values.push(input.valor_diaria); }
     if (input.disponivel          !== undefined) { fields.push(`disponivel = $${idx++}`);          values.push(input.disponivel); }
 
     if (fields.length) {

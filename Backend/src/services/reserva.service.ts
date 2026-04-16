@@ -1,6 +1,7 @@
 import { masterPool } from '../database/masterDb';
 import { withTenant } from '../database/schemaWrapper';
 import { setQuartoDisponivel } from './quarto.service';
+import { creditarCheckout, debitarTaxaWalkin } from './saldo.service';
 import { sendPush, getHotelTokens, getUserTokens } from './fcm.service';
 import { insertNotificacao } from './notificacaoHotel.service';
 import {
@@ -110,6 +111,28 @@ export async function cancelarReservaUsuario(
 
 // ── Helpers Privados ──────────────────────────────────────────────────────────
 
+function calcDiarias(checkin: string, checkout: string): number {
+  const ms = new Date(checkout).getTime() - new Date(checkin).getTime();
+  return Math.round(ms / 86_400_000);
+}
+
+async function _calcValorTotal(
+  client: import('pg').PoolClient,
+  quartoId: number,
+  checkin: string,
+  checkout: string,
+): Promise<number> {
+  const { rows } = await client.query<{ preco_diaria: string }>(
+    `SELECT COALESCE(q.valor_override, cq.preco_base) AS preco_diaria
+     FROM quarto q
+     JOIN categoria_quarto cq ON cq.id = q.categoria_quarto_id
+     WHERE q.id = $1 AND q.deleted_at IS NULL`,
+    [quartoId],
+  );
+  if (!rows[0]) throw new Error('Quarto não encontrado');
+  return parseFloat(rows[0].preco_diaria) * calcDiarias(checkin, checkout);
+}
+
 interface HotelInfo {
   schema_name: string;
   nome_hotel:  string;
@@ -205,14 +228,9 @@ async function _createReservaUsuario(
     // Garante hospede registrado no tenant
     await _ensureHospede(client, userId);
 
-    // Verifica que o quarto existe e está ativo (se informado)
-    if (input.quarto_id) {
-      const { rows } = await client.query(
-        `SELECT id FROM quarto WHERE id = $1 AND deleted_at IS NULL`,
-        [input.quarto_id],
-      );
-      if (!rows[0]) throw new Error('Quarto não encontrado');
-    }
+    const valorTotal = input.quarto_id
+      ? await _calcValorTotal(client, input.quarto_id, input.data_checkin, input.data_checkout)
+      : input.valor_total!;
 
     const { rows } = await client.query<ReservaSafe>(
       `INSERT INTO reserva
@@ -228,7 +246,7 @@ async function _createReservaUsuario(
         input.num_hospedes,
         input.data_checkin,
         input.data_checkout,
-        input.valor_total,
+        valorTotal,
         input.observacoes  ?? null,
         input.p_turisticos ? JSON.stringify(input.p_turisticos) : null,
       ],
@@ -280,14 +298,9 @@ async function _createReservaWalkin(
       await _ensureHospede(client, input.user_id);
     }
 
-    // Verifica que o quarto existe e está ativo (se informado)
-    if (input.quarto_id) {
-      const { rows } = await client.query(
-        `SELECT id FROM quarto WHERE id = $1 AND deleted_at IS NULL`,
-        [input.quarto_id],
-      );
-      if (!rows[0]) throw new Error('Quarto não encontrado');
-    }
+    const valorTotal = input.quarto_id
+      ? await _calcValorTotal(client, input.quarto_id, input.data_checkin, input.data_checkout)
+      : input.valor_total!;
 
     const { rows } = await client.query<ReservaSafe>(
       `INSERT INTO reserva
@@ -308,7 +321,7 @@ async function _createReservaWalkin(
         input.num_hospedes,
         input.data_checkin,
         input.data_checkout,
-        input.valor_total,
+        valorTotal,
         input.observacoes      ?? null,
       ],
     );
@@ -316,6 +329,9 @@ async function _createReservaWalkin(
 
     // Routing público
     await _upsertReservaRouting(reserva.codigo_publico, hotelId, schema_name);
+
+    // Taxa de serviço da plataforma (10%) debitada imediatamente no walk-in
+    await debitarTaxaWalkin(client, hotelId, valorTotal, reserva.id);
 
     // Walk-in com quarto → marca indisponível
     if (input.quarto_id) {
@@ -602,6 +618,9 @@ async function _registrarCheckout(hotelId: string, reservaId: number): Promise<R
     if (atualizada.quarto_id) {
       await setQuartoDisponivel(hotelId, atualizada.quarto_id, true);
     }
+
+    // Credita saldo do hotel pelo valor total da reserva concluída
+    await creditarCheckout(client, hotelId, parseFloat(atualizada.valor_total), atualizada.id);
 
     // Sincroniza historico como CONCLUIDA
     if (atualizada.user_id) {

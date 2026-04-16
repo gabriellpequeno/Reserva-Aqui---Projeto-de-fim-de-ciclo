@@ -181,3 +181,23 @@ CREATE TABLE IF NOT EXISTS foto_hotel (
 
 CREATE INDEX IF NOT EXISTS idx_foto_hotel_hotel_id   ON foto_hotel (hotel_id);
 CREATE INDEX IF NOT EXISTS idx_foto_hotel_orientacao ON foto_hotel (hotel_id, orientacao);
+
+-- 9. Saldo de Transações do Hotel
+--    Rastreia créditos (checkout), taxas (walk-in) e saques solicitados.
+--    O campo saldo em anfitriao é o valor corrente; esta tabela é o audit trail.
+CREATE TABLE IF NOT EXISTS saldo_transacao (
+    id              UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    hotel_id        UUID            NOT NULL REFERENCES anfitriao(hotel_id) ON DELETE CASCADE,
+    tipo            VARCHAR(20)     NOT NULL,
+    valor_bruto     DECIMAL(12, 2)  NOT NULL,
+    taxa            DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,
+    valor_liquido   DECIMAL(12, 2)  NOT NULL,
+    descricao       VARCHAR(255)    NOT NULL,
+    reserva_id      INT,
+    criado_em       TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_saldo_tipo  CHECK (tipo IN ('CREDITO_CHECKOUT', 'TAXA_WALKIN', 'SAQUE_SOLICITADO')),
+    CONSTRAINT chk_saldo_bruto CHECK (valor_bruto > 0),
+    CONSTRAINT chk_saldo_taxa  CHECK (taxa >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_saldo_transacao_hotel ON saldo_transacao (hotel_id, criado_em DESC);

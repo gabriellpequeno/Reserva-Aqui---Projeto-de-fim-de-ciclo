@@ -2,6 +2,8 @@ import crypto from 'crypto';
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 import { masterPool } from '../database/masterDb';
+import { provisionTenant } from '../database/tenantManager';
+import { withTenant } from '../database/schemaWrapper';
 import { Anfitriao } from '../entities/Anfitriao';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -163,6 +165,15 @@ async function _registerAnfitriao(input: RegisterAnfitriaoInput): Promise<Anfitr
       input.descricao   ?? null,
       schemaName,
     ],
+  );
+
+  await provisionTenant(schemaName);
+
+  await withTenant(schemaName, (client) =>
+    client.query(
+      `INSERT INTO configuracao_hotel (hotel_id) VALUES ($1)`,
+      [rows[0].hotel_id],
+    ),
   );
 
   return rows[0];

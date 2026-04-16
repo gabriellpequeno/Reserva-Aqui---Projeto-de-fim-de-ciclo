@@ -18,7 +18,22 @@ export interface ConfiguracaoHotelInput {
 }
 
 export interface ConfiguracaoHotelSafe {
+  // Dados do hotel (anfitriao)
   hotel_id:               string;
+  nome_hotel:             string;
+  cnpj:                   string;
+  telefone:               string;
+  email:                  string;
+  cep:                    string;
+  uf:                     string;
+  cidade:                 string;
+  bairro:                 string;
+  rua:                    string;
+  numero:                 string;
+  complemento:            string | null;
+  saldo:                  string;
+  descricao:              string | null;
+  // Dados operacionais (configuracao_hotel)
   horario_checkin:        string;
   horario_checkout:       string;
   max_dias_reserva:       number;

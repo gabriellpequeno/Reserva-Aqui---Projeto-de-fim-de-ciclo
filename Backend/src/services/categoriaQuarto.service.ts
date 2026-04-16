@@ -39,6 +39,27 @@ export async function removeItemFromCategoria(hotelId: string, categoriaId: numb
   return _removeItemFromCategoria(hotelId, categoriaId, catalogoId);
 }
 
+export async function verificarDisponibilidade(
+  hotelId:      string,
+  dataCheckin:  string,
+  dataCheckout: string,
+): Promise<CategoriaDisponibilidade[]> {
+  return _verificarDisponibilidade(hotelId, dataCheckin, dataCheckout);
+}
+
+// ── Tipos ─────────────────────────────────────────────────────────────────────
+
+export interface CategoriaDisponibilidade {
+  id:                      number;
+  nome:                    string;
+  valor_diaria:            string;
+  capacidade_pessoas:      number;
+  total_quartos:           number;
+  quartos_disponiveis:     number;
+  disponivel:              boolean;
+  proxima_disponibilidade: string | null;
+}
+
 // ── Helper Privado ────────────────────────────────────────────────────────────
 
 async function _getSchemaName(hotelId: string): Promise<string> {
@@ -58,7 +79,7 @@ const SELECT_CATEGORIA_COM_ITENS = `
   SELECT
     cq.id,
     cq.nome,
-    cq.preco_base,
+    cq.preco_base AS valor_diaria,
     cq.capacidade_pessoas,
     COALESCE(
       json_agg(
@@ -137,7 +158,7 @@ async function _createCategoriaQuarto(
       `INSERT INTO categoria_quarto (nome, preco_base, capacidade_pessoas)
        VALUES ($1, $2, $3)
        RETURNING id`,
-      [input.nome, input.preco_base, input.capacidade_pessoas],
+      [input.nome, input.valor_diaria, input.capacidade_pessoas],
     );
 
     // Busca com itens para retornar o formato padrão (itens = [] na criação)
@@ -177,7 +198,7 @@ async function _updateCategoriaQuarto(
     let idx = 1;
 
     if (input.nome               != null) { fields.push(`nome = $${idx++}`);               values.push(input.nome); }
-    if (input.preco_base         != null) { fields.push(`preco_base = $${idx++}`);         values.push(input.preco_base); }
+    if (input.valor_diaria       != null) { fields.push(`preco_base = $${idx++}`);         values.push(input.valor_diaria); }
     if (input.capacidade_pessoas != null) { fields.push(`capacidade_pessoas = $${idx++}`); values.push(input.capacidade_pessoas); }
 
     values.push(categoriaId);
@@ -274,6 +295,77 @@ async function _addItemToCategoria(
       [categoriaId, input.catalogo_id],
     );
     return rows[0];
+  });
+}
+
+/**
+ * Verifica disponibilidade de todas as categorias para um intervalo de datas.
+ * Para cada categoria retorna: total de quartos, quantos estão disponíveis,
+ * e a próxima data de disponibilidade caso estejam todos ocupados.
+ *
+ * Lógica: um quarto está "ocupado" no período se existe reserva não cancelada
+ * com quarto_id atribuído e datas sobrepostas (checkin < dataCheckout E checkout > dataCheckin).
+ */
+async function _verificarDisponibilidade(
+  hotelId:      string,
+  dataCheckin:  string,
+  dataCheckout: string,
+): Promise<CategoriaDisponibilidade[]> {
+  if (!dataCheckin || !dataCheckout || dataCheckout <= dataCheckin)
+    throw new Error('Datas inválidas: data_checkin e data_checkout são obrigatórias e checkout deve ser posterior ao checkin');
+
+  const schemaName = await _getSchemaName(hotelId);
+
+  return withTenant(schemaName, async (client) => {
+    const { rows } = await client.query<CategoriaDisponibilidade>(
+      `SELECT
+         cq.id,
+         cq.nome,
+         cq.preco_base::TEXT           AS valor_diaria,
+         cq.capacidade_pessoas,
+         COALESCE(total.cnt,  0)::INT  AS total_quartos,
+         GREATEST(0, COALESCE(total.cnt, 0) - COALESCE(ocupados.cnt, 0))::INT AS quartos_disponiveis,
+         (GREATEST(0, COALESCE(total.cnt, 0) - COALESCE(ocupados.cnt, 0)) > 0) AS disponivel,
+         CASE
+           WHEN COALESCE(total.cnt, 0) > 0
+            AND COALESCE(total.cnt, 0) <= COALESCE(ocupados.cnt, 0)
+           THEN (
+             SELECT MIN(r2.data_checkout)::TEXT
+             FROM reserva r2
+             JOIN quarto  q2 ON q2.id = r2.quarto_id
+             WHERE q2.categoria_quarto_id = cq.id
+               AND r2.status NOT IN ('CANCELADA')
+               AND r2.data_checkin  < $2
+               AND r2.data_checkout > $1
+           )
+           ELSE NULL
+         END AS proxima_disponibilidade
+       FROM categoria_quarto cq
+
+       -- total de quartos ativos por categoria
+       LEFT JOIN (
+         SELECT categoria_quarto_id, COUNT(*) AS cnt
+         FROM quarto
+         WHERE deleted_at IS NULL
+         GROUP BY categoria_quarto_id
+       ) total ON total.categoria_quarto_id = cq.id
+
+       -- quartos com reservas ativas sobrepostas ao período
+       LEFT JOIN (
+         SELECT q.categoria_quarto_id, COUNT(DISTINCT q.id) AS cnt
+         FROM reserva r
+         JOIN quarto  q ON q.id = r.quarto_id
+         WHERE r.status       NOT IN ('CANCELADA')
+           AND r.data_checkin  < $2
+           AND r.data_checkout > $1
+         GROUP BY q.categoria_quarto_id
+       ) ocupados ON ocupados.categoria_quarto_id = cq.id
+
+       WHERE cq.deleted_at IS NULL
+       ORDER BY cq.nome`,
+      [dataCheckin, dataCheckout],
+    );
+    return rows;
   });
 }
 

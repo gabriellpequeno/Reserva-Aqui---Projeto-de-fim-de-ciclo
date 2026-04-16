@@ -7,6 +7,7 @@ import {
   deleteCategoriaController,
   addItemCategoriaController,
   removeItemCategoriaController,
+  verificarDisponibilidadeController,
 } from '../controllers/categoriaQuarto.controller';
 import { hotelGuard }    from '../middlewares/hotelGuard';
 import { requireFields } from '../middlewares/validateBody';
@@ -15,7 +16,9 @@ const router = Router();
 
 // ── Rotas Públicas ────────────────────────────────────────────────────────────
 
-// Lista todos os tipos de quarto ativos com itens de catálogo incluídos
+// Deve vir antes de /:hotel_id/categorias/:id para não ser capturado como parâmetro
+router.get('/:hotel_id/disponibilidade', verificarDisponibilidadeController);
+
 router.get('/:hotel_id/categorias',     listCategoriasController);
 router.get('/:hotel_id/categorias/:id', getCategoriaController);
 

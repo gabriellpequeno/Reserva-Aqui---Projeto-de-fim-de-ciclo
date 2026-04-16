@@ -7,6 +7,7 @@ import {
   deleteCategoriaQuarto,
   addItemToCategoria,
   removeItemFromCategoria,
+  verificarDisponibilidade,
 } from '../services/categoriaQuarto.service';
 import { CategoriaQuarto } from '../entities/CategoriaQuarto';
 
@@ -118,6 +119,20 @@ export async function removeItemCategoriaController(req: Request, res: Response)
 
     await removeItemFromCategoria((req as any).hotelId, id, catalogoId);
     res.status(204).send();
+  } catch (err) {
+    sendError(res, err);
+  }
+}
+
+/** GET /api/hotel/:hotel_id/disponibilidade?data_checkin=&data_checkout= — público */
+export async function verificarDisponibilidadeController(req: Request, res: Response): Promise<void> {
+  try {
+    const { hotel_id } = req.params;
+    const dataCheckin  = req.query.data_checkin  as string;
+    const dataCheckout = req.query.data_checkout as string;
+
+    const result = await verificarDisponibilidade(hotel_id, dataCheckin, dataCheckout);
+    res.json({ data: result });
   } catch (err) {
     sendError(res, err);
   }

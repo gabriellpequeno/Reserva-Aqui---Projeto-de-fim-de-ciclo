@@ -13,7 +13,7 @@ export interface CreateQuartoInput {
   numero:              string;
   categoria_quarto_id: number;
   descricao?:          string | null;
-  valor_override?:     number | null;
+  valor_diaria?:     number | null;
   disponivel?:         boolean;
   itens?:              QuartoItemInput[];
 }
@@ -22,7 +22,7 @@ export interface UpdateQuartoInput {
   numero?:              string;
   categoria_quarto_id?: number;
   descricao?:           string | null;
-  valor_override?:      number | null;
+  valor_diaria?:      number | null;
   disponivel?:          boolean;
   itens?:               QuartoItemInput[];
 }
@@ -40,7 +40,7 @@ export interface QuartoSafe {
   categoria_quarto_id: number;
   disponivel:          boolean;
   descricao:           string | null;
-  valor_override:      string | null;  // DECIMAL retorna como string pelo driver pg
+  valor_diaria:      string | null;  // DECIMAL retorna como string pelo driver pg
   itens:               QuartoItemSafe[];
 }
 
@@ -69,7 +69,7 @@ export class Quarto {
     if (valor === null || valor === undefined) return null;
     const v = Number(valor);
     if (isNaN(v) || v <= 0)
-      throw new Error('valor_override inválido: deve ser um número maior que zero');
+      throw new Error('valor_diaria inválido: deve ser um número maior que zero');
     return v;
   }
 
@@ -98,7 +98,7 @@ export class Quarto {
     };
 
     if (data.descricao      !== undefined) result.descricao      = this.validateDescricao(data.descricao);
-    if (data.valor_override !== undefined) result.valor_override = this.validateValorOverride(data.valor_override);
+    if (data.valor_diaria !== undefined) result.valor_diaria = this.validateValorOverride(data.valor_diaria);
     if (data.disponivel     !== undefined) {
       if (typeof data.disponivel !== 'boolean') throw new Error('disponivel deve ser true ou false');
       result.disponivel = data.disponivel;
@@ -116,7 +116,7 @@ export class Quarto {
     if (data.numero              !== undefined) result.numero              = this.validateNumero(data.numero);
     if (data.categoria_quarto_id !== undefined) result.categoria_quarto_id = this.validateCategoriaId(data.categoria_quarto_id);
     if (data.descricao           !== undefined) result.descricao           = this.validateDescricao(data.descricao);
-    if (data.valor_override      !== undefined) result.valor_override      = this.validateValorOverride(data.valor_override);
+    if (data.valor_diaria      !== undefined) result.valor_diaria      = this.validateValorOverride(data.valor_diaria);
     if (data.disponivel          !== undefined) {
       if (typeof data.disponivel !== 'boolean') throw new Error('disponivel deve ser true ou false');
       result.disponivel = data.disponivel;

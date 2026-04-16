@@ -38,8 +38,10 @@ function sendError(res: Response, err: unknown): void {
 export async function registerAnfitriaoController(req: Request, res: Response): Promise<void> {
   try {
     const hotel = await registerAnfitriao(req.body);
+    console.log('[register hotel] sucesso, hotel_id =', hotel.hotel_id);
     res.status(201).json({ data: hotel });
   } catch (err) {
+    console.error('[register hotel] erro =', err);
     sendError(res, err);
   }
 }
@@ -51,7 +53,7 @@ export async function loginAnfitriaoController(req: Request, res: Response): Pro
     const result = await loginAnfitriao(email, senha);
     res.json({ data: result.hotel, tokens: result.tokens });
   } catch (err) {
-    // Always 401 for login failures — never reveal which field is wrong
+    if (process.env.NODE_ENV !== 'production') console.error('[login hotel]', err);
     res.status(401).json({ error: 'Credenciais inválidas' });
   }
 }

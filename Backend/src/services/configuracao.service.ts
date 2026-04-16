@@ -27,7 +27,11 @@ async function _getSchemaName(hotelId: string): Promise<string> {
     `SELECT schema_name FROM anfitriao WHERE hotel_id = $1 AND ativo = TRUE`,
     [hotelId],
   );
-  if (!rows[0]) throw new Error('Hotel não encontrado');
+  if (!rows[0]) {
+    const { rows: all } = await masterPool.query(`SELECT hotel_id, email, ativo FROM anfitriao`);
+    console.error('[configuracao] hotel_id buscado:', hotelId, '| hoteis na DB:', all);
+    throw new Error('Hotel não encontrado');
+  }
   return rows[0].schema_name;
 }
 
@@ -38,18 +42,34 @@ async function _getSchemaName(hotelId: string): Promise<string> {
  * Lança erro se ainda não foi criada (hotel precisa chamar POST primeiro).
  */
 async function _getConfiguracaoHotel(hotelId: string): Promise<ConfiguracaoHotelSafe> {
-  const schemaName = await _getSchemaName(hotelId);
+  const { rows: hotelRows } = await masterPool.query<{
+    schema_name: string; nome_hotel: string; cnpj: string; telefone: string;
+    email: string; cep: string; uf: string; cidade: string; bairro: string;
+    rua: string; numero: string; complemento: string | null;
+    saldo: string; descricao: string | null;
+  }>(
+    `SELECT schema_name, nome_hotel, cnpj, telefone, email, cep, uf, cidade,
+            bairro, rua, numero, complemento, saldo, descricao
+     FROM anfitriao WHERE hotel_id = $1 AND ativo = TRUE`,
+    [hotelId],
+  );
+  if (!hotelRows[0]) {
+    const { rows: all } = await masterPool.query(`SELECT hotel_id, email, ativo FROM anfitriao`);
+    console.error('[configuracao] hotel_id buscado:', hotelId, '| hoteis na DB:', all);
+    throw new Error('Hotel não encontrado');
+  }
 
-  return withTenant(schemaName, async (client) => {
-    const { rows } = await client.query<ConfiguracaoHotelSafe>(
+  const { schema_name, ...hotelData } = hotelRows[0];
+
+  return withTenant(schema_name, async (client) => {
+    const { rows } = await client.query<Omit<ConfiguracaoHotelSafe, 'nome_hotel' | 'cnpj' | 'telefone' | 'email' | 'cep' | 'uf' | 'cidade' | 'bairro' | 'rua' | 'numero' | 'complemento' | 'saldo' | 'descricao'>>(
       `SELECT hotel_id, horario_checkin, horario_checkout, max_dias_reserva,
               politica_cancelamento, aceita_animais, idiomas_atendimento
-       FROM configuracao_hotel
-       WHERE hotel_id = $1`,
+       FROM configuracao_hotel WHERE hotel_id = $1`,
       [hotelId],
     );
     if (!rows[0]) throw new Error('Configuração do hotel não encontrada');
-    return rows[0];
+    return { ...rows[0], ...hotelData } as ConfiguracaoHotelSafe;
   });
 }
 

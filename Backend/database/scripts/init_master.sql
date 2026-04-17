@@ -5,6 +5,7 @@
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";  -- para gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS "vector";     -- pgvector — busca por similaridade
 
 -- 1. Usuários Globais
 --    Hóspedes que podem reservar em múltiplos hotéis

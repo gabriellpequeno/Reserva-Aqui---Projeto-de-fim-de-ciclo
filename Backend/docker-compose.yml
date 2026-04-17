@@ -1,0 +1,58 @@
+# ============================================================
+# ReservAqui — Docker Compose (Dev)
+# Uso: docker compose up --build
+# Reset banco: docker compose down -v && docker compose up --build
+# ============================================================
+
+services:
+  # ── PostgreSQL + pgvector ──────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: reservaqui-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+      POSTGRES_DB: ${DB_MASTER_NAME:-reservaqui_master}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      # Volume persistente — dados sobrevivem ao restart
+      - pgdata:/var/lib/postgresql/data
+      # Scripts de inicialização — rodam apenas na PRIMEIRA vez (volume vazio)
+      - ./database/scripts/init_master.sql:/docker-entrypoint-initdb.d/01_init_master.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_MASTER_NAME:-reservaqui_master}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Backend Node.js ────────────────────────────────────────
+  backend:
+    build: .
+    container_name: reservaqui-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_MASTER_NAME: ${DB_MASTER_NAME:-reservaqui_master}
+      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET no .env}
+      JWT_ACCESS_EXPIRES: ${JWT_ACCESS_EXPIRES:-1h}
+      JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES:-7d}
+      API_PREFIX: ${API_PREFIX:-/api}
+      PORT: ${PORT:-3000}
+      NODE_ENV: ${NODE_ENV:-development}
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      # Monta o código local — edições refletem em tempo real (hot-reload)
+      - ./src:/app/src:ro
+      - ./database:/app/database:ro
+
+volumes:
+  pgdata:

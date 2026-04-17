@@ -1,0 +1,2804 @@
+openapi: 3.0.3
+info:
+  title: ReservAqui API
+  description: |
+    API REST do sistema ReservAqui — plataforma de reservas de hotéis.
+
+    ## Autenticação
+    A API utiliza **JWT Bearer Token**. Existem dois tipos de token:
+    - **Token de Usuário** (`authGuard`): obtido via `POST /api/usuarios/login`
+    - **Token de Hotel** (`hotelGuard`): obtido via `POST /api/hotel/login`
+
+    Passe o token no header: `Authorization: Bearer <token>`
+  version: 1.0.0
+  contact:
+    name: ReservAqui
+
+servers:
+  - url: http://localhost:3000/api
+    description: Desenvolvimento local
+
+tags:
+  - name: Usuário — Auth
+    description: Registro, login e gerenciamento de conta do hóspede
+  - name: Usuário — Perfil
+    description: Dados do perfil do hóspede autenticado
+  - name: Usuário — Favoritos
+    description: Hotéis favoritados pelo hóspede
+  - name: Usuário — Reservas
+    description: Reservas feitas pelo hóspede
+  - name: Usuário — Avaliações
+    description: Avaliações submetidas pelo hóspede
+  - name: Hotel — Auth
+    description: Registro, login e gerenciamento de conta do hotel
+  - name: Hotel — Perfil
+    description: Dados do perfil do hotel autenticado
+  - name: Hotel — Reservas
+    description: Gerenciamento de reservas pelo hotel
+  - name: Hotel — Quartos
+    description: Gerenciamento de quartos do hotel
+  - name: Hotel — Categorias de Quarto
+    description: Categorias/tipos de quarto e seus itens
+  - name: Hotel — Catálogo
+    description: Catálogo de comodidades e cômodos
+  - name: Hotel — Configuração
+    description: Configurações operacionais do hotel
+  - name: Hotel — Notificações
+    description: Notificações internas do hotel
+  - name: Hotel — Saldo
+    description: Saldo e saques do hotel
+  - name: Pagamentos
+    description: Criação de pagamentos e webhook InfinitePay
+  - name: Uploads
+    description: Fotos de capa do hotel e fotos de quartos
+  - name: Dispositivos FCM
+    description: Registro de tokens de push notification
+  - name: Avaliações Públicas
+    description: Leitura pública de avaliações de um hotel
+  - name: Reservas Públicas
+    description: Consulta pública de uma reserva por código
+
+# ─────────────────────────────────────────────
+# SECURITY SCHEMES
+# ─────────────────────────────────────────────
+components:
+  securitySchemes:
+    UserBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT gerado no login do **hóspede**
+    HotelBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT gerado no login do **hotel**
+
+  # ─────────────────────────────────────────────
+  # SCHEMAS
+  # ─────────────────────────────────────────────
+  schemas:
+
+    # ── Generic ──────────────────────────────
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Mensagem de erro descritiva
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+    Tokens:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT de acesso (curta duração)
+        refreshToken:
+          type: string
+          description: Token de renovação (longa duração)
+
+    # ── Usuario ───────────────────────────────
+    UsuarioPublico:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        nome_completo:
+          type: string
+        email:
+          type: string
+          format: email
+        cpf:
+          type: string
+          example: "12345678901"
+        data_nascimento:
+          type: string
+          example: "01/01/1990"
+        numero_celular:
+          type: string
+          nullable: true
+          example: "(11) 99999-9999"
+        ativo:
+          type: boolean
+        criado_em:
+          type: string
+          format: date-time
+
+    UsuarioRegisterRequest:
+      type: object
+      required: [nome_completo, email, senha, cpf, data_nascimento]
+      properties:
+        nome_completo:
+          type: string
+        email:
+          type: string
+          format: email
+        senha:
+          type: string
+          description: "Deve conter maiúscula, minúscula, número e @"
+          example: "Senha@123"
+        cpf:
+          type: string
+          pattern: "^\\d{11}$"
+          example: "12345678901"
+        data_nascimento:
+          type: string
+          pattern: "^\\d{2}/\\d{2}/\\d{4}$"
+          example: "15/06/1995"
+        numero_celular:
+          type: string
+          nullable: true
+          example: "(11) 98765-4321"
+
+    UsuarioUpdateRequest:
+      type: object
+      properties:
+        nome_completo:
+          type: string
+        email:
+          type: string
+          format: email
+        numero_celular:
+          type: string
+          nullable: true
+        data_nascimento:
+          type: string
+
+    # ── Hotel ─────────────────────────────────
+    HotelPublico:
+      type: object
+      properties:
+        hotel_id:
+          type: string
+          format: uuid
+        nome_hotel:
+          type: string
+        cnpj:
+          type: string
+          example: "12345678000195"
+        telefone:
+          type: string
+        email:
+          type: string
+          format: email
+        cep:
+          type: string
+        uf:
+          type: string
+          example: "SP"
+        cidade:
+          type: string
+        bairro:
+          type: string
+        rua:
+          type: string
+        numero:
+          type: string
+        complemento:
+          type: string
+          nullable: true
+        descricao:
+          type: string
+          nullable: true
+        ativo:
+          type: boolean
+        criado_em:
+          type: string
+          format: date-time
+
+    HotelRegisterRequest:
+      type: object
+      required:
+        [nome_hotel, cnpj, telefone, email, senha, cep, uf, cidade, bairro, rua, numero]
+      properties:
+        nome_hotel:
+          type: string
+        cnpj:
+          type: string
+          pattern: "^\\d{14}$"
+          example: "12345678000195"
+        telefone:
+          type: string
+        email:
+          type: string
+          format: email
+        senha:
+          type: string
+          example: "Senha@123"
+        cep:
+          type: string
+          pattern: "^\\d{8}$"
+          example: "01310100"
+        uf:
+          type: string
+          pattern: "^[A-Z]{2}$"
+          example: "SP"
+        cidade:
+          type: string
+        bairro:
+          type: string
+        rua:
+          type: string
+        numero:
+          type: string
+        complemento:
+          type: string
+          nullable: true
+        descricao:
+          type: string
+          nullable: true
+
+    HotelUpdateRequest:
+      type: object
+      properties:
+        nome_hotel:
+          type: string
+        telefone:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        cep:
+          type: string
+        uf:
+          type: string
+        cidade:
+          type: string
+        bairro:
+          type: string
+        rua:
+          type: string
+        numero:
+          type: string
+        complemento:
+          type: string
+          nullable: true
+
+    # ── Favorito ──────────────────────────────
+    Favorito:
+      type: object
+      properties:
+        hotel_id:
+          type: string
+          format: uuid
+        nome_hotel:
+          type: string
+        cidade:
+          type: string
+        uf:
+          type: string
+        bairro:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        cover_storage_path:
+          type: string
+          nullable: true
+        favoritado_em:
+          type: string
+          format: date-time
+
+    # ── Reserva ───────────────────────────────
+    ReservaStatus:
+      type: string
+      enum:
+        [SOLICITADA, AGUARDANDO_PAGAMENTO, APROVADA, CANCELADA, CONCLUIDA]
+
+    Reserva:
+      type: object
+      properties:
+        id:
+          type: integer
+        codigo_publico:
+          type: string
+          format: uuid
+        hotel_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+        nome_hospede:
+          type: string
+          nullable: true
+        cpf_hospede:
+          type: string
+          nullable: true
+        telefone_contato:
+          type: string
+          nullable: true
+        quarto_id:
+          type: integer
+          nullable: true
+        tipo_quarto:
+          type: string
+          nullable: true
+        num_hospedes:
+          type: integer
+        data_checkin:
+          type: string
+          format: date
+        data_checkout:
+          type: string
+          format: date
+        valor_total:
+          type: number
+          format: decimal
+        status:
+          $ref: "#/components/schemas/ReservaStatus"
+        observacoes:
+          type: string
+          nullable: true
+        checkin_realizado_em:
+          type: string
+          format: date-time
+          nullable: true
+        checkout_realizado_em:
+          type: string
+          format: date-time
+          nullable: true
+        criado_em:
+          type: string
+          format: date-time
+
+    HotelReservaCreateRequest:
+      type: object
+      required: [num_hospedes, data_checkin, data_checkout, valor_total]
+      properties:
+        num_hospedes:
+          type: integer
+          minimum: 1
+        data_checkin:
+          type: string
+          format: date
+        data_checkout:
+          type: string
+          format: date
+        valor_total:
+          type: number
+          minimum: 0.01
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+        nome_hospede:
+          type: string
+          nullable: true
+        cpf_hospede:
+          type: string
+          nullable: true
+        telefone_contato:
+          type: string
+          nullable: true
+        quarto_id:
+          type: integer
+          nullable: true
+        tipo_quarto:
+          type: string
+          nullable: true
+        observacoes:
+          type: string
+          nullable: true
+
+    UserReservaCreateRequest:
+      type: object
+      required: [hotel_id, num_hospedes, data_checkin, data_checkout, valor_total]
+      properties:
+        hotel_id:
+          type: string
+          format: uuid
+        num_hospedes:
+          type: integer
+          minimum: 1
+        data_checkin:
+          type: string
+          format: date
+        data_checkout:
+          type: string
+          format: date
+        valor_total:
+          type: number
+          minimum: 0.01
+        quarto_id:
+          type: integer
+          nullable: true
+        tipo_quarto:
+          type: string
+          nullable: true
+        observacoes:
+          type: string
+          nullable: true
+
+    ReservaStatusUpdateRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/ReservaStatus"
+
+    # ── Avaliação ──────────────────────────────
+    NotaAvaliacao:
+      type: integer
+      minimum: 1
+      maximum: 5
+
+    Avaliacao:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: string
+          format: uuid
+        reserva_id:
+          type: integer
+        nota_limpeza:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        nota_atendimento:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        nota_conforto:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        nota_organizacao:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        nota_localizacao:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        nota_total:
+          type: number
+          format: float
+          description: Média das 5 notas
+        comentario:
+          type: string
+          nullable: true
+        criado_em:
+          type: string
+          format: date-time
+
+    AvaliacaoCreateRequest:
+      type: object
+      required:
+        [ codigo_publico, nota_limpeza, nota_atendimento, nota_conforto, nota_organizacao, nota_localizacao ]
+      properties:
+        codigo_publico:
+          type: string
+          format: uuid
+        nota_limpeza:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        nota_atendimento:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        nota_conforto:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        nota_organizacao:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        nota_localizacao:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        comentario:
+          type: string
+          nullable: true
+
+    AvaliacaoUpdateRequest:
+      type: object
+      properties:
+        nota_limpeza:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        nota_atendimento:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        nota_conforto:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        nota_organizacao:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        nota_localizacao:
+          $ref: "#/components/schemas/NotaAvaliacao"
+        comentario:
+          type: string
+          nullable: true
+
+    # ── Catálogo ──────────────────────────────
+    CatalogoCategoria:
+      type: string
+      enum: [COMODO, COMODIDADE, LAZER]
+
+    CatalogoItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        categoria:
+          $ref: "#/components/schemas/CatalogoCategoria"
+
+    CatalogoCreateRequest:
+      type: object
+      required: [nome, categoria]
+      properties:
+        nome:
+          type: string
+          maxLength: 100
+        categoria:
+          $ref: "#/components/schemas/CatalogoCategoria"
+
+    CatalogoUpdateRequest:
+      type: object
+      required: [nome]
+      properties:
+        nome:
+          type: string
+          maxLength: 100
+
+    # ── Categoria de Quarto ────────────────────
+    CategoriaQuartoItem:
+      type: object
+      properties:
+        catalogo_id:
+          type: integer
+        nome:
+          type: string
+        categoria:
+          $ref: "#/components/schemas/CatalogoCategoria"
+        quantidade:
+          type: integer
+
+    CategoriaQuarto:
+      type: object
+      properties:
+        id:
+          type: integer
+        hotel_id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        valor_diaria:
+          type: number
+          format: decimal
+        capacidade_pessoas:
+          type: integer
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoriaQuartoItem"
+
+    CategoriaQuartoCreateRequest:
+      type: object
+      required: [nome, valor_diaria, capacidade_pessoas]
+      properties:
+        nome:
+          type: string
+          maxLength: 50
+        valor_diaria:
+          type: number
+          minimum: 0.01
+        capacidade_pessoas:
+          type: integer
+          minimum: 1
+
+    CategoriaQuartoUpdateRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          maxLength: 50
+        valor_diaria:
+          type: number
+          minimum: 0.01
+        capacidade_pessoas:
+          type: integer
+          minimum: 1
+
+    CategoriaItemAddRequest:
+      type: object
+      required: [catalogo_id]
+      properties:
+        catalogo_id:
+          type: integer
+
+    # ── Quarto ────────────────────────────────
+    QuartoItem:
+      type: object
+      properties:
+        catalogo_id:
+          type: integer
+        quantidade:
+          type: integer
+
+    Quarto:
+      type: object
+      properties:
+        id:
+          type: integer
+        hotel_id:
+          type: string
+          format: uuid
+        numero:
+          type: string
+        categoria_quarto_id:
+          type: integer
+        descricao:
+          type: string
+          nullable: true
+        valor_diaria:
+          type: number
+          format: decimal
+          nullable: true
+          description: Se nulo, usa o valor da categoria
+        disponivel:
+          type: boolean
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuartoItem"
+
+    QuartoCreateRequest:
+      type: object
+      required: [numero, categoria_quarto_id]
+      properties:
+        numero:
+          type: string
+          maxLength: 10
+        categoria_quarto_id:
+          type: integer
+          minimum: 1
+        descricao:
+          type: string
+          nullable: true
+          maxLength: 500
+        valor_diaria:
+          type: number
+          nullable: true
+          minimum: 0.01
+        disponivel:
+          type: boolean
+          default: true
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuartoItem"
+
+    QuartoUpdateRequest:
+      type: object
+      properties:
+        numero:
+          type: string
+          maxLength: 10
+        categoria_quarto_id:
+          type: integer
+          minimum: 1
+        descricao:
+          type: string
+          nullable: true
+          maxLength: 500
+        valor_diaria:
+          type: number
+          nullable: true
+          minimum: 0.01
+        disponivel:
+          type: boolean
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuartoItem"
+
+    # ── Configuração ──────────────────────────
+    HotelConfiguracao:
+      type: object
+      properties:
+        hotel_id:
+          type: string
+          format: uuid
+        nome_hotel:
+          type: string
+        cnpj:
+          type: string
+        telefone:
+          type: string
+        email:
+          type: string
+          format: email
+        cep:
+          type: string
+        uf:
+          type: string
+        cidade:
+          type: string
+        bairro:
+          type: string
+        rua:
+          type: string
+        numero:
+          type: string
+        complemento:
+          type: string
+          nullable: true
+        saldo:
+          type: number
+          format: decimal
+        descricao:
+          type: string
+          nullable: true
+        horario_checkin:
+          type: string
+          pattern: "^\\d{2}:\\d{2}$"
+          example: "14:00"
+        horario_checkout:
+          type: string
+          pattern: "^\\d{2}:\\d{2}$"
+          example: "12:00"
+        max_dias_reserva:
+          type: integer
+        politica_cancelamento:
+          type: string
+          nullable: true
+        aceita_animais:
+          type: boolean
+        idiomas_atendimento:
+          type: string
+
+    HotelConfiguracaoRequest:
+      type: object
+      properties:
+        horario_checkin:
+          type: string
+          pattern: "^\\d{2}:\\d{2}$"
+          example: "14:00"
+        horario_checkout:
+          type: string
+          pattern: "^\\d{2}:\\d{2}$"
+          example: "12:00"
+        max_dias_reserva:
+          type: integer
+          minimum: 1
+        politica_cancelamento:
+          type: string
+          nullable: true
+        aceita_animais:
+          type: boolean
+        idiomas_atendimento:
+          type: string
+          maxLength: 200
+
+    # ── Notificação Hotel ──────────────────────
+    NotificacaoHotel:
+      type: object
+      properties:
+        id:
+          type: integer
+        titulo:
+          type: string
+        mensagem:
+          type: string
+        lida:
+          type: boolean
+        criado_em:
+          type: string
+          format: date-time
+
+    # ── Pagamento ─────────────────────────────
+    PagamentoStatus:
+      type: string
+      enum: [PENDENTE, APROVADO, ESTORNADO]
+
+    Pagamento:
+      type: object
+      properties:
+        id:
+          type: integer
+        reserva_id:
+          type: integer
+        valor_pago:
+          type: number
+          format: decimal
+        forma_pagamento:
+          type: string
+        status:
+          $ref: "#/components/schemas/PagamentoStatus"
+        checkout_url:
+          type: string
+          nullable: true
+          description: Link de pagamento InfinitePay
+        infinite_invoice_slug:
+          type: string
+          nullable: true
+        transaction_nsu:
+          type: string
+          nullable: true
+        metodo_captura:
+          type: string
+          nullable: true
+        recibo_url:
+          type: string
+          nullable: true
+        data_pagamento:
+          type: string
+          format: date-time
+
+    InfinitePayWebhookRequest:
+      type: object
+      required:
+        [invoice_slug, amount, paid_amount, capture_method, transaction_nsu, order_nsu]
+      properties:
+        invoice_slug:
+          type: string
+        amount:
+          type: integer
+          description: Valor em centavos
+        paid_amount:
+          type: integer
+          description: Valor pago em centavos
+        installments:
+          type: integer
+          default: 1
+        capture_method:
+          type: string
+          enum: [credit_card, pix]
+        transaction_nsu:
+          type: string
+        order_nsu:
+          type: string
+          description: Mapeado para o codigo_publico da reserva
+        receipt_url:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            type: object
+
+    # ── Saldo ─────────────────────────────────
+    Saldo:
+      type: object
+      properties:
+        saldo_total:
+          type: number
+          format: decimal
+        saldo_disponivel:
+          type: number
+          format: decimal
+        ultimo_saque:
+          type: string
+          format: date-time
+          nullable: true
+        proxima_data_saque:
+          type: string
+          format: date-time
+          nullable: true
+
+    Saque:
+      type: object
+      properties:
+        id:
+          type: integer
+        hotel_id:
+          type: string
+          format: uuid
+        valor:
+          type: number
+          format: decimal
+        status:
+          type: string
+        solicitado_em:
+          type: string
+          format: date-time
+        data_transferencia:
+          type: string
+          format: date-time
+          nullable: true
+
+    # ── FCM ───────────────────────────────────
+    FcmRegisterRequest:
+      type: object
+      required: [fcm_token]
+      properties:
+        fcm_token:
+          type: string
+        origem:
+          type: string
+          enum: [DASHBOARD_WEB, APP_IOS, APP_ANDROID]
+
+    FcmRemoveRequest:
+      type: object
+      required: [fcm_token]
+      properties:
+        fcm_token:
+          type: string
+
+    # ── Upload ────────────────────────────────
+    Foto:
+      type: object
+      properties:
+        foto_id:
+          type: string
+          format: uuid
+        storage_path:
+          type: string
+        orientacao:
+          type: string
+          enum: [portrait, landscape]
+        criado_em:
+          type: string
+          format: date-time
+
+    # ── Auth shared ───────────────────────────
+    LoginRequest:
+      type: object
+      required: [email, senha]
+      properties:
+        email:
+          type: string
+          format: email
+        senha:
+          type: string
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    LogoutRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    ChangePasswordRequest:
+      type: object
+      required: [senhaAtual, novaSenha]
+      properties:
+        senhaAtual:
+          type: string
+        novaSenha:
+          type: string
+
+# ─────────────────────────────────────────────
+# PATHS
+# ─────────────────────────────────────────────
+paths:
+
+  # ════════════════════════════════════════════
+  # USUÁRIO — AUTH
+  # ════════════════════════════════════════════
+  /usuarios/register:
+    post:
+      tags: [Usuário — Auth]
+      summary: Registrar hóspede
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsuarioRegisterRequest"
+      responses:
+        "201":
+          description: Hóspede criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/UsuarioPublico"
+        "400":
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: E-mail ou CPF já cadastrado
+
+  /usuarios/login:
+    post:
+      tags: [Usuário — Auth]
+      summary: Login do hóspede
+      description: Limitado por rate limiter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login realizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/UsuarioPublico"
+                  tokens:
+                    $ref: "#/components/schemas/Tokens"
+        "401":
+          description: Credenciais inválidas
+
+  /usuarios/refresh:
+    post:
+      tags: [Usuário — Auth]
+      summary: Renovar tokens do hóspede
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: Tokens renovados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tokens:
+                    $ref: "#/components/schemas/Tokens"
+        "401":
+          description: Refresh token inválido ou expirado
+
+  /usuarios/logout:
+    post:
+      tags: [Usuário — Auth]
+      summary: Logout do hóspede
+      security:
+        - UserBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+      responses:
+        "200":
+          description: Logout realizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Não autenticado
+
+  # ════════════════════════════════════════════
+  # USUÁRIO — PERFIL
+  # ════════════════════════════════════════════
+  /usuarios/me:
+    get:
+      tags: [Usuário — Perfil]
+      summary: Obter perfil do hóspede
+      security:
+        - UserBearer: []
+      responses:
+        "200":
+          description: Dados do hóspede
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/UsuarioPublico"
+        "401":
+          description: Não autenticado
+
+    patch:
+      tags: [Usuário — Perfil]
+      summary: Atualizar perfil do hóspede
+      security:
+        - UserBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsuarioUpdateRequest"
+      responses:
+        "200":
+          description: Perfil atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/UsuarioPublico"
+        "401":
+          description: Não autenticado
+
+    delete:
+      tags: [Usuário — Perfil]
+      summary: Desativar conta do hóspede
+      security:
+        - UserBearer: []
+      responses:
+        "200":
+          description: Conta desativada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Não autenticado
+
+  /usuarios/change-password:
+    post:
+      tags: [Usuário — Perfil]
+      summary: Alterar senha do hóspede
+      security:
+        - UserBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: Senha alterada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Senha atual incorreta ou não autenticado
+
+  # ════════════════════════════════════════════
+  # USUÁRIO — FAVORITOS
+  # ════════════════════════════════════════════
+  /usuarios/favoritos:
+    get:
+      tags: [Usuário — Favoritos]
+      summary: Listar hotéis favoritos do hóspede
+      security:
+        - UserBearer: []
+      responses:
+        "200":
+          description: Lista de favoritos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Favorito"
+        "401":
+          description: Não autenticado
+
+    post:
+      tags: [Usuário — Favoritos]
+      summary: Favoritar um hotel
+      security:
+        - UserBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hotel_id]
+              properties:
+                hotel_id:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: Hotel favoritado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Favorito"
+        "409":
+          description: Hotel já favoritado
+
+  /usuarios/favoritos/{hotel_id}:
+    delete:
+      tags: [Usuário — Favoritos]
+      summary: Remover hotel dos favoritos
+      security:
+        - UserBearer: []
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Removido com sucesso
+        "404":
+          description: Favorito não encontrado
+
+  # ════════════════════════════════════════════
+  # USUÁRIO — RESERVAS
+  # ════════════════════════════════════════════
+  /usuarios/reservas:
+    get:
+      tags: [Usuário — Reservas]
+      summary: Listar reservas do hóspede
+      security:
+        - UserBearer: []
+      responses:
+        "200":
+          description: Lista de reservas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Reserva"
+        "401":
+          description: Não autenticado
+
+    post:
+      tags: [Usuário — Reservas]
+      summary: Criar uma reserva (hóspede)
+      security:
+        - UserBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserReservaCreateRequest"
+      responses:
+        "201":
+          description: Reserva criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Reserva"
+        "400":
+          description: Dados inválidos
+        "401":
+          description: Não autenticado
+
+  /usuarios/reservas/{codigo_publico}/cancelar:
+    patch:
+      tags: [Usuário — Reservas]
+      summary: Cancelar uma reserva (hóspede)
+      security:
+        - UserBearer: []
+      parameters:
+        - name: codigo_publico
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Reserva cancelada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Reserva"
+        "404":
+          description: Reserva não encontrada
+
+  # ════════════════════════════════════════════
+  # USUÁRIO — AVALIAÇÕES
+  # ════════════════════════════════════════════
+  /usuarios/avaliacoes:
+    post:
+      tags: [Usuário — Avaliações]
+      summary: Avaliar uma estadia
+      security:
+        - UserBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AvaliacaoCreateRequest"
+      responses:
+        "201":
+          description: Avaliação criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Avaliacao"
+        "404":
+          description: Reserva não encontrada
+        "409":
+          description: Reserva já avaliada
+
+  /usuarios/avaliacoes/{codigo_publico}:
+    patch:
+      tags: [Usuário — Avaliações]
+      summary: Editar avaliação
+      security:
+        - UserBearer: []
+      parameters:
+        - name: codigo_publico
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AvaliacaoUpdateRequest"
+      responses:
+        "200":
+          description: Avaliação atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Avaliacao"
+        "404":
+          description: Avaliação não encontrada
+
+  # ════════════════════════════════════════════
+  # HOTEL — AUTH
+  # ════════════════════════════════════════════
+  /hotel/register:
+    post:
+      tags: [Hotel — Auth]
+      summary: Registrar hotel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HotelRegisterRequest"
+      responses:
+        "201":
+          description: Hotel criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/HotelPublico"
+        "400":
+          description: Dados inválidos
+        "409":
+          description: E-mail ou CNPJ já cadastrado
+
+  /hotel/login:
+    post:
+      tags: [Hotel — Auth]
+      summary: Login do hotel
+      description: Limitado por rate limiter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login realizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/HotelPublico"
+                  tokens:
+                    $ref: "#/components/schemas/Tokens"
+        "401":
+          description: Credenciais inválidas
+
+  /hotel/refresh:
+    post:
+      tags: [Hotel — Auth]
+      summary: Renovar tokens do hotel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: Tokens renovados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tokens:
+                    $ref: "#/components/schemas/Tokens"
+        "401":
+          description: Refresh token inválido
+
+  /hotel/logout:
+    post:
+      tags: [Hotel — Auth]
+      summary: Logout do hotel
+      security:
+        - HotelBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+      responses:
+        "200":
+          description: Logout realizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ════════════════════════════════════════════
+  # HOTEL — PERFIL
+  # ════════════════════════════════════════════
+  /hotel/me:
+    get:
+      tags: [Hotel — Perfil]
+      summary: Obter perfil do hotel autenticado
+      security:
+        - HotelBearer: []
+      responses:
+        "200":
+          description: Dados do hotel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/HotelPublico"
+
+    patch:
+      tags: [Hotel — Perfil]
+      summary: Atualizar perfil do hotel
+      security:
+        - HotelBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HotelUpdateRequest"
+      responses:
+        "200":
+          description: Perfil atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/HotelPublico"
+
+    delete:
+      tags: [Hotel — Perfil]
+      summary: Desativar conta do hotel
+      security:
+        - HotelBearer: []
+      responses:
+        "200":
+          description: Conta desativada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /hotel/change-password:
+    post:
+      tags: [Hotel — Perfil]
+      summary: Alterar senha do hotel
+      security:
+        - HotelBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: Senha alterada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ════════════════════════════════════════════
+  # HOTEL — RESERVAS
+  # ════════════════════════════════════════════
+  /hotel/reservas:
+    get:
+      tags: [Hotel — Reservas]
+      summary: Listar reservas do hotel
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ReservaStatus"
+        - name: data_checkin_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: data_checkin_to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: data_checkout_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: data_checkout_to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: nome_hospede
+          in: query
+          schema:
+            type: string
+        - name: cpf_hospede
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de reservas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Reserva"
+
+    post:
+      tags: [Hotel — Reservas]
+      summary: Criar reserva avulsa (pelo hotel)
+      security:
+        - HotelBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HotelReservaCreateRequest"
+      responses:
+        "201":
+          description: Reserva criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Reserva"
+
+  /hotel/reservas/{id}:
+    get:
+      tags: [Hotel — Reservas]
+      summary: Obter detalhe de uma reserva
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Detalhes da reserva
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Reserva"
+        "404":
+          description: Reserva não encontrada
+
+  /hotel/reservas/{id}/status:
+    patch:
+      tags: [Hotel — Reservas]
+      summary: Atualizar status de uma reserva
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReservaStatusUpdateRequest"
+      responses:
+        "200":
+          description: Status atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Reserva"
+
+  /hotel/reservas/{id}/quarto:
+    patch:
+      tags: [Hotel — Reservas]
+      summary: Atribuir quarto a uma reserva
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quarto_id]
+              properties:
+                quarto_id:
+                  type: integer
+                  minimum: 1
+      responses:
+        "200":
+          description: Quarto atribuído
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Reserva"
+
+  /hotel/reservas/{id}/checkin:
+    patch:
+      tags: [Hotel — Reservas]
+      summary: Registrar check-in
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Check-in registrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Reserva"
+
+  /hotel/reservas/{id}/checkout:
+    patch:
+      tags: [Hotel — Reservas]
+      summary: Registrar check-out
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Check-out registrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Reserva"
+
+  # ════════════════════════════════════════════
+  # PAGAMENTOS — Hotel
+  # ════════════════════════════════════════════
+  /hotel/reservas/{reserva_id}/pagamentos:
+    post:
+      tags: [Pagamentos]
+      summary: Gerar link/cobrança InfinitePay para uma reserva
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: reserva_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Pagamento criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Pagamento"
+
+    get:
+      tags: [Pagamentos]
+      summary: Listar pagamentos de uma reserva
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: reserva_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista de pagamentos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Pagamento"
+
+  # ════════════════════════════════════════════
+  # PAGAMENTOS — Webhook InfinitePay
+  # ════════════════════════════════════════════
+  /pagamentos/webhook/infinitepay:
+    post:
+      tags: [Pagamentos]
+      summary: Webhook de notificação de pagamento (InfinitePay)
+      description: |
+        Endpoint público chamado pela InfinitePay após conclusão de pagamento.
+        Processado de forma assíncrona; sempre retorna 200 para idempotência.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InfinitePayWebhookRequest"
+      responses:
+        "200":
+          description: Recebido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                    example: true
+
+  # ════════════════════════════════════════════
+  # HOTEL — QUARTOS
+  # ════════════════════════════════════════════
+  /hotel/quartos:
+    get:
+      tags: [Hotel — Quartos]
+      summary: Listar quartos do hotel
+      security:
+        - HotelBearer: []
+      responses:
+        "200":
+          description: Lista de quartos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Quarto"
+
+    post:
+      tags: [Hotel — Quartos]
+      summary: Criar quarto
+      security:
+        - HotelBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuartoCreateRequest"
+      responses:
+        "201":
+          description: Quarto criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Quarto"
+
+  /hotel/quartos/{id}:
+    get:
+      tags: [Hotel — Quartos]
+      summary: Obter detalhe de um quarto
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dados do quarto
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Quarto"
+        "404":
+          description: Quarto não encontrado
+
+    patch:
+      tags: [Hotel — Quartos]
+      summary: Atualizar quarto
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuartoUpdateRequest"
+      responses:
+        "200":
+          description: Quarto atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Quarto"
+
+    delete:
+      tags: [Hotel — Quartos]
+      summary: Deletar quarto
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Quarto deletado
+
+  # ════════════════════════════════════════════
+  # HOTEL — CATEGORIAS DE QUARTO
+  # ════════════════════════════════════════════
+  /hotel/categorias:
+    post:
+      tags: [Hotel — Categorias de Quarto]
+      summary: Criar categoria de quarto
+      security:
+        - HotelBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoriaQuartoCreateRequest"
+      responses:
+        "201":
+          description: Categoria criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CategoriaQuarto"
+
+  /hotel/categorias/{id}:
+    patch:
+      tags: [Hotel — Categorias de Quarto]
+      summary: Atualizar categoria de quarto
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoriaQuartoUpdateRequest"
+      responses:
+        "200":
+          description: Categoria atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CategoriaQuarto"
+
+    delete:
+      tags: [Hotel — Categorias de Quarto]
+      summary: Deletar categoria de quarto
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Categoria deletada
+
+  /hotel/categorias/{id}/itens:
+    post:
+      tags: [Hotel — Categorias de Quarto]
+      summary: Adicionar item do catálogo a uma categoria
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoriaItemAddRequest"
+      responses:
+        "201":
+          description: Item adicionado
+
+  /hotel/categorias/{id}/itens/{catalogo_id}:
+    delete:
+      tags: [Hotel — Categorias de Quarto]
+      summary: Remover item do catálogo de uma categoria
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: catalogo_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Item removido
+
+  # ════════════════════════════════════════════
+  # HOTEL — CATÁLOGO
+  # ════════════════════════════════════════════
+  /hotel/catalogo:
+    post:
+      tags: [Hotel — Catálogo]
+      summary: Adicionar item ao catálogo do hotel
+      security:
+        - HotelBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CatalogoCreateRequest"
+      responses:
+        "201":
+          description: Item criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CatalogoItem"
+
+  /hotel/catalogo/{id}:
+    patch:
+      tags: [Hotel — Catálogo]
+      summary: Atualizar item do catálogo
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CatalogoUpdateRequest"
+      responses:
+        "200":
+          description: Item atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CatalogoItem"
+
+    delete:
+      tags: [Hotel — Catálogo]
+      summary: Remover item do catálogo
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Item removido
+
+  # ════════════════════════════════════════════
+  # HOTEL — CONFIGURAÇÃO
+  # ════════════════════════════════════════════
+  /hotel/configuracao:
+    post:
+      tags: [Hotel — Configuração]
+      summary: Criar configuração operacional do hotel
+      security:
+        - HotelBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HotelConfiguracaoRequest"
+      responses:
+        "201":
+          description: Configuração criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/HotelConfiguracao"
+
+    patch:
+      tags: [Hotel — Configuração]
+      summary: Atualizar configuração operacional do hotel
+      security:
+        - HotelBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HotelConfiguracaoRequest"
+      responses:
+        "200":
+          description: Configuração atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/HotelConfiguracao"
+
+  # ════════════════════════════════════════════
+  # HOTEL — NOTIFICAÇÕES
+  # ════════════════════════════════════════════
+  /hotel/notificacoes:
+    get:
+      tags: [Hotel — Notificações]
+      summary: Listar notificações do hotel
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: nao_lidas
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Se true, retorna apenas as não lidas
+      responses:
+        "200":
+          description: Lista de notificações
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NotificacaoHotel"
+
+  /hotel/notificacoes/lida-todas:
+    patch:
+      tags: [Hotel — Notificações]
+      summary: Marcar todas as notificações como lidas
+      security:
+        - HotelBearer: []
+      responses:
+        "204":
+          description: Todas marcadas como lidas
+
+  /hotel/notificacoes/{id}/lida:
+    patch:
+      tags: [Hotel — Notificações]
+      summary: Marcar uma notificação como lida
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notificação atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/NotificacaoHotel"
+
+  # ════════════════════════════════════════════
+  # HOTEL — SALDO
+  # ════════════════════════════════════════════
+  /hotel/saldo:
+    get:
+      tags: [Hotel — Saldo]
+      summary: Consultar saldo do hotel
+      security:
+        - HotelBearer: []
+      responses:
+        "200":
+          description: Dados de saldo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Saldo"
+
+  /hotel/saldo/saque:
+    post:
+      tags: [Hotel — Saldo]
+      summary: Solicitar saque do saldo
+      security:
+        - HotelBearer: []
+      responses:
+        "201":
+          description: Saque solicitado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Saque"
+        "400":
+          description: Saldo insuficiente
+
+  # ════════════════════════════════════════════
+  # DISPOSITIVOS FCM
+  # ════════════════════════════════════════════
+  /dispositivos-fcm/usuario:
+    post:
+      tags: [Dispositivos FCM]
+      summary: Registrar token FCM do hóspede
+      security:
+        - UserBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FcmRegisterRequest"
+      responses:
+        "204":
+          description: Token registrado
+
+    delete:
+      tags: [Dispositivos FCM]
+      summary: Remover token FCM do hóspede
+      security:
+        - UserBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FcmRemoveRequest"
+      responses:
+        "204":
+          description: Token removido
+
+  /dispositivos-fcm/hotel:
+    post:
+      tags: [Dispositivos FCM]
+      summary: Registrar token FCM do hotel
+      security:
+        - HotelBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FcmRegisterRequest"
+      responses:
+        "204":
+          description: Token registrado
+
+    delete:
+      tags: [Dispositivos FCM]
+      summary: Remover token FCM do hotel
+      security:
+        - HotelBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FcmRemoveRequest"
+      responses:
+        "204":
+          description: Token removido
+
+  # ════════════════════════════════════════════
+  # UPLOADS — FOTOS DE CAPA DO HOTEL
+  # ════════════════════════════════════════════
+  /uploads/hotels/{hotel_id}/cover:
+    get:
+      tags: [Uploads]
+      summary: Listar fotos de capa de um hotel
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: orientacao
+          in: query
+          schema:
+            type: string
+            enum: [portrait, landscape]
+      responses:
+        "200":
+          description: Lista de fotos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Foto"
+
+    post:
+      tags: [Uploads]
+      summary: Enviar foto de capa do hotel
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [foto, orientacao]
+              properties:
+                foto:
+                  type: string
+                  format: binary
+                  description: Arquivo de imagem (JPEG, PNG ou WebP)
+                orientacao:
+                  type: string
+                  enum: [portrait, landscape]
+      responses:
+        "201":
+          description: Foto enviada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Foto"
+        "422":
+          description: Arquivo inválido (não é imagem ou formato não suportado)
+
+  /uploads/hotels/{hotel_id}/cover/{foto_id}:
+    get:
+      tags: [Uploads]
+      summary: Servir foto de capa (arquivo)
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: foto_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Arquivo de imagem
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+
+    delete:
+      tags: [Uploads]
+      summary: Deletar foto de capa do hotel
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: foto_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Foto deletada
+
+  # ════════════════════════════════════════════
+  # UPLOADS — FOTOS DE QUARTO
+  # ════════════════════════════════════════════
+  /uploads/hotels/{hotel_id}/rooms/{quarto_id}:
+    get:
+      tags: [Uploads]
+      summary: Listar fotos de um quarto
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: quarto_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista de fotos do quarto
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Foto"
+
+    post:
+      tags: [Uploads]
+      summary: Enviar foto de quarto
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: quarto_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [foto]
+              properties:
+                foto:
+                  type: string
+                  format: binary
+                  description: Arquivo de imagem (JPEG, PNG ou WebP)
+      responses:
+        "201":
+          description: Foto enviada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Foto"
+        "422":
+          description: Arquivo inválido
+
+  /uploads/hotels/{hotel_id}/rooms/{quarto_id}/{foto_id}:
+    get:
+      tags: [Uploads]
+      summary: Servir foto de quarto (arquivo)
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: quarto_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: foto_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Arquivo de imagem
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+
+    delete:
+      tags: [Uploads]
+      summary: Deletar foto de quarto
+      security:
+        - HotelBearer: []
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: quarto_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: foto_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Foto deletada
+
+  # ════════════════════════════════════════════
+  # PÚBLICOS — Catálogo, Categorias, Disponibilidade, Configuração
+  # ════════════════════════════════════════════
+  /hotel/{hotel_id}/catalogo:
+    get:
+      tags: [Hotel — Catálogo]
+      summary: Listar catálogo público de um hotel
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Catálogo do hotel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CatalogoItem"
+
+  /hotel/{hotel_id}/categorias:
+    get:
+      tags: [Hotel — Categorias de Quarto]
+      summary: Listar categorias de quarto públicas de um hotel
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Categorias do hotel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CategoriaQuarto"
+
+  /hotel/{hotel_id}/categorias/{id}:
+    get:
+      tags: [Hotel — Categorias de Quarto]
+      summary: Obter detalhe de uma categoria (público)
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Detalhes da categoria
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CategoriaQuarto"
+
+  /hotel/{hotel_id}/disponibilidade:
+    get:
+      tags: [Hotel — Categorias de Quarto]
+      summary: Consultar disponibilidade do hotel
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: data_checkin
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: data_checkout
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: num_hospedes
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Disponibilidade por categoria
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CategoriaQuarto"
+
+  /hotel/{hotel_id}/configuracao:
+    get:
+      tags: [Hotel — Configuração]
+      summary: Obter configuração pública de um hotel
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Configuração do hotel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/HotelConfiguracao"
+
+  # ════════════════════════════════════════════
+  # AVALIAÇÕES PÚBLICAS
+  # ════════════════════════════════════════════
+  /hotel/{hotel_id}/avaliacoes:
+    get:
+      tags: [Avaliações Públicas]
+      summary: Listar avaliações públicas de um hotel
+      parameters:
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Avaliações do hotel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Avaliacao"
+
+  # ════════════════════════════════════════════
+  # RESERVAS PÚBLICAS
+  # ════════════════════════════════════════════
+  /reservas/{codigo_publico}:
+    get:
+      tags: [Reservas Públicas]
+      summary: Consultar reserva pelo código público
+      parameters:
+        - name: codigo_publico
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Dados públicos da reserva
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Reserva"
+        "404":
+          description: Reserva não encontrada

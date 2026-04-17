@@ -42,11 +42,7 @@ export interface ProvisionResult {
  *  1. Cria o Schema no banco Mestre
  *  2. Executa init_tenant.sql dentro do escopo deste Schema
  */
-export async function provisionTenant(
-  hotelId:   string,
-  hotelName: string,
-): Promise<ProvisionResult> {
-  const schemaName = buildSchemaName(hotelId, hotelName);
+export async function provisionTenant(schemaName: string): Promise<ProvisionResult> {
 
   // Lê o script do tenant
   const initSql = fs.readFileSync(INIT_TENANT_SQL, 'utf-8');

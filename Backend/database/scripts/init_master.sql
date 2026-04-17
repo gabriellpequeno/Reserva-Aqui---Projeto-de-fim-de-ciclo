@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     ativo           BOOLEAN         NOT NULL DEFAULT TRUE
 );
 
--- 3. Refresh Tokens (JWT — server-side revocation)
+-- 3. Refresh Tokens de Usuário (JWT — server-side revocation)
 --    Cada login emite um refresh token armazenado aqui.
 --    O logout, o change-password e a desativação da conta invalidam todos os tokens do user.
 CREATE TABLE IF NOT EXISTS refresh_tokens (
@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens (user_id);
+
+
 
 -- 2. Hotéis / Anfitriões
 --    Cada hotel registra UMA única conta (o próprio hotel é o anfitriao).
@@ -52,11 +54,24 @@ CREATE TABLE IF NOT EXISTS anfitriao (
     complemento VARCHAR(100),
     saldo       DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,
     descricao   VARCHAR(1000),
-    path        VARCHAR(1000),                         -- caminho logo/imagem
+    cover_storage_path TEXT,                       -- caminho relativo a UPLOAD_DIR (foto de capa)
     schema_name VARCHAR(150)    UNIQUE NOT NULL,       -- nome do schema lógico do tenant
     criado_em   TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
     ativo       BOOLEAN         NOT NULL DEFAULT TRUE
 );
+
+-- 4. Refresh Tokens de Hotel / Anfitrião (JWT — server-side revocation)
+--    Isolado da tabela de usuários para evitar cruzamento de contextos de sessão.
+--    Segue a mesma política de invalidação: logout, change-password e desativação revogam todos.
+CREATE TABLE IF NOT EXISTS hotel_refresh_tokens (
+    id          UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    hotel_id    UUID            NOT NULL REFERENCES anfitriao(hotel_id) ON DELETE CASCADE,
+    token_hash  VARCHAR(255)    NOT NULL UNIQUE,   -- SHA-256 do token (nunca armazenar o token raw)
+    expires_at  TIMESTAMPTZ     NOT NULL,
+    criado_em   TIMESTAMPTZ     NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_hotel_refresh_tokens_hotel ON hotel_refresh_tokens (hotel_id);
 
 -- 4. Chat Global (WhatsApp / App)
 --    Amarrado via celular para não-logados ou user_id para logados.
@@ -82,32 +97,18 @@ CREATE TABLE IF NOT EXISTS mensagem_chat (
 
 CREATE INDEX IF NOT EXISTS idx_msg_sessao ON mensagem_chat (sessao_chat_id);
 
--- 5. Tickets de Reserva Global
---    Atende reservas feitas sem cadastro prévio (boca do caixa, WhatsApp).
---    Fica no Master pois independe de estrutura rígida do Tenant e serve como entrada global.
-CREATE TABLE IF NOT EXISTS ticket_reserva_global (
-    codigo_ticket       UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Código único (usado para o link público do hóspede)
-    user_id             UUID REFERENCES usuario(user_id) ON DELETE SET NULL, -- Caso ele tenha conta global (NULL se walk-in)
-    hotel_id            UUID NOT NULL REFERENCES anfitriao(hotel_id) ON DELETE CASCADE, -- Qual hotel ele vai ficar
-    nome_hospede        VARCHAR(200) NOT NULL,                  -- Nome do hóspede avulso
-    telefone_contato    VARCHAR(20),                            -- Telefone/WhatsApp do cliente
-    sessao_chat_id      UUID REFERENCES sessao_chat(id) ON DELETE SET NULL, -- Qual papo gerou a reserva
-    tipo_quarto         VARCHAR(100) NOT NULL,                  -- Descrição textual ou codificação do quarto
-    num_hospedes        INT NOT NULL DEFAULT 1,                 -- Regra de Negócio: Obrigatório
-    observacoes         TEXT,                                   -- Pedidos especiais
-    data_checkin        DATE NOT NULL,
-    data_checkout       DATE NOT NULL,
-    hora_checkin_real   TIMESTAMPTZ,                            -- Nulo até a chegada real do hóspede
-    hora_checkout_real  TIMESTAMPTZ,                            -- Nulo até a saída
-    valor_total         DECIMAL(10, 2) NOT NULL,
-    status              VARCHAR(20) DEFAULT 'SOLICITADA',         -- SOLICITADA, AGUARDANDO_PAGAMENTO, APROVADA, CANCELADA, CONCLUIDA
-    criado_em           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
-    CONSTRAINT chk_datas_ticket CHECK (data_checkout > data_checkin),
-    CONSTRAINT chk_status_ticket CHECK (status IN ('SOLICITADA', 'AGUARDANDO_PAGAMENTO', 'APROVADA', 'CANCELADA', 'CONCLUIDA'))
+-- 5. Roteamento de Reservas Públicas (Walk-in / WhatsApp)
+--    Mapeia o codigo_publico → hotel_id + schema_name, permitindo ao backend
+--    localizar o tenant correto antes de buscar os detalhes da reserva.
+--    Os dados completos da reserva (incluindo walk-ins) vivem em reserva (tenant).
+CREATE TABLE IF NOT EXISTS reserva_routing (
+    codigo_publico  UUID            PRIMARY KEY,                              -- mesmo UUID que reserva.codigo_publico no tenant
+    hotel_id        UUID            NOT NULL REFERENCES anfitriao(hotel_id) ON DELETE CASCADE,
+    schema_name     VARCHAR(150)    NOT NULL,                                 -- schema do tenant (ex: schema_hotel_xyz)
+    criado_em       TIMESTAMPTZ     NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_ticket_hotel ON ticket_reserva_global (hotel_id);
+CREATE INDEX IF NOT EXISTS idx_reserva_routing_hotel ON reserva_routing (hotel_id);
 
 -- 5. Histórico de Reservas (Denormalização Global)
 --    Sincronizado automaticamente pelo backend a partir do DB do Tenant.
@@ -162,3 +163,41 @@ CREATE TABLE IF NOT EXISTS hotel_favorito (
 );
 
 CREATE INDEX IF NOT EXISTS idx_hotel_favorito_user ON hotel_favorito (user_id);
+
+-- 8. Fotos de Capa do Hotel (Master DB)
+--    Cada hotel pode ter até UPLOAD_MAX_HOTEL_COVER fotos por orientação.
+--    Portrait e landscape são contados separadamente (5 portrait + 5 landscape = 10 total).
+--    O Flutter seleciona a orientação correta conforme a tela do dispositivo.
+CREATE TABLE IF NOT EXISTS foto_hotel (
+    id              UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    hotel_id        UUID            NOT NULL REFERENCES anfitriao(hotel_id) ON DELETE CASCADE,
+    storage_path    TEXT            NOT NULL,     -- caminho relativo a UPLOAD_DIR (nunca URL pública)
+    orientacao      VARCHAR(10)     NOT NULL,     -- 'portrait' | 'landscape'
+    ordem           INT             NOT NULL DEFAULT 0,
+    criado_em       TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT chk_foto_hotel_orientacao CHECK (orientacao IN ('portrait', 'landscape'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_foto_hotel_hotel_id   ON foto_hotel (hotel_id);
+CREATE INDEX IF NOT EXISTS idx_foto_hotel_orientacao ON foto_hotel (hotel_id, orientacao);
+
+-- 9. Saldo de Transações do Hotel
+--    Rastreia créditos (checkout), taxas (walk-in) e saques solicitados.
+--    O campo saldo em anfitriao é o valor corrente; esta tabela é o audit trail.
+CREATE TABLE IF NOT EXISTS saldo_transacao (
+    id              UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    hotel_id        UUID            NOT NULL REFERENCES anfitriao(hotel_id) ON DELETE CASCADE,
+    tipo            VARCHAR(20)     NOT NULL,
+    valor_bruto     DECIMAL(12, 2)  NOT NULL,
+    taxa            DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,
+    valor_liquido   DECIMAL(12, 2)  NOT NULL,
+    descricao       VARCHAR(255)    NOT NULL,
+    reserva_id      INT,
+    criado_em       TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_saldo_tipo  CHECK (tipo IN ('CREDITO_CHECKOUT', 'TAXA_WALKIN', 'SAQUE_SOLICITADO')),
+    CONSTRAINT chk_saldo_bruto CHECK (valor_bruto > 0),
+    CONSTRAINT chk_saldo_taxa  CHECK (taxa >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_saldo_transacao_hotel ON saldo_transacao (hotel_id, criado_em DESC);

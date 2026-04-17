@@ -1,0 +1,13 @@
+---
+description: Regras arquiteturais centrais do projeto.
+alwaysApply: true
+---
+
+# Architecture Core
+
+- Leia `documentation/architecture.md` antes de mudancas estruturais.
+- Prefira simplicidade: menor solucao que resolve o problema.
+- Em mudancas de arquitetura, explicite trade-offs e impacto.
+- Antes de editar um arquivo compartilhado, verifique dependencias.
+- Evite acoplamento novo sem necessidade clara.
+- Para decisoes relevantes, registre racional em markdown no repo.

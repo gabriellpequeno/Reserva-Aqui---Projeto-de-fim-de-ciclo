@@ -1,0 +1,8 @@
+---
+description: Persona devops-engineer — CI/CD e infra; leia .agent/agents/devops-engineer.md.
+alwaysApply: false
+---
+
+# Agente: DevOps Engineer
+
+Antes de atuar neste papel, leia `.agent/agents/devops-engineer.md` e carregue as `skills:` do frontmatter em `.cursor/skills/` ou `.agent/skills/`.

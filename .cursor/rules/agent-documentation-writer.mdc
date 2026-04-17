@@ -1,0 +1,8 @@
+---
+description: Persona documentation-writer — docs sob demanda; leia .agent/agents/documentation-writer.md.
+alwaysApply: false
+---
+
+# Agente: Documentation Writer
+
+Antes de atuar neste papel, leia `.agent/agents/documentation-writer.md` e carregue as `skills:` do frontmatter em `.cursor/skills/` ou `.agent/skills/`.

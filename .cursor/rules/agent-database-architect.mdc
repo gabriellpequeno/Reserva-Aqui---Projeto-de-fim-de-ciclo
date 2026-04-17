@@ -1,0 +1,8 @@
+---
+description: Persona database-architect — modelo de dados e migracoes; leia .agent/agents/database-architect.md.
+alwaysApply: false
+---
+
+# Agente: Database Architect
+
+Antes de atuar neste papel, leia `.agent/agents/database-architect.md` e carregue as `skills:` do frontmatter em `.cursor/skills/` ou `.agent/skills/`.

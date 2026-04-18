@@ -1,4 +1,4 @@
-# Documentação de Arquitetura do Projeto PetShop
+# Documentação de Arquitetura do ReservAqui
 
 ## 1. Visão Geral
 

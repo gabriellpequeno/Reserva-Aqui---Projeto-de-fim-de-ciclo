@@ -17,9 +17,9 @@ O sistema possui dois níveis de acesso baseados em roles (funções).
 | Ator | Descrição | Permissões Chave |
 | --- | --- | --- |
 | **Cliente (Usuário Comum)** | Cliente que predente se hospedar | • Cadastrar-se e fazer login.
-| --- | --- | --- |
+
 | **Administrador (Atendente)** | Gerente ou funcionário do Hotel. | • Todas as permissões do Cliente.
-| --- | --- | --- |
+
 
 ---
 

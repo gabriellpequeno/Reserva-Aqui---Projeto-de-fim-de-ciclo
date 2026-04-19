@@ -11,14 +11,22 @@ import '../../features/auth/presentation/pages/user_or_host_page.dart';
 import '../../features/profile/presentation/pages/user_profile_page.dart';
 import '../../features/profile/presentation/pages/host_profile_page.dart';
 import '../../features/profile/presentation/pages/admin_profile_page.dart';
+import '../../features/profile/presentation/pages/settings_page.dart';
 import '../../features/chat/presentation/pages/chat_page.dart';
 import '../../features/favorites/presentation/pages/favorites_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
 import '../../features/rooms/presentation/pages/room_details_page.dart';
+<<<<<<< HEAD
 import '../../features/booking/presentation/pages/checkout_page.dart';
 import '../../features/tickets/presentation/pages/tickets_page.dart';
 import '../../features/tickets/presentation/pages/ticket_details_page.dart';
+=======
+import '../../features/rooms/presentation/pages/hotel_details_page.dart';
+import '../../features/rooms/presentation/pages/add_room_page.dart';
+import '../../features/rooms/presentation/pages/my_rooms_page.dart';
+import '../../features/rooms/presentation/pages/my_rooms_page.dart';
+>>>>>>> f866b24 (feat: implement multi-tenant database infrastructure and expand frontend navigation and page structure)
 
 // O Navigator base
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -30,6 +38,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     debugLogDiagnostics: true,
     redirect: (context, state) {
+      // Forçado para modo desenvolvimento
       final role = MockAuth.currentUserRole;
       final path = state.uri.path;
 
@@ -115,6 +124,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/profile/admin',
             builder: (context, state) => const AdminProfilePage(),
           ),
+          GoRoute(
+            path: '/profile/settings',
+            builder: (context, state) => const SettingsPage(),
+          ),
         ],
       ),
 
@@ -126,6 +139,24 @@ final routerProvider = Provider<GoRouter>((ref) {
           final roomId = state.pathParameters['roomId'] ?? '';
           return RoomDetailsPage(roomId: roomId);
         },
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/hotel_details/:hotelId',
+        builder: (context, state) {
+          final hotelId = state.pathParameters['hotelId'] ?? '';
+          return HotelDetailsPage(hotelId: hotelId);
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/add_room',
+        builder: (context, state) => AddRoomPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/my_rooms',
+        builder: (context, state) => MyRoomsPage(),
       ),
 
       GoRoute(
@@ -149,9 +180,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: '/host/dashboard',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Página: Host Dashboard (My Rooms)')),
-        ),
+        builder: (context, state) => const MyRoomsPage(),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

@@ -107,7 +107,7 @@ class RoomDetailsPage extends ConsumerWidget {
                       const SizedBox(height: 32),
                       
                       // Host Section
-                      _buildHostSection(room.host),
+                      _buildHostSection(context, room.host),
                       
                       const SizedBox(height: 100), // Space for bottom bar
                     ],
@@ -313,7 +313,7 @@ class RoomDetailsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHostSection(Host host) {
+  Widget _buildHostSection(BuildContext context, Host host) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -363,7 +363,9 @@ class RoomDetailsPage extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         TextButton(
-          onPressed: () {},
+          onPressed: () {
+            context.push('/hotel_details/1');
+          },
           style: TextButton.styleFrom(
             padding: EdgeInsets.zero,
             minimumSize: Size.zero,

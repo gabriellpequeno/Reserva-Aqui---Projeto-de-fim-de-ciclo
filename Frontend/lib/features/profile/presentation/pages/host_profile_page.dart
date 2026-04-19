@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../widgets/profile_header.dart';
@@ -44,7 +45,9 @@ class HostProfilePage extends StatelessWidget {
                   ProfileMenuItem(
                     title: 'Meus quartos',
                     icon: Icons.meeting_room_outlined,
-                    onTap: () {},
+                    onTap: () {
+                      context.push('/my_rooms');
+                    },
                     showDivider: false,
                   ),
                 ],
@@ -56,7 +59,9 @@ class HostProfilePage extends StatelessWidget {
                   ProfileMenuItem(
                     title: 'configurações',
                     icon: Icons.settings_outlined,
-                    onTap: () {},
+                    onTap: () {
+                      context.push('/profile/settings');
+                    },
                   ),
                   ProfileMenuItem(
                     title: 'suporte',

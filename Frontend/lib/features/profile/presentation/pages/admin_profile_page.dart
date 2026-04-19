@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../widgets/profile_header.dart';
@@ -46,7 +47,9 @@ class AdminProfilePage extends StatelessWidget {
                   ProfileMenuItem(
                     title: 'configurações',
                     icon: Icons.settings_outlined,
-                    onTap: () {},
+                    onTap: () {
+                      context.push('/profile/settings');
+                    },
                   ),
                   ProfileMenuItem(
                     title: 'suporte',

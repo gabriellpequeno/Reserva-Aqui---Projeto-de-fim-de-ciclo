@@ -42,7 +42,8 @@ class LoginPage extends StatelessWidget {
               PrimaryButton(
                 text: 'Login',
                 onPressed: () {
-                  // Mock login
+                  // Mock login and redirect to home
+                  context.go('/home');
                 },
               ),
               const SizedBox(height: 32),

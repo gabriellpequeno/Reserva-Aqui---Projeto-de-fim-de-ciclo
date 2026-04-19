@@ -1,0 +1,80 @@
+import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/primary_button.dart';
+import '../widgets/profile_header.dart';
+import '../widgets/profile_menu_item.dart';
+
+class UserProfilePage extends StatelessWidget {
+  const UserProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 120), // Accounting for CustomAppBar
+              ProfileHeader(
+                name: 'Acesse agora', // Placeholder name from prototype
+                email: 'usuario@user.com',
+                onEditTap: () {},
+              ),
+              const SizedBox(height: 32),
+              ProfileMenuSection(
+                title: 'Atividade',
+                items: [
+                  ProfileMenuItem(
+                    title: 'notificações',
+                    icon: Icons.notifications_none,
+                    onTap: () {},
+                  ),
+                  ProfileMenuItem(
+                    title: 'meus tickets',
+                    icon: Icons.confirmation_number_outlined,
+                    onTap: () {},
+                  ),
+                  ProfileMenuItem(
+                    title: 'favoritos',
+                    icon: Icons.favorite_border,
+                    onTap: () {},
+                    showDivider: false,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              ProfileMenuSection(
+                title: 'sistema',
+                items: [
+                  ProfileMenuItem(
+                    title: 'configurações',
+                    icon: Icons.settings_outlined,
+                    onTap: () {},
+                  ),
+                  ProfileMenuItem(
+                    title: 'suporte',
+                    icon: Icons.headset_mic_outlined,
+                    onTap: () {},
+                    showDivider: false,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              PrimaryButton(
+                text: 'sair',
+                color: AppColors.secondary,
+                textColor: AppColors.primary,
+                onPressed: () {
+                  // Logout logic
+                },
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

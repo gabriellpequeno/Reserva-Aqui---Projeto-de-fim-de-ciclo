@@ -47,6 +47,10 @@ services:
       API_PREFIX: ${API_PREFIX:-/api}
       PORT: ${PORT:-3000}
       NODE_ENV: ${NODE_ENV:-development}
+      WHATSAPP_TOKEN: ${WHATSAPP_TOKEN}
+      WHATSAPP_PHONE_ID: ${WHATSAPP_PHONE_ID}
+      WHATSAPP_WEBHOOK_VERIFY_TOKEN: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
     ports:
       - "${PORT:-3000}:3000"
     volumes:

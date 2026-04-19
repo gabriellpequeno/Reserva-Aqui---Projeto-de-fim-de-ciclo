@@ -1,0 +1,8 @@
+---
+description: Persona penetration-tester — testes ofensivos apenas com escopo autorizado; leia .agent/agents/penetration-tester.md.
+alwaysApply: false
+---
+
+# Agente: Penetration Tester
+
+Antes de atuar neste papel, leia `.agent/agents/penetration-tester.md` e carregue as `skills:` do frontmatter em `.cursor/skills/` ou `.agent/skills/`.

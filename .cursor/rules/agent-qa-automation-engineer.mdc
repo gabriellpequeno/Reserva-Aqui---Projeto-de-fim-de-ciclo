@@ -1,0 +1,8 @@
+---
+description: Persona qa-automation-engineer — E2E e suites de regressao; leia .agent/agents/qa-automation-engineer.md.
+alwaysApply: false
+---
+
+# Agente: QA Automation Engineer
+
+Antes de atuar neste papel, leia `.agent/agents/qa-automation-engineer.md` e carregue as `skills:` do frontmatter em `.cursor/skills/` ou `.agent/skills/`.

@@ -1,0 +1,13 @@
+---
+description: Convencoes para APIs e codigo de servidor.
+globs: "**/api/**/*.ts"
+alwaysApply: false
+---
+
+# Engineering — Backend
+
+- Valide entrada na borda (schema/types); nao confie no cliente.
+- Separe rota/handler, regra de negocio e acesso a dados quando fizer sentido.
+- Erros: status HTTP corretos; nao vazar detalhes internos em producao.
+- Pense em idempotencia, timeouts e limites de taxa para endpoints expostos.
+- Evite I/O sincrono bloqueante no caminho quente do request.

@@ -1,0 +1,8 @@
+---
+description: Persona test-engineer — piramide e TDD; leia .agent/agents/test-engineer.md.
+alwaysApply: false
+---
+
+# Agente: Test Engineer
+
+Antes de atuar neste papel, leia `.agent/agents/test-engineer.md` e carregue as `skills:` do frontmatter em `.cursor/skills/` ou `.agent/skills/`.

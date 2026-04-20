@@ -21,7 +21,7 @@ class HostProfilePage extends StatelessWidget {
               ProfileHeader(
                 name: 'Acesse agora',
                 email: 'usuario@user.com',
-                onEditTap: () {},
+                onEditTap: () => context.push('/profile/host/edit'),
               ),
               const SizedBox(height: 32),
               ProfileMenuSection(

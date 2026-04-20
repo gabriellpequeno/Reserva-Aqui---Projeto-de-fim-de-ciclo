@@ -17,6 +17,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final bool canPop = context.canPop();
     final String location = GoRouterState.of(context).uri.path;
     final bool isHome = location == '/' || location == '/home';
+    final bool isProfile = location.startsWith('/profile');
 
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -28,13 +29,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               padding: const EdgeInsets.only(top: 30.0, left: 8.0),
               child: IconButton(
                 icon: const Icon(
-                  Icons.chevron_left, 
-                  color: AppColors.primary, 
+                  Icons.chevron_left,
+                  color: AppColors.primary,
                   size: 32, // More prominent like in the print
                 ),
                 onPressed: () {
                   if (canPop) {
                     context.pop();
+                  } else if (isProfile) {
+                    context.go('/home');
                   } else {
                     final role = MockAuth.currentUserRole;
                     if (role == UserRole.admin) {

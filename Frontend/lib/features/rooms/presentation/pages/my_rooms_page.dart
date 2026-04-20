@@ -246,19 +246,22 @@ class _MyRoomsPageState extends State<MyRoomsPage> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      // Close / Info icon
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEE8DB),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFEC6725)),
-                        ),
-                        child: Icon(
-                          room['status'] == 'active' ? Icons.close : Icons.info,
-                          color: const Color(0xFFEC6725),
-                          size: 14,
+                      // Edit button
+                      GestureDetector(
+                        onTap: () => context.push('/edit_room/${room['id']}'),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEE8DB),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFFEC6725)),
+                          ),
+                          child: const Icon(
+                            Icons.edit,
+                            color: Color(0xFFEC6725),
+                            size: 14,
+                          ),
                         ),
                       ),
                     ],

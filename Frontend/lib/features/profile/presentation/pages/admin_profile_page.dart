@@ -21,7 +21,7 @@ class AdminProfilePage extends StatelessWidget {
               ProfileHeader(
                 name: 'Admin',
                 email: 'admin@admin.com',
-                onEditTap: () {},
+                onEditTap: () => context.push('/profile/admin/edit'),
               ),
               const SizedBox(height: 32),
               ProfileMenuSection(

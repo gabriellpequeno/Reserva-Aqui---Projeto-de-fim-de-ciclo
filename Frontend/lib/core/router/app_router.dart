@@ -12,6 +12,9 @@ import '../../features/profile/presentation/pages/user_profile_page.dart';
 import '../../features/profile/presentation/pages/host_profile_page.dart';
 import '../../features/profile/presentation/pages/admin_profile_page.dart';
 import '../../features/profile/presentation/pages/settings_page.dart';
+import '../../features/profile/presentation/pages/edit_user_profile_page.dart';
+import '../../features/profile/presentation/pages/edit_host_profile_page.dart';
+import '../../features/profile/presentation/pages/edit_admin_profile_page.dart';
 import '../../features/chat/presentation/pages/chat_page.dart';
 import '../../features/favorites/presentation/pages/favorites_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
@@ -20,6 +23,7 @@ import '../../features/rooms/presentation/pages/room_details_page.dart';
 import '../../features/rooms/presentation/pages/hotel_details_page.dart';
 import '../../features/rooms/presentation/pages/add_room_page.dart';
 import '../../features/rooms/presentation/pages/my_rooms_page.dart';
+import '../../features/rooms/presentation/pages/edit_room_page.dart';
 import '../../features/booking/presentation/pages/checkout_page.dart';
 import '../../features/tickets/presentation/pages/tickets_page.dart';
 import '../../features/tickets/presentation/pages/ticket_details_page.dart';
@@ -39,13 +43,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final path = state.uri.path;
 
       if (path == '/') {
-        if (role == UserRole.guest || role == UserRole.user) {
-          return '/home';
-        } else if (role == UserRole.host) {
-          return '/profile/host';
-        } else if (role == UserRole.admin) {
-          return '/profile/admin';
-        }
+        return '/home';
       }
 
       final isLogged = MockAuth.isLoggedIn;
@@ -118,6 +116,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/profile/settings',
             builder: (context, state) => const SettingsPage(),
           ),
+          GoRoute(
+            path: '/profile/user/edit',
+            builder: (context, state) => const EditUserProfilePage(),
+          ),
+          GoRoute(
+            path: '/profile/host/edit',
+            builder: (context, state) => const EditHostProfilePage(),
+          ),
+          GoRoute(
+            path: '/profile/admin/edit',
+            builder: (context, state) => const EditAdminProfilePage(),
+          ),
         ],
       ),
 
@@ -147,6 +157,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         path: '/my_rooms',
         builder: (context, state) => MyRoomsPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/edit_room/:roomId',
+        builder: (context, state) {
+          final roomId = state.pathParameters['roomId'] ?? '';
+          return EditRoomPage(roomId: roomId);
+        },
       ),
 
       GoRoute(

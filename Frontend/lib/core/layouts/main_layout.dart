@@ -35,7 +35,7 @@ class MainLayout extends ConsumerWidget {
         context.go('/favorites'); // curtidas
         break;
       case 2:
-        context.go('/'); // início (home root)
+        context.go('/home'); // início (home)
         break;
       case 3:
         context.go('/chat'); // mensagens/tickets

@@ -21,7 +21,7 @@ class UserProfilePage extends StatelessWidget {
               ProfileHeader(
                 name: 'Acesse agora', // Placeholder name from prototype
                 email: 'usuario@user.com',
-                onEditTap: () {},
+                onEditTap: () => context.push('/profile/user/edit'),
               ),
               const SizedBox(height: 32),
               ProfileMenuSection(

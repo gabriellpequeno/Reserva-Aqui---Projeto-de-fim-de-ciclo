@@ -416,7 +416,7 @@ class RoomDetailsPage extends ConsumerWidget {
             // Reservation Button
             Expanded(
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () => context.push('/booking/checkout/${room.id}'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.secondary,
                   foregroundColor: Colors.white,

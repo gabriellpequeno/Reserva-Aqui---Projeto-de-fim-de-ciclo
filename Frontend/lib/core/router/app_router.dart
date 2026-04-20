@@ -16,6 +16,9 @@ import '../../features/favorites/presentation/pages/favorites_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
 import '../../features/rooms/presentation/pages/room_details_page.dart';
+import '../../features/booking/presentation/pages/checkout_page.dart';
+import '../../features/tickets/presentation/pages/tickets_page.dart';
+import '../../features/tickets/presentation/pages/ticket_details_page.dart';
 
 // O Navigator base
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -79,6 +82,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const NotificationsPage(),
           ),
           GoRoute(
+            path: '/tickets',
+            builder: (context, state) => const TicketsPage(),
+          ),
+          GoRoute(
             path: '/auth',
             builder: (context, state) => const UserOrHostPage(),
             routes: [
@@ -113,11 +120,29 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // ROTAS FORA DO CASCO (Sem Bottom Bar global) - Ex: Tela de Detalhes
       GoRoute(
-        parentNavigatorKey: _rootNavigatorKey, 
+        parentNavigatorKey: _rootNavigatorKey,
         path: '/room_details/:roomId',
         builder: (context, state) {
           final roomId = state.pathParameters['roomId'] ?? '';
           return RoomDetailsPage(roomId: roomId);
+        },
+      ),
+
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/tickets/details/:ticketId',
+        builder: (context, state) {
+          final ticketId = state.pathParameters['ticketId'] ?? '';
+          return TicketDetailsPage(ticketId: ticketId);
+        },
+      ),
+
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/booking/checkout/:roomId',
+        builder: (context, state) {
+          final roomId = state.pathParameters['roomId'] ?? '';
+          return CheckoutPage(roomId: roomId);
         },
       ),
 

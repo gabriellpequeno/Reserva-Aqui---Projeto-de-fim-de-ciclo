@@ -26,29 +26,32 @@ class NotificationsPage extends ConsumerWidget {
             child: !isLoggedIn
                 ? _buildLoginMessage(context)
                 : notifications.isEmpty
-                    ? _buildEmptyState()
-                    : Stack(
-                        children: [
-                          ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
-                            itemCount: notifications.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              final notification = notifications[index];
-                              return _buildNotificationCard(context, ref, notification);
-                            },
-                          ),
-                          // Bottom "Limpar" button
-                          Positioned(
-                            bottom: 30,
-                            left: 0,
-                            right: 0,
-                            child: Center(
-                              child: _buildClearButton(ref),
-                            ),
-                          ),
-                        ],
+                ? _buildEmptyState()
+                : Stack(
+                    children: [
+                      ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
+                        itemCount: notifications.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final notification = notifications[index];
+                          return _buildNotificationCard(
+                            context,
+                            ref,
+                            notification,
+                          );
+                        },
                       ),
+                      // Bottom "Limpar" button
+                      Positioned(
+                        bottom: 30,
+                        left: 0,
+                        right: 0,
+                        child: Center(child: _buildClearButton(ref)),
+                      ),
+                    ],
+                  ),
           ),
         ],
       ),
@@ -73,8 +76,25 @@ class NotificationsPage extends ConsumerWidget {
           Positioned(
             left: 0,
             child: IconButton(
-              icon: const Icon(Icons.chevron_left, color: Colors.white, size: 32),
-              onPressed: () => context.pop(),
+              icon: const Icon(
+                Icons.chevron_left,
+                color: Colors.white,
+                size: 32,
+              ),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  final role = MockAuth.currentUserRole;
+                  if (role == UserRole.admin) {
+                    context.go('/profile/admin');
+                  } else if (role == UserRole.host) {
+                    context.go('/profile/host');
+                  } else {
+                    context.go('/profile/user');
+                  }
+                }
+              },
             ),
           ),
           const Text(
@@ -90,7 +110,11 @@ class NotificationsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildNotificationCard(BuildContext context, WidgetRef ref, AppNotification notification) {
+  Widget _buildNotificationCard(
+    BuildContext context,
+    WidgetRef ref,
+    AppNotification notification,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -151,7 +175,11 @@ class NotificationsPage extends ConsumerWidget {
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.secondary),
             ),
-            child: const Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.secondary),
+            child: const Icon(
+              Icons.arrow_forward_ios,
+              size: 12,
+              color: AppColors.secondary,
+            ),
           ),
         ],
       ),
@@ -198,7 +226,11 @@ class NotificationsPage extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.notifications_off_outlined, size: 64, color: AppColors.secondary),
+            const Icon(
+              Icons.notifications_off_outlined,
+              size: 64,
+              color: AppColors.secondary,
+            ),
             const SizedBox(height: 20),
             const Text(
               'Acesse suas notificações',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 
@@ -72,7 +73,7 @@ class _AddRoomPageState extends State<AddRoomPage> {
         const SnackBar(content: Text('Quarto criado com sucesso!')),
       );
 
-      Navigator.pop(context);
+      context.pop();
     }
   }
 
@@ -250,7 +251,7 @@ class _AddRoomPageState extends State<AddRoomPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               GestureDetector(
-                onTap: () => Navigator.pop(context),
+                onTap: () => context.pop(),
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -284,16 +285,19 @@ class _AddRoomPageState extends State<AddRoomPage> {
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.notifications,
-                  color: Colors.white,
-                  size: 24,
+              GestureDetector(
+                onTap: () => context.go('/notifications'),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.notifications,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
               ),
             ],

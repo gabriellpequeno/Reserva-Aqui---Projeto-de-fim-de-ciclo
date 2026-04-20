@@ -208,7 +208,7 @@ class HotelDetailsPage extends ConsumerWidget {
             ),
             child: IconButton(
               icon: const Icon(Icons.notifications_none, size: 20),
-              onPressed: () {},
+              onPressed: () => context.go('/notifications'),
             ),
           ),
         ),

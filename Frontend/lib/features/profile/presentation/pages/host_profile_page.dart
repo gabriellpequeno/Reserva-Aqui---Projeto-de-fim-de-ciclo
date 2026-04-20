@@ -30,7 +30,7 @@ class HostProfilePage extends StatelessWidget {
                   ProfileMenuItem(
                     title: 'notificações',
                     icon: Icons.notifications_none,
-                    onTap: () {},
+                    onTap: () => context.go('/notifications'),
                   ),
                   ProfileMenuItem(
                     title: 'Agendamentos',
@@ -40,7 +40,7 @@ class HostProfilePage extends StatelessWidget {
                   ProfileMenuItem(
                     title: 'Dashboard',
                     icon: Icons.dashboard_outlined,
-                    onTap: () {},
+                    onTap: () => context.go('/host/dashboard'),
                   ),
                   ProfileMenuItem(
                     title: 'Meus quartos',
@@ -76,9 +76,7 @@ class HostProfilePage extends StatelessWidget {
                 text: 'sair',
                 color: AppColors.secondary,
                 textColor: AppColors.primary,
-                onPressed: () {
-                  // Logout logic
-                },
+                onPressed: () => context.go('/auth'),
               ),
               const SizedBox(height: 40),
             ],

@@ -17,16 +17,12 @@ import '../../features/favorites/presentation/pages/favorites_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
 import '../../features/rooms/presentation/pages/room_details_page.dart';
-<<<<<<< HEAD
-import '../../features/booking/presentation/pages/checkout_page.dart';
-import '../../features/tickets/presentation/pages/tickets_page.dart';
-import '../../features/tickets/presentation/pages/ticket_details_page.dart';
-=======
 import '../../features/rooms/presentation/pages/hotel_details_page.dart';
 import '../../features/rooms/presentation/pages/add_room_page.dart';
 import '../../features/rooms/presentation/pages/my_rooms_page.dart';
-import '../../features/rooms/presentation/pages/my_rooms_page.dart';
->>>>>>> f866b24 (feat: implement multi-tenant database infrastructure and expand frontend navigation and page structure)
+import '../../features/booking/presentation/pages/checkout_page.dart';
+import '../../features/tickets/presentation/pages/tickets_page.dart';
+import '../../features/tickets/presentation/pages/ticket_details_page.dart';
 
 // O Navigator base
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -46,9 +42,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (role == UserRole.guest || role == UserRole.user) {
           return '/home';
         } else if (role == UserRole.host) {
-          return '/host/dashboard';
+          return '/profile/host';
         } else if (role == UserRole.admin) {
-          return '/admin/dashboard';
+          return '/profile/admin';
         }
       }
 
@@ -74,14 +70,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/search',
             builder: (context, state) => const SearchPage(),
           ),
-          GoRoute(
-            path: '/chat',
-            builder: (context, state) => const ChatPage(),
-          ),
-          GoRoute(
-            path: '/home',
-            builder: (context, state) => const HomePage(),
-          ),
+          GoRoute(path: '/chat', builder: (context, state) => const ChatPage()),
+          GoRoute(path: '/home', builder: (context, state) => const HomePage()),
           GoRoute(
             path: '/favorites',
             builder: (context, state) => const FavoritesPage(),
@@ -180,7 +170,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: '/host/dashboard',
-        builder: (context, state) => const MyRoomsPage(),
+        builder: (context, state) =>
+            const Scaffold(body: Center(child: Text('Página: Host Dashboard'))),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

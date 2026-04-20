@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
+import '../mocks/mock_auth.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showBackButton;
@@ -35,7 +36,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   if (canPop) {
                     context.pop();
                   } else {
-                    context.go('/home');
+                    final role = MockAuth.currentUserRole;
+                    if (role == UserRole.admin) {
+                      context.go('/profile/admin');
+                    } else if (role == UserRole.host) {
+                      context.go('/profile/host');
+                    } else {
+                      context.go('/profile/user');
+                    }
                   }
                 },
               ),

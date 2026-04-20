@@ -134,9 +134,7 @@ class _MyRoomsPageState extends State<MyRoomsPage> {
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
-                  onPressed: () {
-                    if (context.canPop()) context.pop();
-                  },
+                  onPressed: () => context.canPop() ? context.pop() : context.go('/profile/host'),
                 ),
               ),
               Column(
@@ -167,7 +165,11 @@ class _MyRoomsPageState extends State<MyRoomsPage> {
                   color: Colors.white.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.notifications_none, color: Colors.white),
+                child: IconButton(
+                  icon: const Icon(Icons.notifications_none, color: Colors.white),
+                  onPressed: () => context.go('/notifications'),
+                  padding: EdgeInsets.zero,
+                ),
               ),
             ],
           ),
@@ -302,7 +304,7 @@ class _MyRoomsPageState extends State<MyRoomsPage> {
                     width: double.infinity,
                     height: 38,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () => context.push('/hotel_details/${room['id']}'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF182541),
                         shape: RoundedRectangleBorder(

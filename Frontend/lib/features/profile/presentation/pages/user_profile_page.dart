@@ -30,17 +30,17 @@ class UserProfilePage extends StatelessWidget {
                   ProfileMenuItem(
                     title: 'notificações',
                     icon: Icons.notifications_none,
-                    onTap: () {},
+                    onTap: () => context.go('/notifications'),
                   ),
                   ProfileMenuItem(
                     title: 'meus tickets',
                     icon: Icons.confirmation_number_outlined,
-                    onTap: () {},
+                    onTap: () => context.go('/tickets'),
                   ),
                   ProfileMenuItem(
                     title: 'favoritos',
                     icon: Icons.favorite_border,
-                    onTap: () {},
+                    onTap: () => context.go('/favorites'),
                     showDivider: false,
                   ),
                 ],
@@ -69,9 +69,7 @@ class UserProfilePage extends StatelessWidget {
                 text: 'sair',
                 color: AppColors.secondary,
                 textColor: AppColors.primary,
-                onPressed: () {
-                  // Logout logic
-                },
+                onPressed: () => context.go('/auth'),
               ),
               const SizedBox(height: 40),
             ],

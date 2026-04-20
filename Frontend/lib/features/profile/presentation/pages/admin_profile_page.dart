@@ -30,7 +30,7 @@ class AdminProfilePage extends StatelessWidget {
                   ProfileMenuItem(
                     title: 'Dashboard',
                     icon: Icons.dashboard_outlined,
-                    onTap: () {},
+                    onTap: () => context.go('/admin/dashboard'),
                   ),
                   ProfileMenuItem(
                     title: 'Clientes',
@@ -64,9 +64,7 @@ class AdminProfilePage extends StatelessWidget {
                 text: 'sair',
                 color: AppColors.secondary,
                 textColor: AppColors.primary,
-                onPressed: () {
-                  // Logout logic
-                },
+                onPressed: () => context.go('/auth'),
               ),
               const SizedBox(height: 40),
             ],

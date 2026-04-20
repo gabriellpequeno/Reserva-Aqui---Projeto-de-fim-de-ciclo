@@ -1,16 +1,24 @@
-# Initial Concept
-ReservAqui — Multi-tenant hotel reservation system / Gestão Inteligente de Serviços
+# Project Brief — ReservAqui
 
-## Target Users
-The primary users of the system are Hotel Administrators (managing schedules and accommodations) and their Guests (selecting and booking rooms).
+## O que é
+Plataforma multi-tenant de gestão hoteleira que conecta hóspedes e hotéis através do WhatsApp, apps mobile (Flutter) e inteligência artificial. O hóspede reserva, tira dúvidas e pede um roteiro turístico diretamente pelo WhatsApp — sem precisar baixar app ou criar conta.
 
-## Key Value Proposition
-To act as an intermediary platform between the hotel and the user. It streamlines operations by allowing hotels to manage their availability while enabling users to seamlessly discover and book accommodations.
+## Problema que resolve
+- **Hóspede:** Reservar um quarto exige baixar um app, criar uma conta e navegar por formulários. O processo é lento e burocrático para algo que poderia ser feito em uma conversa.
+- **Hotel:** Perde reservas por não conseguir atender a demanda de mensagens em tempo real. Não tem ferramenta para automatizar o atendimento sem depender de atendentes humanos.
 
-## Core Features (MVP)
-- **Real-Time Booking (Guest):** Guests can make room reservations in real time via the app.
-- **Real-Time Management (Hotel):** Hotels receive real-time notifications to validate or deny incoming reservations, with immediate updates reflected in the application's master calendar.
-- **Role-Based Access Control:** Separate interfaces and permissions for hotel staff and guests.
+## Público-alvo
+- **Hóspede:** Classe média e média-alta que viaja a lazer, negócios ou eventos. Usa WhatsApp diariamente e valoriza praticidade.
+- **Fornecedor (Hotel):** Hotéis de médio e grande porte que querem aumentar clientes e automatizar o atendimento.
+- **Admin da plataforma:** Equipe responsável pela gestão e operação da plataforma.
 
-## Supported Platforms
-The frontend, built with Flutter, will primarily target Mobile (iOS/Android) and Web platforms to ensure maximum accessibility for both guests and hotel staff.
+## Plataformas
+- App mobile Flutter (iOS, Android, Web, Tablet)
+- WhatsApp Business (via WhatsApp Cloud API)
+- Backend Node.js + TypeScript + Express
+- IA com Google Gemini + LangChain + RAG
+
+## Contexto
+Projeto acadêmico de fim de ciclo — Turma T7
+Prazo: MVP funcional para apresentação em 08/05/2026
+Time: 5 pessoas (2 front, 1 back, 1 IA, 1 infra)

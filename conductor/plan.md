@@ -27,25 +27,25 @@
 
 ## Fase 4 - Integracao WhatsApp [EM ANDAMENTO]
 > Spec: `specs/integracao-whatsapp.spec.md`
+> Todas as tasks tecnicas estao concluidas. Checkpoint de fase pendente de verificacao manual.
 
-- [~] Endpoint GET `/whatsapp/webhook` para verificacao da Meta
-- [~] Endpoint POST `/whatsapp/webhook` para recebimento de mensagens
-- [~] Validar o inbound contra o `WHATSAPP_PHONE_ID` global da plataforma
-- [~] Vincular sessao ao hospede por numero de telefone quando houver conta
-- [~] Persistir sessao, mensagem do cliente e resposta do bot no historico
-- [ ] Deduplicar inbound por `wamid` / `messages[0].id`
-- [ ] Persistir `message_id` da Meta e o ultimo status outbound conhecido
-- [ ] Fazer fallback para template generico fora da janela de 24 horas
-- [ ] Tratar audio, imagem e documento com metadados + resposta amigavel por tipo
-- [ ] Encerrar sessao por fim de fluxo ou inatividade configuravel
-- [ ] Enviar confirmacao de reserva + PDF via WhatsApp
-- [ ] Enriquecer `sessao_chat.hotel_id` depois, via contexto da conversa / reserva / selecao explicita
+- [x] Endpoint GET `/whatsapp/webhook` para verificacao da Meta [sha: c90617e]
+- [x] Endpoint POST `/whatsapp/webhook` para recebimento de mensagens [sha: c90617e]
+- [x] Validar o inbound contra o `WHATSAPP_PHONE_ID` global da plataforma [sha: c90617e]
+- [x] Vincular sessao ao hospede por numero de telefone quando houver conta [sha: c90617e]
+- [x] Persistir sessao, mensagem do cliente e resposta do bot no historico [sha: c90617e]
+- [x] Deduplicar inbound por `wamid` / `messages[0].id` [sha: c90617e]
+- [x] Persistir `message_id` da Meta e o ultimo status outbound conhecido [sha: c90617e]
+- [x] Fazer fallback para template generico fora da janela de 24 horas [sha: c90617e]
+- [x] Tratar audio, imagem e documento com metadados + resposta amigavel por tipo [sha: c90617e]
+- [x] Encerrar sessao por fim de fluxo ou inatividade configuravel [sha: c90617e]
+- [x] Enviar confirmacao de reserva + PDF via WhatsApp [sha: c90617e]
 
 ## Fase 5 - Chatbot IA (RAG + Intencao) [PENDENTE]
 > Spec: `specs/chatbot-ia.spec.md`
 
 - [ ] Configurar LangChain + Gemini Flash
-- [ ] Implementar resolucao de hotel na conversa antes do RAG hotel-scoped
+- [ ] Implementar resolucao de hotel na conversa e enriquecer `sessao_chat.hotel_id` antes do RAG hotel-scoped
 - [ ] Consultar dados canonicos no banco relacional (preco, disponibilidade, reserva)
 - [ ] Criar estrutura de documentos do hotel com embeddings em `pgvector`
 - [ ] Criar script de ingestao e reindexacao de documentos do hotel

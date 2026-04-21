@@ -1,0 +1,2482 @@
+{
+  "info": {
+    "_postman_id": "reservaqui-api-v1",
+    "name": "ReservAqui API",
+    "description": "Coleção completa da API ReservAqui.\n\nComo usar:\n1. Ajuste `baseUrl` nas variáveis da coleção\n2. Execute `Hóspede - Login` → tokens salvos automaticamente\n3. Execute `Hotel - Login` → tokens de hotel salvos automaticamente\n4. IDs de recursos criados (quarto, categoria, reserva, etc.) são capturados automaticamente pelos test scripts",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "hotelAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "hotelRefreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "hotelId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "catalogoId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "categoriaId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "quartoId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "reservaId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "codigoPublico",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "fotoHotelId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "fotoQuartoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notificacaoId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Hospede - Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome_completo\": \"João Silva\",\n  \"email\": \"joao@email.com\",\n  \"senha\": \"Senha@123\",\n  \"cpf\": \"123.456.789-01\",\n  \"data_nascimento\": \"20/05/1990\",\n  \"numero_celular\": \"(11) 91234-5678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "register"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('userId', pm.response.json().data.user_id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"joao@email.com\",\n  \"senha\": \"Senha@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken',  b.tokens.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', b.tokens.refreshToken);",
+                  "    pm.collectionVariables.set('userId',       b.data.user_id);",
+                  "    console.log('accessToken salvo:', b.tokens.accessToken.substring(0,30) + '...');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "refresh"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken',  b.tokens.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', b.tokens.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hospede - Perfil",
+      "item": [
+        {
+          "name": "GET Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH Me",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome_completo\": \"João da Silva\",\n  \"numero_celular\": \"(11) 98765-4321\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senhaAtual\": \"Senha@123\",\n  \"novaSenha\": \"NovaSenha@456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "change-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE Me",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hospede - Favoritos",
+      "item": [
+        {
+          "name": "Listar Favoritos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/favoritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "favoritos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Favoritar Hotel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hotel_id\": \"{{hotelId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/favoritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "favoritos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Desfavoritar Hotel",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/favoritos/{{hotelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "favoritos",
+                "{{hotelId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hospede - Reservas",
+      "item": [
+        {
+          "name": "Listar Historico",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "reservas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Reserva (App)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hotel_id\": \"{{hotelId}}\",\n  \"num_hospedes\": 2,\n  \"data_checkin\": \"2025-06-10\",\n  \"data_checkout\": \"2025-06-12\",\n  \"valor_total\": 399.80,\n  \"tipo_quarto\": \"Standard\",\n  \"observacoes\": \"Chegada prevista às 15h\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "reservas"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const d = pm.response.json().data;",
+                  "    pm.collectionVariables.set('reservaId',     d.id);",
+                  "    pm.collectionVariables.set('codigoPublico', d.codigo_publico);",
+                  "    console.log('codigoPublico:', d.codigo_publico);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Cancelar Reserva",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/reservas/{{codigoPublico}}/cancelar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "reservas",
+                "{{codigoPublico}}",
+                "cancelar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hospede - Avaliacoes",
+      "item": [
+        {
+          "name": "Criar Avaliacao",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo_publico\": \"{{codigoPublico}}\",\n  \"nota_limpeza\": 5,\n  \"nota_atendimento\": 4,\n  \"nota_conforto\": 5,\n  \"nota_organizacao\": 4,\n  \"nota_localizacao\": 5,\n  \"comentario\": \"Excelente estadia, voltarei com certeza!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/avaliacoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "avaliacoes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Editar Avaliacao",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nota_atendimento\": 5,\n  \"comentario\": \"Atendimento ainda melhor do que esperava!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/avaliacoes/{{codigoPublico}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "avaliacoes",
+                "{{codigoPublico}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hospede - FCM",
+      "item": [
+        {
+          "name": "Registrar Token FCM",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcm_token\": \"fMEk39...-token-do-firebase\",\n  \"origem\": \"APP_ANDROID\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/dispositivos-fcm/usuario",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dispositivos-fcm",
+                "usuario"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remover Token FCM",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcm_token\": \"fMEk39...-token-do-firebase\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/dispositivos-fcm/usuario",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dispositivos-fcm",
+                "usuario"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hotel - Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome_hotel\": \"Hotel Exemplo\",\n  \"cnpj\": \"12.345.678/0001-99\",\n  \"telefone\": \"(11) 3000-0000\",\n  \"email\": \"contato@hotelexemplo.com\",\n  \"senha\": \"Hotel@Senha1\",\n  \"cep\": \"01310-100\",\n  \"uf\": \"SP\",\n  \"cidade\": \"São Paulo\",\n  \"bairro\": \"Bela Vista\",\n  \"rua\": \"Av. Paulista\",\n  \"numero\": \"1000\",\n  \"complemento\": \"Andar 5\",\n  \"descricao\": \"Hotel boutique no coração de São Paulo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "register"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('hotelId', pm.response.json().data.hotel_id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"contato@hotelexemplo.com\",\n  \"senha\": \"Hotel@Senha1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.collectionVariables.set('hotelAccessToken',  b.tokens.accessToken);",
+                  "    pm.collectionVariables.set('hotelRefreshToken', b.tokens.refreshToken);",
+                  "    pm.collectionVariables.set('hotelId',           b.data.hotel_id);",
+                  "    console.log('hotelAccessToken salvo:', b.tokens.accessToken.substring(0,30) + '...');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{hotelRefreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "refresh"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const b = pm.response.json();",
+                  "    pm.collectionVariables.set('hotelAccessToken',  b.tokens.accessToken);",
+                  "    pm.collectionVariables.set('hotelRefreshToken', b.tokens.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{hotelRefreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hotel - Perfil",
+      "item": [
+        {
+          "name": "GET Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH Me",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descricao\": \"Hotel boutique com vista panorâmica\",\n  \"telefone\": \"(11) 3001-0000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senhaAtual\": \"Hotel@Senha1\",\n  \"novaSenha\": \"NovoHotel@Senha2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "change-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE Me",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hotel - Configuracao",
+      "item": [
+        {
+          "name": "GET Configuracao (publico)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/{{hotelId}}/configuracao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "{{hotelId}}",
+                "configuracao"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST Configuracao (criar)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"horario_checkin\": \"14:00\",\n  \"horario_checkout\": \"12:00\",\n  \"max_dias_reserva\": 30,\n  \"politica_cancelamento\": \"Cancelamento gratuito até 48h antes do check-in.\",\n  \"aceita_animais\": false,\n  \"idiomas_atendimento\": \"Português, Inglês\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/configuracao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "configuracao"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH Configuracao",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"aceita_animais\": true,\n  \"politica_cancelamento\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/configuracao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "configuracao"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hotel - Catalogo",
+      "item": [
+        {
+          "name": "Listar Catalogo (publico)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/{{hotelId}}/catalogo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "{{hotelId}}",
+                "catalogo"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Item no Catalogo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Ar-condicionado\",\n  \"categoria\": \"COMODIDADE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/catalogo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "catalogo"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('catalogoId', pm.response.json().data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Renomear Item do Catalogo",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Ar-condicionado Split\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/catalogo/{{catalogoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "catalogo",
+                "{{catalogoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar Item do Catalogo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/catalogo/{{catalogoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "catalogo",
+                "{{catalogoId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hotel - Categorias de Quarto",
+      "item": [
+        {
+          "name": "Listar Categorias (publico)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/{{hotelId}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "{{hotelId}}",
+                "categorias"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Categoria por ID (publico)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/{{hotelId}}/categorias/{{categoriaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "{{hotelId}}",
+                "categorias",
+                "{{categoriaId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Categoria",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Standard\",\n  \"preco_base\": 199.90,\n  \"capacidade_pessoas\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "categorias"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('categoriaId', pm.response.json().data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Atualizar Categoria",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preco_base\": 249.90,\n  \"capacidade_pessoas\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/categorias/{{categoriaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "categorias",
+                "{{categoriaId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar Categoria",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/categorias/{{categoriaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "categorias",
+                "{{categoriaId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Adicionar Item a Categoria",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"catalogo_id\": {{catalogoId}},\n  \"quantidade\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/categorias/{{categoriaId}}/itens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "categorias",
+                "{{categoriaId}}",
+                "itens"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remover Item da Categoria",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/categorias/{{categoriaId}}/itens/{{catalogoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "categorias",
+                "{{categoriaId}}",
+                "itens",
+                "{{catalogoId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hotel - Quartos",
+      "item": [
+        {
+          "name": "Listar Quartos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/quartos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "quartos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Quarto por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/quartos/{{quartoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "quartos",
+                "{{quartoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Quarto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numero\": \"101\",\n  \"categoria_quarto_id\": {{categoriaId}},\n  \"descricao\": \"Vista para o jardim\",\n  \"valor_override\": null,\n  \"disponivel\": true,\n  \"itens\": [\n    { \"catalogo_id\": {{catalogoId}}, \"quantidade\": 1 }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/quartos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "quartos"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('quartoId', pm.response.json().data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Atualizar Quarto",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descricao\": \"Vista para a piscina\",\n  \"valor_override\": 299.90,\n  \"disponivel\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/quartos/{{quartoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "quartos",
+                "{{quartoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar Quarto",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/quartos/{{quartoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "quartos",
+                "{{quartoId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hotel - Reservas",
+      "item": [
+        {
+          "name": "Listar Reservas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "reservas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Reserva por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/reservas/{{reservaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "reservas",
+                "{{reservaId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Reserva Walk-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome_hospede\": \"Maria Souza\",\n  \"cpf_hospede\": \"987.654.321-00\",\n  \"telefone_contato\": \"(11) 99999-8888\",\n  \"quarto_id\": {{quartoId}},\n  \"num_hospedes\": 1,\n  \"data_checkin\": \"2025-06-15\",\n  \"data_checkout\": \"2025-06-17\",\n  \"valor_total\": 299.90,\n  \"observacoes\": \"Hóspede frequente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "reservas"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const d = pm.response.json().data;",
+                  "    pm.collectionVariables.set('reservaId',     d.id);",
+                  "    pm.collectionVariables.set('codigoPublico', d.codigo_publico);",
+                  "    console.log('reservaId:', d.id, '| codigoPublico:', d.codigo_publico);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Atualizar Status da Reserva",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APROVADA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/reservas/{{reservaId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "reservas",
+                "{{reservaId}}",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atribuir Quarto a Reserva",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quarto_id\": {{quartoId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/reservas/{{reservaId}}/quarto",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "reservas",
+                "{{reservaId}}",
+                "quarto"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar Check-in",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/reservas/{{reservaId}}/checkin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "reservas",
+                "{{reservaId}}",
+                "checkin"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar Check-out",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/reservas/{{reservaId}}/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "reservas",
+                "{{reservaId}}",
+                "checkout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hotel - Pagamentos",
+      "item": [
+        {
+          "name": "Gerar Link de Pagamento (InfinitePay)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotel/reservas/{{reservaId}}/pagamentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "reservas",
+                "{{reservaId}}",
+                "pagamentos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar Pagamentos da Reserva",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/reservas/{{reservaId}}/pagamentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "reservas",
+                "{{reservaId}}",
+                "pagamentos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Webhook InfinitePay (simulacao)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoice_slug\": \"abc123xyz\",\n  \"amount\": 39980,\n  \"paid_amount\": 39980,\n  \"installments\": 1,\n  \"capture_method\": \"pix\",\n  \"transaction_nsu\": \"NSU123456\",\n  \"order_nsu\": \"{{codigoPublico}}\",\n  \"receipt_url\": \"https://infinitepay.io/receipt/abc123\",\n  \"items\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pagamentos/webhook/infinitepay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pagamentos",
+                "webhook",
+                "infinitepay"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hotel - Notificacoes",
+      "item": [
+        {
+          "name": "Listar Notificacoes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/notificacoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "notificacoes"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const d = pm.response.json().data;",
+                  "    if (d && d.length > 0) {",
+                  "        pm.collectionVariables.set('notificacaoId', d[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Marcar Notificacao como Lida",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/notificacoes/{{notificacaoId}}/lida",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "notificacoes",
+                "{{notificacaoId}}",
+                "lida"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Marcar Todas como Lidas",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/notificacoes/lida-todas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "notificacoes",
+                "lida-todas"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hotel - FCM",
+      "item": [
+        {
+          "name": "Registrar Token FCM",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcm_token\": \"fMEk39...-dashboard-token\",\n  \"origem\": \"DASHBOARD_WEB\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/dispositivos-fcm/hotel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dispositivos-fcm",
+                "hotel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remover Token FCM",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcm_token\": \"fMEk39...-dashboard-token\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/dispositivos-fcm/hotel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dispositivos-fcm",
+                "hotel"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Publico",
+      "item": [
+        {
+          "name": "GET Reserva por Codigo Publico",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservas/{{codigoPublico}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "{{codigoPublico}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Avaliacoes do Hotel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hotel/{{hotelId}}/avaliacoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotel",
+                "{{hotelId}}",
+                "avaliacoes"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Uploads - Fotos do Hotel",
+      "item": [
+        {
+          "name": "Listar Fotos de Capa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/uploads/hotels/{{hotelId}}/cover",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads",
+                "hotels",
+                "{{hotelId}}",
+                "cover"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const fotos = pm.response.json().fotos;",
+                  "    if (fotos && fotos.length > 0) {",
+                  "        pm.collectionVariables.set('fotoHotelId', fotos[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Servir Foto de Capa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/uploads/hotels/{{hotelId}}/cover/{{fotoHotelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads",
+                "hotels",
+                "{{hotelId}}",
+                "cover",
+                "{{fotoHotelId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Foto de Capa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "foto",
+                  "type": "file",
+                  "src": [],
+                  "description": "Selecione um arquivo JPEG, PNG ou WebP"
+                },
+                {
+                  "key": "orientacao",
+                  "value": "portrait",
+                  "type": "text",
+                  "description": "portrait ou landscape"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/uploads/hotels/{{hotelId}}/cover",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads",
+                "hotels",
+                "{{hotelId}}",
+                "cover"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('fotoHotelId', pm.response.json().foto.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Deletar Foto de Capa",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/uploads/hotels/{{hotelId}}/cover/{{fotoHotelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads",
+                "hotels",
+                "{{hotelId}}",
+                "cover",
+                "{{fotoHotelId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Uploads - Fotos do Quarto",
+      "item": [
+        {
+          "name": "Listar Fotos do Quarto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/uploads/hotels/{{hotelId}}/rooms/{{quartoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads",
+                "hotels",
+                "{{hotelId}}",
+                "rooms",
+                "{{quartoId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const fotos = pm.response.json().fotos;",
+                  "    if (fotos && fotos.length > 0) {",
+                  "        pm.collectionVariables.set('fotoQuartoId', fotos[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Servir Foto do Quarto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/uploads/hotels/{{hotelId}}/rooms/{{quartoId}}/{{fotoQuartoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads",
+                "hotels",
+                "{{hotelId}}",
+                "rooms",
+                "{{quartoId}}",
+                "{{fotoQuartoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Foto do Quarto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "foto",
+                  "type": "file",
+                  "src": [],
+                  "description": "Selecione um arquivo JPEG, PNG ou WebP (max 10 fotos por quarto)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/uploads/hotels/{{hotelId}}/rooms/{{quartoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads",
+                "hotels",
+                "{{hotelId}}",
+                "rooms",
+                "{{quartoId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('fotoQuartoId', pm.response.json().foto.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Deletar Foto do Quarto",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{hotelAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/uploads/hotels/{{hotelId}}/rooms/{{quartoId}}/{{fotoQuartoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads",
+                "hotels",
+                "{{hotelId}}",
+                "rooms",
+                "{{quartoId}}",
+                "{{fotoQuartoId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

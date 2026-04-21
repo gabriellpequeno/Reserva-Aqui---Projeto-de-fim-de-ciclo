@@ -57,7 +57,6 @@ function hashToken(token: string): string {
 }
 
 function refreshExpiresAt(): Date {
-  // 7 dias em ms
   return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 }
 
@@ -70,20 +69,50 @@ const ARGON2_OPTIONS: argon2.Options = {
   parallelism:  process.env.ARGON2_PARALLELISM ? parseInt(process.env.ARGON2_PARALLELISM, 10) : 1,
 };
 
-// ── Funções de Serviço ────────────────────────────────────────────────────────
+// ── Funções Exportadas (Wrappers) ─────────────────────────────────────────────
+
+export async function registerUsuario(input: RegisterUsuarioInput): Promise<UsuarioSafe> {
+  return _registerUsuario(input);
+}
+
+export async function loginUsuario(email: string, senha: string): Promise<{ user: UsuarioSafe; tokens: AuthTokens }> {
+  return _loginUsuario(email, senha);
+}
+
+export async function refreshUsuarioToken(refreshToken: string): Promise<AuthTokens> {
+  return _refreshUsuarioToken(refreshToken);
+}
+
+export async function logoutUsuario(refreshToken: string): Promise<void> {
+  return _logoutUsuario(refreshToken);
+}
+
+export async function getUsuarioById(userId: string): Promise<UsuarioSafe> {
+  return _getUsuarioById(userId);
+}
+
+export async function updateUsuario(userId: string, input: UpdateUsuarioInput): Promise<UsuarioSafe> {
+  return _updateUsuario(userId, input);
+}
+
+export async function changePassword(userId: string, senhaAtual: string, novaSenha: string): Promise<void> {
+  return _changePassword(userId, senhaAtual, novaSenha);
+}
+
+export async function deleteUsuario(userId: string): Promise<void> {
+  return _deleteUsuario(userId);
+}
+
+// ── Funções Privadas (Regras de Negócio) ───────────────────────────────────────
 
 /**
  * Registra um novo usuario.
  * Valida → hash senha → persiste → retorna payload seguro (sem senha).
  */
-export async function registerUsuario(input: RegisterUsuarioInput): Promise<UsuarioSafe> {
-  // 1. Validate business rules
+async function _registerUsuario(input: RegisterUsuarioInput): Promise<UsuarioSafe> {
   Usuario.validate(input);
-
-  // 2. Hash password
   const senhaHash = await argon2.hash(input.senha, ARGON2_OPTIONS);
 
-  // 3. Persist
   const { rows } = await masterPool.query<UsuarioSafe>(
     `INSERT INTO usuario (nome_completo, email, senha, cpf, data_nascimento, numero_celular)
      VALUES ($1, $2, $3, $4, $5, $6)
@@ -105,7 +134,7 @@ export async function registerUsuario(input: RegisterUsuarioInput): Promise<Usua
  * Autentica um usuario e emite access + refresh tokens.
  * Mensagem de erro genérica — nunca distingue "usuário não existe" de "senha errada".
  */
-export async function loginUsuario(
+async function _loginUsuario(
   email: string,
   senha: string,
 ): Promise<{ user: UsuarioSafe; tokens: AuthTokens }> {
@@ -116,23 +145,18 @@ export async function loginUsuario(
 
   const user = rows[0];
 
-  // Timing-safe: always verify even if user not found (dummy hash prevents timing leak)
   const senhaCorreta =
     user
       ? await argon2.verify(user.senha, senha)
       : (await argon2.hash('dummy_to_prevent_timing_attack', ARGON2_OPTIONS), false);
 
-  if (!user || !senhaCorreta)
-    throw new Error('Credenciais inválidas');
+  if (!user || !senhaCorreta) throw new Error('Credenciais inválidas');
 
-  // Strip senha before using user object
   const { senha: _, ...safeUser } = user;
 
-  // Issue tokens
   const accessToken  = signAccessToken({ user_id: safeUser.user_id, email: safeUser.email });
   const refreshToken = signRefreshToken({ user_id: safeUser.user_id });
 
-  // Persist refresh token hash
   await masterPool.query(
     `INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
      VALUES ($1, $2, $3)`,
@@ -146,10 +170,9 @@ export async function loginUsuario(
  * Renova o access token com um refresh token válido.
  * Invalida o token antigo (rotation) e emite um novo par.
  */
-export async function refreshUsuarioToken(
+async function _refreshUsuarioToken(
   refreshToken: string,
 ): Promise<AuthTokens> {
-  // Verify signature + expiry
   let payload: { user_id: string };
   try {
     payload = jwt.verify(refreshToken, JWT_SECRET) as { user_id: string };
@@ -159,7 +182,6 @@ export async function refreshUsuarioToken(
 
   const tokenHash = hashToken(refreshToken);
 
-  // Check token exists in DB (not revoked)
   const { rows } = await masterPool.query(
     `SELECT id FROM refresh_tokens WHERE token_hash = $1 AND expires_at > NOW()`,
     [tokenHash],
@@ -167,10 +189,8 @@ export async function refreshUsuarioToken(
 
   if (!rows[0]) throw new Error('Refresh token inválido ou expirado');
 
-  // Revoke old token (rotation)
   await masterPool.query(`DELETE FROM refresh_tokens WHERE token_hash = $1`, [tokenHash]);
 
-  // Fetch user (may have been deactivated since last login)
   const { rows: userRows } = await masterPool.query<UsuarioSafe>(
     `SELECT user_id, email FROM usuario WHERE user_id = $1 AND ativo = TRUE`,
     [payload.user_id],
@@ -180,7 +200,6 @@ export async function refreshUsuarioToken(
 
   const { user_id, email } = userRows[0];
 
-  // Issue new pair
   const newAccessToken  = signAccessToken({ user_id, email });
   const newRefreshToken = signRefreshToken({ user_id });
 
@@ -195,9 +214,8 @@ export async function refreshUsuarioToken(
 
 /**
  * Logout: revoga o refresh token no servidor.
- * O access token expira naturalmente no cliente.
  */
-export async function logoutUsuario(refreshToken: string): Promise<void> {
+async function _logoutUsuario(refreshToken: string): Promise<void> {
   await masterPool.query(
     `DELETE FROM refresh_tokens WHERE token_hash = $1`,
     [hashToken(refreshToken)],
@@ -207,7 +225,7 @@ export async function logoutUsuario(refreshToken: string): Promise<void> {
 /**
  * Retorna o perfil do usuario autenticado (sem senha).
  */
-export async function getUsuarioById(userId: string): Promise<UsuarioSafe> {
+async function _getUsuarioById(userId: string): Promise<UsuarioSafe> {
   const { rows } = await masterPool.query<UsuarioSafe>(
     `SELECT user_id, nome_completo, email, cpf, data_nascimento, numero_celular, criado_em, ativo
      FROM usuario
@@ -220,14 +238,12 @@ export async function getUsuarioById(userId: string): Promise<UsuarioSafe> {
 }
 
 /**
- * Atualiza dados não-sensíveis do usuario (nome, celular, data_nascimento, email).
- * Nunca atualiza senha aqui — use changePassword para isso.
+ * Atualiza dados não-sensíveis do usuario.
  */
-export async function updateUsuario(
+async function _updateUsuario(
   userId: string,
   input: UpdateUsuarioInput,
 ): Promise<UsuarioSafe> {
-  // Validate only present fields
   Usuario.validatePartial(input);
 
   const fields: string[] = [];
@@ -256,10 +272,8 @@ export async function updateUsuario(
 
 /**
  * Troca a senha do usuario.
- * Exige a senha atual para confirmar identidade.
- * Revoga todos os refresh tokens ao trocar (forçar re-login).
  */
-export async function changePassword(
+async function _changePassword(
   userId: string,
   senhaAtual: string,
   novaSenha: string,
@@ -283,15 +297,13 @@ export async function changePassword(
     [novaSenhaHash, userId],
   );
 
-  // Revoke all refresh tokens — force re-login on all devices
   await masterPool.query(`DELETE FROM refresh_tokens WHERE user_id = $1`, [userId]);
 }
 
 /**
- * Desativa a conta do usuario (soft delete: ativo = FALSE).
- * Revoga todos os refresh tokens imediatamente.
+ * Desativa a conta do usuario.
  */
-export async function deleteUsuario(userId: string): Promise<void> {
+async function _deleteUsuario(userId: string): Promise<void> {
   const { rowCount } = await masterPool.query(
     `UPDATE usuario SET ativo = FALSE WHERE user_id = $1 AND ativo = TRUE`,
     [userId],
@@ -299,6 +311,5 @@ export async function deleteUsuario(userId: string): Promise<void> {
 
   if (!rowCount) throw new Error('Usuário não encontrado');
 
-  // Revoke all tokens immediately
   await masterPool.query(`DELETE FROM refresh_tokens WHERE user_id = $1`, [userId]);
 }

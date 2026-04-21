@@ -15,12 +15,12 @@ export class Usuario {
 
   // ── Validators ───────────────────────────────────────────────────────────────
 
-  static validateEmail(email: string): void {
+  private static validateEmail(email: string): void {
     if (!email.includes('@') || !email.includes('.com'))
       throw new Error('Email inválido: deve conter @ e .com');
   }
 
-  static validateSenha(senha: string): void {
+  private static validateSenha(senha: string): void {
     const ok =
       /[A-Z]/.test(senha) &&
       /[a-z]/.test(senha) &&
@@ -30,18 +30,18 @@ export class Usuario {
       throw new Error('Senha fraca: requer letra maiúscula, minúscula, @ e número');
   }
 
-  static validateCpf(cpf: string): void {
+  private static validateCpf(cpf: string): void {
     const digits = cpf.replace(/\D/g, '');
     if (!/^\d{11}$/.test(digits))
       throw new Error('CPF inválido: deve conter 11 dígitos');
   }
 
-  static validateDataNascimento(data: string): void {
+  private static validateDataNascimento(data: string): void {
     if (!/^\d{2}\/\d{2}\/\d{4}$/.test(data))
       throw new Error('Data de nascimento inválida: formato esperado dd/mm/aaaa');
   }
 
-  static validateCelular(cel: string): void {
+  private static validateCelular(cel: string): void {
     // Aceita: (xx) x xxxx-xxxx ou (xx) xxxxx-xxxx
     if (!/^\(\d{2}\) \d{4,5}-\d{4}$/.test(cel))
       throw new Error('Celular inválido: formato esperado (xx) xxxx-xxxx ou (xx) xxxxx-xxxx');

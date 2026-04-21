@@ -9,6 +9,11 @@ import {
   changePasswordController,
   deleteMeController,
 } from '../controllers/usuario.controller';
+import {
+  listFavoritosController,
+  addFavoritoController,
+  removeFavoritoController,
+} from '../controllers/favorito.controller';
 import { loginRateLimiter } from '../middlewares/rateLimiter';
 import { authGuard } from '../middlewares/authGuard';
 import { requireFields } from '../middlewares/validateBody';
@@ -61,5 +66,11 @@ router.post(
   requireFields('senhaAtual', 'novaSenha'),
   changePasswordController
 );
+
+// ── Favoritos ─────────────────────────────────────────────────────────────────
+
+router.get('/favoritos',             authGuard, listFavoritosController);
+router.post('/favoritos',            authGuard, requireFields('hotel_id'), addFavoritoController);
+router.delete('/favoritos/:hotel_id', authGuard, removeFavoritoController);
 
 export default router;

@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-// O RagService será implementado na Fase 4, por enquanto vamos dar um echo ou apenas logar
-import { masterPool } from '../database/masterDb';
-// import { RagService } from '../services/rag.service';
-import { WhatsAppService } from '../services/whatsapp.service';
+import {
+  logUnsupportedMessageType,
+  processIncomingTextMessage,
+} from '../services/whatsappWebhook.service';
 
 export class WhatsAppController {
   
@@ -35,83 +35,59 @@ export class WhatsAppController {
    */
   public static async receiveMessage(req: Request, res: Response): Promise<void> {
     const body = req.body;
+    const changeValue = body?.entry?.[0]?.changes?.[0]?.value;
 
     // Log seguro: nunca expor payload completo em produção
     if (process.env.NODE_ENV === 'development') {
-      console.log('[WEBHOOK] Payload recebido de:', body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from ?? 'status-event');
+      console.log('[WEBHOOK] Payload recebido de:', changeValue?.messages?.[0]?.from ?? 'status-event');
     }
 
     // Verifica se é um evento da API do WhatsApp
     if (body.object) {
-      if (
-        body.entry &&
-        body.entry[0].changes &&
-        body.entry[0].changes[0] &&
-        body.entry[0].changes[0].value.messages &&
-        body.entry[0].changes[0].value.messages[0]
-      ) {
-        const message = body.entry[0].changes[0].value.messages[0];
-        const fromNumber = message.from; // Número do cliente
-        const messageType = message.type;
+      const message = changeValue?.messages?.[0];
 
-        // Vamos extrair o texto, ignorando por hora áudios ou imagens
-        if (messageType === 'text') {
-          const incomingText = message.text.body;
-          console.log(`Nova mensagem de ${fromNumber}: ${incomingText}`);
-
-          // Responde 200 PRAZO CURTO para a Meta não achar que deu Timeout (Regra crítica)
-          res.sendStatus(200);
-
-          try {
-            // [SEMANA 1]: Logar mensagens no banco usando sessao_chat e mensagem_chat
-            let sessionId: string | null = null;
-            
-            // 1. Busca uma sessão com status ABERTA para o celular que chamou
-            const checkSession = await masterPool.query(
-              `SELECT id FROM sessao_chat WHERE canal = 'WHATSAPP' AND identificador_externo = $1 AND status = 'ABERTA' LIMIT 1`,
-              [fromNumber]
-            );
-
-            if (checkSession.rows.length > 0) {
-              sessionId = checkSession.rows[0].id; // Já existe conversa
-            } else {
-              // 2. Cria nova sessão caso seja a primeira vez ou a anterior já foi fechada
-              const newSession = await masterPool.query(
-                `INSERT INTO sessao_chat (canal, identificador_externo) VALUES ('WHATSAPP', $1) RETURNING id`,
-                [fromNumber]
-              );
-              sessionId = newSession.rows[0].id;
-              console.log(`🆕 Nova Sessão de Chat Criada: ${sessionId}`);
-            }
-
-            // 3. Grava a mensagem do hóspede/cliente na tabela de mensagens daquela sessão
-            await masterPool.query(
-              `INSERT INTO mensagem_chat (sessao_chat_id, origem, conteudo) VALUES ($1, 'CLIENTE', $2)`,
-              [sessionId, incomingText]
-            );
-
-            console.log(`💾 [Database] Mensagem registrada com sucesso na base de dados!`);
-
-            // 4. Enviar Echo de Recebimento provisório para testar infraestrutura Node -> Meta
-            await WhatsAppService.sendText(
-              fromNumber,
-              `🤖 Olá! Sua mensagem "${incomingText}" foi gravada com sucesso em nosso banco de dados. Nosso assistente inteligente será ligado em breve!`
-            );
-            
-            // (Aqui na Fase 4, o RAG interceptará e o Echo sumirá)
-            // const respostaIA = await RagService.processText(fromNumber, incomingText);
-            // await WhatsAppService.sendText(fromNumber, respostaIA);
-
-          } catch (error) {
-             console.error("❌ Erro no processamento do Banco ou Meta API:", error);
-          }
-        } else {
-          // Mensagem ignorada (não é texto)
-          res.sendStatus(200);
-        }
-      } else {
+      if (!message) {
         // Evento de Status (entregue, lida, falha) e não de Mensagem Nova
         res.sendStatus(200);
+        return;
+      }
+
+      const fromNumber = message.from;
+      const messageType = message.type;
+      const phoneNumberId = changeValue?.metadata?.phone_number_id;
+      const configuredPhoneNumberId = process.env.WHATSAPP_PHONE_ID;
+
+      // Responde 200 PRAZO CURTO para a Meta não achar que deu Timeout (Regra crítica)
+      res.sendStatus(200);
+
+      if (!fromNumber) {
+        console.warn('[WhatsApp] Payload sem número de origem; evento ignorado.');
+        return;
+      }
+
+      if (messageType !== 'text') {
+        logUnsupportedMessageType(messageType, fromNumber);
+        return;
+      }
+
+      const incomingText = typeof message.text?.body === 'string' ? message.text.body.trim() : '';
+      if (!incomingText) {
+        console.warn(`[WhatsApp] Mensagem de texto vazia recebida de ${fromNumber}; evento ignorado.`);
+        return;
+      }
+
+      if (configuredPhoneNumberId && phoneNumberId && phoneNumberId !== configuredPhoneNumberId) {
+        console.warn(`[WhatsApp] phone_number_id inesperado recebido: ${phoneNumberId}. Evento ignorado.`);
+        return;
+      }
+
+      try {
+        await processIncomingTextMessage({
+          fromNumber,
+          incomingText,
+        });
+      } catch (error) {
+        console.error('❌ Erro no processamento do Banco ou Meta API:', error);
       }
     } else {
       res.sendStatus(404);

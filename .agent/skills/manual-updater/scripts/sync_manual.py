@@ -13,7 +13,7 @@ def scan_folder(folder_path):
 def main():
     # Asumimos que o cwd será a raiz (PROJETO DE CICLO)
     base_dir = os.path.join(os.getcwd(), '.agent')
-    manual_path = os.path.join(os.getcwd(), 'DOT_AGENTS_MANUAL.md')
+    manual_path = os.path.join(os.getcwd(), 'Documantation', 'dot-agents-manual.md')
     
     content = ""
     if os.path.exists(manual_path):
@@ -26,7 +26,7 @@ def main():
         'workflows': os.path.join(base_dir, 'workflows')
     }
 
-    print("=== Relatório de Sincronização: DOT_AGENTS_MANUAL ===\n")
+    print("=== Relatório de Sincronização: dot-agents-manual ===\n")
 
     all_found_names = []
     for cat_name, folder_path in folders_to_scan.items():
@@ -51,7 +51,7 @@ def main():
     print("--- Verificação Reversa (Itens no Manual que não existem mais no sistema) ---")
     print("ALL SYSTEM ITEMS: " + ", ".join(all_found_names))
     print("\n[!] INSTRUÇÃO AO AGENTE:")
-    print("Leia o DOT_AGENTS_MANUAL.md. Se existir alguma ferramenta/skill documentada lá que NÃO está na lista 'ALL SYSTEM ITEMS' acima, APAGUE-A do manual, pois foi removida do sistema.")
+    print("Leia o ./Documantation/dot-agents-manual.md. Se existir alguma ferramenta/skill documentada lá que NÃO está na lista 'ALL SYSTEM ITEMS' acima, APAGUE-A do manual, pois foi removida do sistema.")
 
 if __name__ == "__main__":
     main()

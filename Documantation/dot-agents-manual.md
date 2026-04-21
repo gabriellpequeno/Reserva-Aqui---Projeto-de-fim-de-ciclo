@@ -1,8 +1,8 @@
-# DOT_AGENTS_MANUAL.md
+# dot-agents-manual.md
 
 ## 1. Visão Geral
 
-Este documento serve como a documentação central e unificada para todo o ecossistema operando na pasta `.agent/`. Ele detalha em profundidade o limite de atuação, os propósitos, dependências e modos de uso de todos os agentes especialistas, skills de módulos de conhecimento, workflows operacionais e scripts validadores presentes no Antigravity Kit instanciado neste projeto.
+Este documento serve como a documentação central e unificada para todo o ecossistema operando na pasta `.agent/`. Ele detalha em profundidade o limite de atuação, os propósitos, dependências e modos de uso de todos os agentes especialistas, skills de módulos de conhecimento, workflows operacionais e scripts validadores presentes no Antigravity Kit instanciado neste projeto. 
 
 ## 2. Estrutura de Diretórios
 

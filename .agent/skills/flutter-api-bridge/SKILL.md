@@ -129,7 +129,7 @@ Before writing anything:
 //   Makes N+1 requests where N = number of results from the first call.
 //
 // USAGE EXAMPLE:
-//   await functionName(
+//   await Namespace.functionName(
 //     param: 'value',
 //     onSuccess: (data) => print(data),
 //     onError: (msg) => logError(msg),
@@ -140,13 +140,15 @@ Before writing anything:
 ### Single-endpoint function template
 
 ```dart
-Future<void> functionName({
-  required String param1,
-  String? optionalParam,
-  required void Function(Map<String, dynamic> data) onSuccess,
-  required void Function(String message) onError,
-}) async {
-  // Client-side format validation before making request
+// FUNÇÕES DEVEM SER AGRUPADAS EM CLASSES DE NAMESPACE ESTÁTICOS
+class Namespace {
+  static Future<void> functionName({
+    required String param1,
+    String? optionalParam,
+    required void Function(Map<String, dynamic> data) onSuccess,
+    required void Function(String message) onError,
+  }) async {
+    // Client-side format validation before making request
   if (param1.isEmpty) {
     onError('O parâmetro não pode ser vazio.');
     return;
@@ -195,12 +197,12 @@ Future<void> functionName({
 ### GET with query parameters
 
 ```dart
-Future<void> listItems({
-  String? cidade,
-  required void Function(List<Map<String, dynamic>> items) onSuccess,
-  required void Function(String message) onError,
-}) async {
-  try {
+  static Future<void> listItems({
+    String? cidade,
+    required void Function(List<Map<String, dynamic>> items) onSuccess,
+    required void Function(String message) onError,
+  }) async {
+    try {
     final response = await _dio.get<List<dynamic>>(
       '/path/to/endpoint',
       queryParameters: {
@@ -221,13 +223,13 @@ Future<void> listItems({
 ### Composed function (multiple API calls)
 
 ```dart
-Future<void> listHoteisComSuiteNoRio({
-  String? cidade,
-  bool? somenteDisponivel,
-  required void Function(List<Map<String, dynamic>> items) onSuccess,
-  required void Function(String message) onError,
-}) async {
-  try {
+  static Future<void> listHoteisComSuiteNoRio({
+    String? cidade,
+    bool? somenteDisponivel,
+    required void Function(List<Map<String, dynamic>> items) onSuccess,
+    required void Function(String message) onError,
+  }) async {
+    try {
     // Step 1: list hotels, optionally filter by city client-side
     final hotelsRes = await _dio.get<List<dynamic>>('/hotel/catalogo');
     final hotels = (hotelsRes.data ?? []).cast<Map<String, dynamic>>();
@@ -412,6 +414,7 @@ Tell the developer:
 
 ## Code quality rules
 
+- **Namespacing** — ALWAYS group functions inside classes with static methods based on their context (`class Usuario`, `class Hotel`, `class Catalogo`). NEVER create global functions.
 - **Stateless/Interceptor** — no explicit tokens passed to functions. The auto-refresh interceptor handles authentication headers behind the scenes.
 - **Callback Pattern** — ALWAYS use `onSuccess(...)` and `onError(String message)`. NO try-catch blocks in the UI. Functions catch all `DioException`s and map status codes to user-friendly messages for `onError`.
 - **camelCase params, snake_case JSON** — map them explicitly inside the function body

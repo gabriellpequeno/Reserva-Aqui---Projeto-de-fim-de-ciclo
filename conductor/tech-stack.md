@@ -15,7 +15,7 @@
 | Framework | Express |
 | Banco de dados | PostgreSQL (via `pg` driver) |
 | Autenticação | JWT com refresh token |
-| Hashing de senha | `bcrypt` |
+| Hashing de senha | `argon2id` |
 | IDs únicos | `uuid` |
 | Variáveis de ambiente | `dotenv` |
 

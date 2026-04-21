@@ -101,10 +101,29 @@ CREATE TABLE IF NOT EXISTS mensagem_chat (
     sessao_chat_id  UUID            NOT NULL REFERENCES sessao_chat(id) ON DELETE CASCADE,
     origem          VARCHAR(20)     NOT NULL, -- 'CLIENTE', 'BOT_SISTEMA', 'ATENDENTE'
     conteudo        TEXT            NOT NULL,
+    tipo_mensagem   VARCHAR(20)     NOT NULL DEFAULT 'TEXT',
+    meta_message_id VARCHAR(100),
+    meta_status     VARCHAR(30),
+    metadata_json   JSONB,
     criado_em       TIMESTAMPTZ     NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE IF EXISTS mensagem_chat
+    ADD COLUMN IF NOT EXISTS tipo_mensagem VARCHAR(20) NOT NULL DEFAULT 'TEXT';
+
+ALTER TABLE IF EXISTS mensagem_chat
+    ADD COLUMN IF NOT EXISTS meta_message_id VARCHAR(100);
+
+ALTER TABLE IF EXISTS mensagem_chat
+    ADD COLUMN IF NOT EXISTS meta_status VARCHAR(30);
+
+ALTER TABLE IF EXISTS mensagem_chat
+    ADD COLUMN IF NOT EXISTS metadata_json JSONB;
+
 CREATE INDEX IF NOT EXISTS idx_msg_sessao ON mensagem_chat (sessao_chat_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_mensagem_chat_meta_message_id
+    ON mensagem_chat (meta_message_id)
+    WHERE meta_message_id IS NOT NULL;
 
 -- 5. Roteamento de Reservas Públicas (Walk-in / WhatsApp)
 --    Mapeia o codigo_publico → hotel_id + schema_name, permitindo ao backend

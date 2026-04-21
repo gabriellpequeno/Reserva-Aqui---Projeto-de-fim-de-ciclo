@@ -4,6 +4,7 @@ import { setQuartoDisponivel } from './quarto.service';
 import { creditarCheckout, debitarTaxaWalkin } from './saldo.service';
 import { sendPush, getHotelTokens, getUserTokens } from './fcm.service';
 import { insertNotificacao } from './notificacaoHotel.service';
+import { sendApprovedReservationConfirmation } from './whatsappReservation.service';
 import {
   Reserva,
   ReservaSafe,
@@ -528,6 +529,12 @@ async function _updateStatus(
           payload:  { reserva_id: atualizada.id, codigo_publico: atualizada.codigo_publico },
         }),
       ]).catch(() => {});
+    }
+
+    if (input.status === 'APROVADA' && reserva.status !== 'APROVADA') {
+      Promise.resolve()
+        .then(() => sendApprovedReservationConfirmation({ hotelId, reservaId: atualizada.id }))
+        .catch(() => {});
     }
 
     return atualizada;

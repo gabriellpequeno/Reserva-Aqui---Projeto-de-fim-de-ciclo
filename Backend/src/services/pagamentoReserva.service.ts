@@ -4,6 +4,7 @@ import { withTenant } from '../database/schemaWrapper';
 import { sendPush, getHotelTokens, getUserTokens } from './fcm.service';
 import { insertNotificacao } from './notificacaoHotel.service';
 import { setQuartoDisponivel } from './quarto.service';
+import { sendApprovedReservationConfirmation } from './whatsappReservation.service';
 import {
   PagamentoReserva,
   PagamentoReservaSafe,
@@ -409,5 +410,9 @@ async function _handleWebhook(payload: InfinitePayWebhookPayload): Promise<void>
           )
         : Promise.resolve(),
     ]).catch(() => {});
+
+    Promise.resolve()
+      .then(() => sendApprovedReservationConfirmation({ hotelId: hotel_id, reservaId: reserva.id }))
+      .catch(() => {});
   });
 }

@@ -1,328 +1,202 @@
-# Project Workflow
+# Workflow — ReservAqui
 
-## Guiding Principles
+## Pipeline de Desenvolvimento
 
-1. **The Plan is the Source of Truth:** All work must be tracked in `plan.md`
-2. **The Tech Stack is Deliberate:** Changes to the tech stack must be documented in `tech-stack.md` *before* implementation
-3. **Test-Driven Development:** Write unit tests before implementing functionality
-4. **High Code Coverage:** Aim for >90% code coverage for all modules
-5. **User Experience First:** Every decision should prioritize user experience
-6. **Non-Interactive & CI-Aware:** Prefer non-interactive commands. Use `CI=true` for watch-mode tools (tests, linters) to ensure single execution.
+Todo trabalho no projeto segue este fluxo em ordem. Não pule etapas.
 
-## Task Workflow
-
-All tasks follow a strict lifecycle:
-
-### Standard Task Workflow
-
-1. **Select Task:** Choose the next available task from `plan.md` in sequential order
-
-2. **Mark In Progress:** Before beginning work, edit `plan.md` and change the task from `[ ]` to `[~]`
-
-3. **Write Failing Tests (Red Phase):**
-   - Create a new test file for the feature or bug fix.
-   - Write one or more unit tests that clearly define the expected behavior and acceptance criteria for the task.
-   - **CRITICAL:** Run the tests and confirm that they fail as expected. This is the "Red" phase of TDD. Do not proceed until you have failing tests.
-
-4. **Implement to Pass Tests (Green Phase):**
-   - Write the minimum amount of application code necessary to make the failing tests pass.
-   - Run the test suite again and confirm that all tests now pass. This is the "Green" phase.
-
-5. **Refactor (Optional but Recommended):**
-   - With the safety of passing tests, refactor the implementation code and the test code to improve clarity, remove duplication, and enhance performance without changing the external behavior.
-   - Rerun tests to ensure they still pass after refactoring.
-
-6. **Verify Coverage:** Run coverage reports using the project's chosen tools. For example, in a Python project, this might look like:
-   ```bash
-   pytest --cov=app --cov-report=html
-   ```
-   Target: >90% coverage for new code. The specific tools and commands will vary by language and framework.
-
-7. **Document Deviations:** If implementation differs from tech stack:
-   - **STOP** implementation
-   - Update `tech-stack.md` with new design
-   - Add dated note explaining the change
-   - Resume implementation
-
-8. **Commit Code Changes:**
-   - Stage all code changes related to the task.
-   - Propose a clear, concise commit message e.g, `feat(ui): Create basic HTML structure for calculator`.
-   - Perform the commit.
-
-9. **Include Task Summary in Commit Message:**
-   - When proposing the commit message, ensure the body of the message contains a detailed summary for the completed task.
-   - This should include the task name, a summary of changes, a list of all created/modified files, and the core "why" for the change.
-
-10. **Get and Record Task Commit SHA:**
-    - **Step 10.1: Update Plan:** Read `plan.md`, find the line for the completed task, update its status from `[~]` to `[x]`, and append the first 7 characters of the *just-completed commit's* commit hash.
-    - **Step 10.2: Write Plan:** Write the updated content back to `plan.md`.
-
-11. **Commit Plan Update:**
-    - **Action:** Stage the modified `plan.md` file.
-    - **Action:** Commit this change with a descriptive message (e.g., `conductor(plan): Mark task 'Create user model' as complete`).
-
-### Phase Completion Verification and Checkpointing Protocol
-
-**Trigger:** This protocol is executed immediately after a task is completed that also concludes a phase in `plan.md`.
-
-1.  **Announce Protocol Start:** Inform the user that the phase is complete and the verification and checkpointing protocol has begun.
-
-2.  **Ensure Test Coverage for Phase Changes:**
-    -   **Step 2.1: Determine Phase Scope:** To identify the files changed in this phase, you must first find the starting point. Read `plan.md` to find the Git commit SHA of the *previous* phase's checkpoint. If no previous checkpoint exists, the scope is all changes since the first commit.
-    -   **Step 2.2: List Changed Files:** Execute `git diff --name-only <previous_checkpoint_sha> HEAD` to get a precise list of all files modified during this phase.
-    -   **Step 2.3: Verify and Create Tests:** For each file in the list:
-        -   **CRITICAL:** First, check its extension. Exclude non-code files (e.g., `.json`, `.md`, `.yaml`).
-        -   For each remaining code file, verify a corresponding test file exists.
-        -   If a test file is missing, you **must** create one. Before writing the test, **first, analyze other test files in the repository to determine the correct naming convention and testing style.** The new tests **must** validate the functionality described in this phase's tasks (`plan.md`).
-
-3.  **Execute Automated Tests with Proactive Debugging:**
-    -   Before execution, you **must** announce the exact shell command you will use to run the tests.
-    -   **Example Announcement:** "I will now run the automated test suite to verify the phase. **Command:** `CI=true npm test`"
-    -   Execute the announced command.
-    -   If tests fail, you **must** inform the user and begin debugging. You may attempt to propose a fix a **maximum of two times**. If the tests still fail after your second proposed fix, you **must stop**, report the persistent failure, and ask the user for guidance.
-
-4.  **Propose a Detailed, Actionable Manual Verification Plan:**
-    -   **CRITICAL:** To generate the plan, first analyze `product.md`, `product-guidelines.md`, and `plan.md` to determine the user-facing goals of the completed phase.
-    -   You **must** generate a step-by-step plan that walks the user through the verification process, including any necessary commands and specific, expected outcomes.
-    -   The plan you present to the user **must** follow this format:
-
-        **For a Frontend Change:**
-        ```
-        The automated tests have passed. For manual verification, please follow these steps:
-
-        **Manual Verification Steps:**
-        1.  **Start the development server with the command:** `npm run dev`
-        2.  **Open your browser to:** `http://localhost:3000`
-        3.  **Confirm that you see:** The new user profile page, with the user's name and email displayed correctly.
-        ```
-
-        **For a Backend Change:**
-        ```
-        The automated tests have passed. For manual verification, please follow these steps:
-
-        **Manual Verification Steps:**
-        1.  **Ensure the server is running.**
-        2.  **Execute the following command in your terminal:** `curl -X POST http://localhost:8080/api/v1/users -d '{"name": "test"}'`
-        3.  **Confirm that you receive:** A JSON response with a status of `201 Created`.
-        ```
-
-5.  **Await Explicit User Feedback:**
-    -   After presenting the detailed plan, ask the user for confirmation: "**Does this meet your expectations? Please confirm with yes or provide feedback on what needs to be changed.**"
-    -   **PAUSE** and await the user's response. Do not proceed without an explicit yes or confirmation.
-
-6.  **Create Checkpoint Commit:**
-    -   Stage all changes. If no changes occurred in this step, proceed with an empty commit.
-    -   Perform the commit with a clear and concise message (e.g., `conductor(checkpoint): Checkpoint end of Phase X`).
-
-7.  **Include Auditable Verification Report in Checkpoint Commit:**
-    -   **Step 7.1: Draft Report Content:** Create a detailed verification report including the automated test command, the manual verification steps, and the user's confirmation.
-    -   **Step 7.2: Include in Commit:** Include this report in the body of the checkpoint commit message.
-
-8.  **Get and Record Phase Checkpoint SHA:**
-    -   **Step 8.1: Get Commit Hash:** Obtain the hash of the *just-created checkpoint commit* (`git log -1 --format="%H"`).
-    -   **Step 8.2: Update Plan:** Read `plan.md`, find the heading for the completed phase, and append the first 7 characters of the commit hash in the format `[checkpoint: <sha>]`.
-    -   **Step 8.3: Write Plan:** Write the updated content back to `plan.md`.
-
-9. **Commit Plan Update:**
-    - **Action:** Stage the modified `plan.md` file.
-    - **Action:** Commit this change with a descriptive message following the format `conductor(plan): Mark phase '<PHASE NAME>' as complete`.
-
-10.  **Announce Completion:** Inform the user that the phase is complete and the checkpoint has been created, with the detailed verification report attached as a git note.
-
-### Quality Gates
-
-Before marking any task complete, verify:
-
-- [ ] All tests pass
-- [ ] Code coverage meets requirements (>90%)
-- [ ] Code follows project's code style guidelines (as defined in `code_styleguides/`)
-- [ ] All public functions/methods are documented (e.g., docstrings, JSDoc, GoDoc)
-- [ ] Type safety is enforced (e.g., type hints, TypeScript types, Go types)
-- [ ] No linting or static analysis errors (using the project's configured tools)
-- [ ] Works correctly on mobile (if applicable)
-- [ ] Documentation updated if needed
-- [ ] No security vulnerabilities introduced
-
-## Development Commands
-
-**AI AGENT INSTRUCTION: This section should be adapted to the project's specific language, framework, and build tools.**
-
-### Setup
-```bash
-# Example: Commands to set up the development environment (e.g., install dependencies, configure database)
-# e.g., for a Node.js project: npm install
-# e.g., for a Go project: go mod tidy
+```
+product.md → prd.md → features/*.prd.md → specs/*.spec.md → plan.md → código → commit → PR
 ```
 
-### Daily Development
-```bash
-# Example: Commands for common daily tasks (e.g., start dev server, run tests, lint, format)
-# e.g., for a Node.js project: npm run dev, npm test, npm run lint
-# e.g., for a Go project: go run main.go, go test ./..., go fmt ./...
+| Etapa | Arquivo | Quando criar |
+|-------|---------|-------------|
+| Project Brief | `conductor/product.md` | Dia zero — já existe |
+| PRD do Produto | `conductor/prd.md` | Antes de qualquer implementação — já existe |
+| PRD de Feature | `conductor/features/{feature}.prd.md` | Ao decidir implementar uma feature grande |
+| Spec Técnica | `conductor/specs/{feature}.spec.md` | Após PRD de Feature aprovado |
+| Plan | `conductor/plan.md` | Após primeira Spec — atualizado continuamente |
+| Implement | código-fonte | Ao pegar uma task `[ ]` do plan |
+| Commit | git | Ao concluir uma task |
+| PR | GitHub | Ao concluir uma fase do plan |
+
+---
+
+## Quando criar um PRD de Feature?
+
+Crie sempre que a feature envolver:
+- Mais de 3 arquivos de código
+- Interação com serviço externo (Meta, Gemini, InfinitePay, etc.)
+- Mudança no banco de dados
+- Nova tela no app
+
+**Não precisa** para: correção de bug, refatoração, ajuste visual simples.
+
+---
+
+## Ciclo de uma Task
+
+```
+1. Abra plan.md → escolha a próxima task [ ] em ordem
+2. Mude para [~] (em progresso)
+3. Leia a spec da feature antes de codar
+4. Implemente o mínimo necessário para completar a task
+5. Teste manualmente o fluxo afetado
+6. Mude para [x] + hash do commit
+7. Faça o commit
 ```
 
-### Before Committing
+---
+
+## Comandos do Projeto
+
+### Frontend (Flutter)
 ```bash
-# Example: Commands to run all pre-commit checks (e.g., format, lint, type check, run tests)
-# e.g., for a Node.js project: npm run check
-# e.g., for a Go project: make check (if a Makefile exists)
+# Instalar dependências
+flutter pub get
+
+# Rodar no Chrome (web)
+flutter run -d chrome
+
+# Rodar no emulador/dispositivo
+flutter run
+
+# Build web
+flutter build web
+
+# Analisar código
+flutter analyze
+
+# Formatar código
+dart format .
 ```
 
-## Testing Requirements
+### Backend (Node.js)
+```bash
+# Instalar dependências
+npm install
 
-### Unit Testing
-- Every module must have corresponding tests.
-- Use appropriate test setup/teardown mechanisms (e.g., fixtures, beforeEach/afterEach).
-- Mock external dependencies.
-- Test both success and failure cases.
+# Rodar em desenvolvimento (com hot reload)
+npm run dev
 
-### Integration Testing
-- Test complete user flows
-- Verify database transactions
-- Test authentication and authorization
-- Check form submissions
+# Build TypeScript
+npm run build
 
-### Mobile Testing
-- Test on actual iPhone when possible
-- Use Safari developer tools
-- Test touch interactions
-- Verify responsive layouts
-- Check performance on 3G/4G
+# Rodar em produção
+npm start
 
-## Code Review Process
+# Lint
+npm run lint
 
-### Self-Review Checklist
-Before requesting review:
+# Testes
+npm test
+```
 
-1. **Functionality**
-   - Feature works as specified
-   - Edge cases handled
-   - Error messages are user-friendly
+### Infraestrutura (Docker)
+```bash
+# Subir todos os serviços
+docker-compose up -d
 
-2. **Code Quality**
-   - Follows style guide
-   - DRY principle applied
-   - Clear variable/function names
-   - Appropriate comments
+# Subir e rebuildar
+docker-compose up -d --build
 
-3. **Testing**
-   - Unit tests comprehensive
-   - Integration tests pass
-   - Coverage adequate (>90%)
+# Ver logs
+docker-compose logs -f
 
-4. **Security**
-   - No hardcoded secrets
-   - Input validation present
-   - SQL injection prevented
-   - XSS protection in place
+# Parar tudo
+docker-compose down
+```
 
-5. **Performance**
-   - Database queries optimized
-   - Images optimized
-   - Caching implemented where needed
-
-6. **Mobile Experience**
-   - Touch targets adequate (44x44px)
-   - Text readable without zooming
-   - Performance acceptable on mobile
-   - Interactions feel native
+---
 
 ## Commit Guidelines
 
-### Message Format
+### Formato
 ```
-<type>(<scope>): <description>
+<tipo>(<escopo>): <descrição curta>
 
-[optional body]
-
-[optional footer]
+[corpo opcional — o que e por que]
 ```
 
-### Types
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation only
-- `style`: Formatting, missing semicolons, etc.
-- `refactor`: Code change that neither fixes a bug nor adds a feature
-- `test`: Adding missing tests
-- `chore`: Maintenance tasks
+### Tipos
 
-### Examples
+| Tipo | Quando usar | Exemplo |
+|------|-------------|---------|
+| `feat` | Feature nova | `feat(auth): implementar login com Google` |
+| `fix` | Correção de bug | `fix(whatsapp): corrigir timeout no webhook POST` |
+| `docs` | Só documentação | `docs(prd): atualizar features de notificação` |
+| `refactor` | Melhoria sem mudar comportamento | `refactor(rag): extrair RagService para módulo próprio` |
+| `chore` | Infra, configs, deps | `chore(docker): adicionar Qdrant ao compose` |
+| `test` | Só testes | `test(reservas): adicionar teste de cancelamento` |
+| `conductor` | Atualização do plan | `conductor(plan): marcar fase auth como concluída` |
+
+### Exemplos reais do projeto
 ```bash
-git commit -m "feat(auth): Add remember me functionality"
-git commit -m "fix(posts): Correct excerpt generation for short posts"
-git commit -m "test(comments): Add tests for emoji reaction limits"
-git commit -m "style(mobile): Improve button touch targets"
+git commit -m "feat(whatsapp): implementar webhook de recebimento de mensagens"
+git commit -m "feat(rag): criar RagService com LangChain e Gemini Flash"
+git commit -m "feat(reservas): fluxo de criação de reserva via conversa no WhatsApp"
+git commit -m "fix(router): corrigir botão voltar sem fallback em NotificationsPage"
+git commit -m "conductor(plan): marcar Fase 1 — Infraestrutura como concluída"
 ```
+
+---
+
+## Quality Gates
+
+Antes de marcar qualquer task como `[x]`, verifique:
+
+- [ ] O fluxo afetado funciona manualmente (teste você mesmo)
+- [ ] Não quebrou nenhuma tela ou rota existente
+- [ ] Código segue o style guide da linguagem (`code_styleguides/`)
+- [ ] Sem `any` em TypeScript; sem `dynamic` desnecessário em Dart
+- [ ] Sem segredos hardcoded (chaves de API, senhas)
+- [ ] Funciona em mobile E web (se for Flutter)
+
+---
 
 ## Definition of Done
 
-A task is complete when:
+Uma task está concluída quando:
 
-1. All code implemented to specification
-2. Unit tests written and passing
-3. Code coverage meets project requirements
-4. Documentation complete (if applicable)
-5. Code passes all configured linting and static analysis checks
-6. Works beautifully on mobile (if applicable)
-7. Implementation notes added to `plan.md`
-8. Changes committed with proper message
-9. Commit message includes a detailed task summary
+1. Implementada conforme a spec da feature
+2. Testada manualmente no fluxo principal
+3. Código formatado e sem erros de lint
+4. Commit feito com mensagem no formato correto
+5. `plan.md` atualizado com `[x]` e hash do commit
 
-## Emergency Procedures
+---
 
-### Critical Bug in Production
-1. Create hotfix branch from main
-2. Write failing test for bug
-3. Implement minimal fix
-4. Test thoroughly including mobile
-5. Deploy immediately
-6. Document in plan.md
+## PR (Pull Request)
 
-### Data Loss
-1. Stop all write operations
-2. Restore from latest backup
-3. Verify data integrity
-4. Document incident
-5. Update backup procedures
+Abra um PR ao concluir uma fase completa do `plan.md`.
 
-### Security Breach
-1. Rotate all secrets immediately
-2. Review access logs
-3. Patch vulnerability
-4. Notify affected users (if any)
-5. Document and update security procedures
+### Template
+```markdown
+## O que essa PR entrega
+<2-3 frases>
 
-## Deployment Workflow
+## Arquivos alterados
+| Arquivo | Tipo | O que faz |
+|---------|------|-----------|
+| `src/services/rag.service.ts` | NEW | Serviço RAG com LangChain |
 
-### Pre-Deployment Checklist
-- [ ] All tests passing
-- [ ] Coverage >90%
-- [ ] No linting errors
-- [ ] Mobile testing complete
-- [ ] Environment variables configured
-- [ ] Database migrations ready
-- [ ] Backup created
+## Como testar
+1. `docker-compose up --build`
+2. <passos específicos>
+3. Resultado esperado: <o que deve acontecer>
 
-### Deployment Steps
-1. Merge feature branch to main
-2. Tag release with version
-3. Push to deployment service
-4. Run database migrations
-5. Verify deployment
-6. Test critical paths
-7. Monitor for errors
+## Checklist
+- [ ] Fluxo principal funciona
+- [ ] Sem erros de lint
+- [ ] plan.md atualizado
+- [ ] Spec seguida fielmente
+```
 
-### Post-Deployment
-1. Monitor analytics
-2. Check error logs
-3. Gather user feedback
-4. Plan next iteration
+---
 
-## Continuous Improvement
+## Regras de Ouro
 
-- Review workflow weekly
-- Update based on pain points
-- Document lessons learned
-- Optimize for user happiness
-- Keep things simple and maintainable
+1. **O `prd.md` é a fonte de verdade do produto.** Em caso de dúvida sobre o que implementar, consulte-o.
+2. **O `plan.md` é a fonte de verdade do progresso.** Nunca trabalhe em algo que não está no plan.
+3. **Mudança de tech stack?** Documente em `tech-stack.md` antes de implementar.
+4. **Feature nova surgiu durante o desenvolvimento?** Crie o PRD de Feature antes de codar.
+5. **Nunca commite diretamente na `main`.** Sempre via PR de branch de feature.

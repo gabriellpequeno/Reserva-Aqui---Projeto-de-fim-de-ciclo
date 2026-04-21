@@ -1,14 +1,16 @@
-# Project Context
+# Project Context — ReservAqui
 
-## Definition
-- [Product Definition](./product.md)
+## Produto
+- [Project Brief](./product.md)
 - [Product Guidelines](./product-guidelines.md)
+- [PRD do Produto](./prd.md)
 - [Tech Stack](./tech-stack.md)
 
-## Workflow
-- [Workflow](./workflow.md)
-- [Code Style Guides](./code_styleguides/)
+## Features e Especificações
+- [PRDs de Feature](./features/)
+- [Specs Técnicas](./specs/)
 
-## Management
-- [Tracks Registry](./tracks.md)
-- [Tracks Directory](./tracks/)
+## Execução
+- [Plano de Desenvolvimento](./plan.md)
+- [Workflow e Processo](./workflow.md)
+- [Code Style Guides](./code_styleguides/)

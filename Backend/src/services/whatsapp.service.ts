@@ -1,89 +1,154 @@
 import 'dotenv/config';
 
-interface MetaApiResponse {
-  error?: {
-    message: string;
-    code?: number;
-  };
+interface MetaApiError {
+  message: string;
+  code?: number;
+}
+
+export interface MetaApiResponse {
+  error?: MetaApiError;
   messages?: Array<{ id: string }>;
 }
 
-export class WhatsAppService {
-  private static readonly token = process.env.WHATSAPP_TOKEN;
-  private static readonly phoneId = process.env.WHATSAPP_PHONE_ID;
-  private static readonly url = `https://graph.facebook.com/v22.0/${this.phoneId}/messages`;
+interface MetaMediaUploadResponse {
+  error?: MetaApiError;
+  id?: string;
+}
 
-  private static getHeaders() {
-    if (!this.token || !this.phoneId) {
-      throw new Error("⚠️ Variáveis de ambiente WHATSAPP_TOKEN ou WHATSAPP_PHONE_ID não configuradas.");
+export class WhatsAppService {
+  private static get token(): string | undefined {
+    return process.env.WHATSAPP_TOKEN;
+  }
+
+  private static get phoneId(): string | undefined {
+    return process.env.WHATSAPP_PHONE_ID;
+  }
+
+  private static get messagesUrl(): string {
+    if (!this.phoneId) {
+      throw new Error('Variaveis de ambiente WHATSAPP_TOKEN ou WHATSAPP_PHONE_ID nao configuradas.');
     }
+
+    return `https://graph.facebook.com/v22.0/${this.phoneId}/messages`;
+  }
+
+  private static get mediaUrl(): string {
+    if (!this.phoneId) {
+      throw new Error('Variaveis de ambiente WHATSAPP_TOKEN ou WHATSAPP_PHONE_ID nao configuradas.');
+    }
+
+    return `https://graph.facebook.com/v22.0/${this.phoneId}/media`;
+  }
+
+  private static getAuthHeaders(): Record<string, string> {
+    if (!this.token || !this.phoneId) {
+      throw new Error('Variaveis de ambiente WHATSAPP_TOKEN ou WHATSAPP_PHONE_ID nao configuradas.');
+    }
+
     return {
-      "Authorization": `Bearer ${this.token}`,
-      "Content-Type": "application/json"
+      Authorization: `Bearer ${this.token}`,
     };
   }
 
-  /**
-   * Envia uma mensagem em formato de texto livre.
-   * Só funciona dentro da janela de 24 horas após o usuário iniciar a conversa.
-   */
+  private static getJsonHeaders(): Record<string, string> {
+    return {
+      ...this.getAuthHeaders(),
+      'Content-Type': 'application/json',
+    };
+  }
+
   public static async sendText(to: string, text: string): Promise<MetaApiResponse> {
     const body = {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: to,
-      type: "text",
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to,
+      type: 'text',
       text: {
         preview_url: false,
-        body: text
-      }
+        body: text,
+      },
     };
 
-    return this.postToMeta(body);
+    return this.postJsonToMeta(body);
   }
 
-  /**
-   * Envia um Template de Mensagem (iniciativa por parte do negócio).
-   * Templates precisam estar pré-aprovados na Meta.
-   */
-  public static async sendTemplate(to: string, templateName: string, languageCode: string = "en_US"): Promise<MetaApiResponse> {
+  public static async sendTemplate(
+    to: string,
+    templateName: string,
+    languageCode = 'en_US',
+  ): Promise<MetaApiResponse> {
     const body = {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: to,
-      type: "template",
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to,
+      type: 'template',
       template: {
         name: templateName,
         language: {
-          code: languageCode
-        }
-      }
+          code: languageCode,
+        },
+      },
     };
 
-    return this.postToMeta(body);
+    return this.postJsonToMeta(body);
   }
 
-  private static async postToMeta(body: Record<string, unknown>): Promise<MetaApiResponse> {
-    try {
-      const response = await fetch(this.url, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify(body)
-      });
+  public static async sendDocument(
+    to: string,
+    fileBuffer: Buffer,
+    filename: string,
+    caption?: string,
+  ): Promise<MetaApiResponse> {
+    const mediaId = await this.uploadDocument(fileBuffer, filename);
 
-      // Justificativa: response.json() retorna unknown, usamos assertion para o contrato da Meta.
-      const data = (await response.json()) as MetaApiResponse;
+    const body = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to,
+      type: 'document',
+      document: {
+        id: mediaId,
+        filename,
+        caption,
+      },
+    };
 
-      if (!response.ok) {
-        console.error("❌ Meta API Error:", data.error);
-        throw new Error(`Erro na API do WhatsApp: ${data.error?.message || response.statusText}`);
-      }
+    return this.postJsonToMeta(body);
+  }
 
-      console.log(`✅ Mensagem enviada com sucesso para ${body.to}`);
-      return data;
-    } catch (error) {
-      console.error("❌ Falha crítica ao conectar com a Meta:", error);
-      throw error;
+  private static async uploadDocument(fileBuffer: Buffer, filename: string): Promise<string> {
+    const form = new FormData();
+    form.append('messaging_product', 'whatsapp');
+    form.append('file', new Blob([fileBuffer], { type: 'application/pdf' }), filename);
+
+    const response = await fetch(this.mediaUrl, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: form,
+    });
+
+    const data = (await response.json()) as MetaMediaUploadResponse;
+
+    if (!response.ok || !data.id) {
+      throw new Error(`Erro ao enviar documento para a Meta: ${data.error?.message || response.statusText}`);
     }
+
+    return data.id;
+  }
+
+  private static async postJsonToMeta(body: Record<string, unknown>): Promise<MetaApiResponse> {
+    const response = await fetch(this.messagesUrl, {
+      method: 'POST',
+      headers: this.getJsonHeaders(),
+      body: JSON.stringify(body),
+    });
+
+    const data = (await response.json()) as MetaApiResponse;
+
+    if (!response.ok) {
+      throw new Error(`Erro na API do WhatsApp: ${data.error?.message || response.statusText}`);
+    }
+
+    return data;
   }
 }

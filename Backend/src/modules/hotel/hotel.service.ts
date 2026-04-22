@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
 import { masterPool } from '../../database/masterDb';
-import { provisionTenant } from '../../database/tenantManager';
+import { buildSchemaName, provisionTenant } from '../../database/tenantManager';
 import { withTenant } from '../../database/schemaWrapper';
 import { PoolClient } from 'pg';
 
@@ -34,16 +34,17 @@ export async function registerHotel(
 ): Promise<HotelRegistrado> {
   const hotelId    = uuidv4();
   const senhaHash  = await bcrypt.hash(input.senha, 12);
+  const schemaName = buildSchemaName(hotelId, input.nome);
 
   // Provisiona: cria schema logic no banco Master e constrói as tabelas daquele hotel
-  const { schemaName } = await provisionTenant(hotelId, input.nome);
+  await provisionTenant(schemaName);
 
   // Registra o hotel no master DB
   const { rows } = await masterPool.query<HotelRegistrado>(
     `INSERT INTO anfitriao (
        hotel_id, nome_hotel, cnpj, telefone, email, senha,
        cep, uf, cidade, bairro, rua, numero,
-       descricao, path, schema_name
+       descricao, cover_storage_path, schema_name
      ) VALUES (
        $1,  $2,  $3,  $4,  $5,  $6,
        $7,  $8,  $9,  $10, $11, $12,

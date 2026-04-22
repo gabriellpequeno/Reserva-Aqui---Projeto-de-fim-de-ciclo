@@ -1,8 +1,12 @@
 # Tech Stack — ReservAqui
 
 ## Arquitetura
-- **Modelo:** Client-Server
-- **Comunicação:** RESTful API + WebSocket (notificações em tempo real)
+
+| Item | Valor |
+|------|-------|
+| Modelo | Client-Server |
+| Comunicação | REST API + WhatsApp Cloud API webhook |
+| Estratégia Realtime | Webhook para mensagens WhatsApp, polling/WebSocket para atualizações no app |
 
 ---
 
@@ -14,7 +18,8 @@
 | Linguagem | TypeScript |
 | Framework | Express |
 | Banco de dados | PostgreSQL (via `pg` driver) |
-| Autenticação | JWT com refresh token |
+| Busca vetorial | `pgvector` na mesma instância PostgreSQL |
+| Autenticação | JWT com access token + refresh token |
 | Hashing de senha | `argon2id` |
 | IDs únicos | `uuid` |
 | Variáveis de ambiente | `dotenv` |
@@ -39,9 +44,11 @@
 |--------|-----------|
 | LLM | Google Gemini (Flash) via API |
 | Orquestração | LangChain / LangGraph |
-| RAG — Vector Store | Qdrant (container Docker) |
+| RAG — Vector Store | `pgvector` (extensão PostgreSQL) |
 | Embeddings | Modelo de embeddings do Gemini |
-| Pipeline | Recebimento de mensagem → classificação de intenção → RAG ou geração de roteiro → resposta |
+| Fontes de conhecimento | Dados canônicos no PostgreSQL relacional + documentos e políticas indexados em `pgvector` |
+| Roteamento de conversa | Número único de WhatsApp da plataforma; `hotel_id` resolvido por contexto, reserva ou seleção explícita |
+| Pipeline | Mensagem inbound → validação do canal → linkagem user/guest + histórico → resolução do hotel → classificação de intenção → consulta estruturada e/ou RAG → resposta |
 
 ---
 
@@ -50,7 +57,7 @@
 | Serviço | Finalidade |
 |---------|-----------|
 | WhatsApp Cloud API (Meta) | Canal principal de comunicação com o hóspede |
-| InfinitePay | Processamento de pagamentos (app + WhatsApp) |
+| InfinitePay | Processamento de pagamentos |
 | Google OAuth | Login social do hóspede |
 
 ---
@@ -60,9 +67,10 @@
 | Camada | Tecnologia |
 |--------|-----------|
 | Containerização | Docker + docker-compose |
-| Containers | Backend (Node.js), PostgreSQL, Qdrant |
+| Containers | Backend (Node.js) + PostgreSQL (`pgvector/pgvector`) |
 | Gerenciamento de pacotes | `npm` (Backend), `flutter pub` (Frontend) |
 | Variáveis de ambiente | Arquivos `.env` por ambiente (dev / prod) |
+| Testes | Jest + Supertest |
 
 ---
 
@@ -70,9 +78,11 @@
 
 | Decisão | Motivo |
 |---------|--------|
-| Qdrant separado do PostgreSQL | Isola a responsabilidade de busca vetorial; mais simples de escalar que pgvector no prazo do projeto |
+| `pgvector` ao invés de Qdrant externo | Mantém o MVP operacionalmente simples; coloca o conhecimento do hotel junto ao banco existente, sem container extra |
+| Número único de WhatsApp na plataforma | O `phone_number_id` da Meta valida o canal oficial, mas não identifica o hotel — o `hotel_id` é resolvido no fluxo da conversa |
+| Recuperação híbrida | Preços, disponibilidade e reservas ficam no banco relacional; FAQ, regras e políticas ficam indexadas em `pgvector` |
+| Sessão de chat sem hotel fixo | Cada sessão WhatsApp pode iniciar sem `hotel_id` e ser enriquecida quando a conversa identificar o hotel |
 | GoRouter no Flutter | Suporte nativo a deep links, shell routes e navegação declarativa para web e mobile |
 | Gemini Flash | Free tier generoso, latência baixa, suficiente para RAG e geração de roteiros no MVP |
-| Polling vs WebSocket | WebSocket para notificações em tempo real (reservas); polling simples para chat se WebSocket travar |
 
 > **Regra:** qualquer mudança de tecnologia deve ser documentada aqui com data e justificativa antes de ser implementada.

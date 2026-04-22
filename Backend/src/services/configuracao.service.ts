@@ -86,7 +86,7 @@ async function _createConfiguracaoHotel(
   ConfiguracaoHotel.validate(input);
   const schemaName = await _getSchemaName(hotelId);
 
-  return withTenant(schemaName, async (client) => {
+  await withTenant(schemaName, async (client) => {
     const { rows: existing } = await client.query(
       `SELECT hotel_id FROM configuracao_hotel WHERE hotel_id = $1`,
       [hotelId],
@@ -111,8 +111,9 @@ async function _createConfiguracaoHotel(
         input.idiomas_atendimento   ?? 'Português',
       ],
     );
-    return rows[0];
   });
+
+  return _getConfiguracaoHotel(hotelId);
 }
 
 /**
@@ -126,7 +127,7 @@ async function _updateConfiguracaoHotel(
   ConfiguracaoHotel.validatePartial(input);
   const schemaName = await _getSchemaName(hotelId);
 
-  return withTenant(schemaName, async (client) => {
+  await withTenant(schemaName, async (client) => {
     const fields: string[] = [];
     const values: unknown[] = [];
     let idx = 1;
@@ -139,17 +140,26 @@ async function _updateConfiguracaoHotel(
     // politica_cancelamento permite null explícito (remover política)
     if (input.politica_cancelamento !== undefined) { fields.push(`politica_cancelamento = $${idx++}`); values.push(input.politica_cancelamento); }
 
-    values.push(hotelId);
+    if (fields.length) {
+      values.push(hotelId);
 
-    const { rows } = await client.query<ConfiguracaoHotelSafe>(
-      `UPDATE configuracao_hotel
-       SET ${fields.join(', ')}
-       WHERE hotel_id = $${idx}
-       RETURNING hotel_id, horario_checkin, horario_checkout, max_dias_reserva,
-                 politica_cancelamento, aceita_animais, idiomas_atendimento`,
-      values,
+      const { rows } = await client.query(
+        `UPDATE configuracao_hotel
+         SET ${fields.join(', ')}
+         WHERE hotel_id = $${idx}
+         RETURNING hotel_id`,
+        values,
+      );
+      if (!rows[0]) throw new Error('Configuração do hotel não encontrada');
+      return;
+    }
+
+    const { rows: existing } = await client.query(
+      `SELECT hotel_id FROM configuracao_hotel WHERE hotel_id = $1`,
+      [hotelId],
     );
-    if (!rows[0]) throw new Error('Configuração do hotel não encontrada');
-    return rows[0];
+    if (!existing[0]) throw new Error('Configuração do hotel não encontrada');
   });
+
+  return _getConfiguracaoHotel(hotelId);
 }

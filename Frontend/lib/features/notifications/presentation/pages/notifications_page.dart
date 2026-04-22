@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/mocks/mock_auth.dart';
+import '../../../../core/auth/auth_notifier.dart';
+import '../../../../core/auth/auth_state.dart';
 import '../providers/notifications_provider.dart';
 import '../../domain/models/app_notification.dart';
 
@@ -12,14 +13,14 @@ class NotificationsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifications = ref.watch(notificationsProvider);
-    final isLoggedIn = MockAuth.isLoggedIn;
+    final isLoggedIn = ref.watch(authProvider).asData?.value.isAuthenticated ?? false;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
         children: [
           // Header (Matching prototype)
-          _buildHeader(context),
+          _buildHeader(context, ref),
 
           // Content
           Expanded(
@@ -58,7 +59,7 @@ class NotificationsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 60, 16, 30),
@@ -85,10 +86,8 @@ class NotificationsPage extends ConsumerWidget {
                 if (context.canPop()) {
                   context.pop();
                 } else {
-                  final role = MockAuth.currentUserRole;
-                  if (role == UserRole.admin) {
-                    context.go('/profile/admin');
-                  } else if (role == UserRole.host) {
+                  final auth = ref.read(authProvider).asData?.value;
+                  if (auth?.role == AuthRole.host) {
                     context.go('/profile/host');
                   } else {
                     context.go('/profile/user');

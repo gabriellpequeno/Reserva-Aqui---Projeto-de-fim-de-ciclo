@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../mocks/mock_auth.dart';
+import '../auth/auth_notifier.dart';
 import '../layouts/main_layout.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -28,48 +28,50 @@ import '../../features/booking/presentation/pages/checkout_page.dart';
 import '../../features/tickets/presentation/pages/tickets_page.dart';
 import '../../features/tickets/presentation/pages/ticket_details_page.dart';
 
-// O Navigator base
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
+  final authAsync = ref.watch(authProvider);
+
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     debugLogDiagnostics: true,
     redirect: (context, state) {
-      // Forçado para modo desenvolvimento
-      final role = MockAuth.currentUserRole;
+      // Aguarda o estado de auth carregar do storage antes de redirecionar.
+      if (authAsync.isLoading) return null;
+
+      final auth = authAsync.asData?.value;
+      final isAuthenticated = auth?.isAuthenticated ?? false;
       final path = state.uri.path;
 
-      if (path == '/') {
-        return '/home';
-      }
+      if (path == '/') return '/home';
 
-      final isLogged = MockAuth.isLoggedIn;
-      final protectedRoutes = ['/host', '/admin', '/profile'];
+      final protectedRoutes = ['/profile', '/tickets', '/favorites'];
       final isProtected = protectedRoutes.any((r) => path.startsWith(r));
 
-      if (!isLogged && isProtected) {
-        return '/auth';
-      }
+      if (!isAuthenticated && isProtected) return '/auth/login';
 
       return null;
     },
     routes: [
-      // Rotas com Casco (BottomNavBar / Drawer)
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
-        builder: (context, state, child) {
-          return MainLayout(child: child);
-        },
+        builder: (context, state, child) => MainLayout(child: child),
         routes: [
           GoRoute(
             path: '/search',
             builder: (context, state) => const SearchPage(),
           ),
-          GoRoute(path: '/chat', builder: (context, state) => const ChatPage()),
-          GoRoute(path: '/home', builder: (context, state) => const HomePage()),
+          GoRoute(
+            path: '/chat',
+            builder: (context, state) => const ChatPage(),
+          ),
+          GoRoute(
+            path: '/home',
+            builder: (context, state) => const HomePage(),
+          ),
           GoRoute(
             path: '/favorites',
             builder: (context, state) => const FavoritesPage(),
@@ -131,7 +133,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // ROTAS FORA DO CASCO (Sem Bottom Bar global) - Ex: Tela de Detalhes
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: '/room_details/:roomId',
@@ -166,7 +167,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           return EditRoomPage(roomId: roomId);
         },
       ),
-
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: '/tickets/details/:ticketId',
@@ -175,7 +175,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           return TicketDetailsPage(ticketId: ticketId);
         },
       ),
-
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: '/booking/checkout/:roomId',
@@ -184,7 +183,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           return CheckoutPage(roomId: roomId);
         },
       ),
-
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: '/host/dashboard',

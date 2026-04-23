@@ -5,7 +5,7 @@
 
 ---
 
-## Fase 0 — Infraestrutura e Setup [PENDENTE]
+## Fase 0 — Infraestrutura e Setup [EM ANDAMENTO]
 
 > Spec: `specs/infra.spec.md`
 
@@ -13,8 +13,18 @@
 - [ ] Criar schema inicial do banco de dados
 - [ ] Configurar variáveis de ambiente (.env dev e prod)
 - [ ] Configurar projeto Node.js + TypeScript + Express
-- [ ] Configurar projeto Flutter com GoRouter e estrutura de pastas
+- [x] Configurar projeto Flutter com GoRouter e estrutura de pastas
 - [ ] Pipeline de seed: script para popular banco com dados de demonstração
+
+### P0 — HTTP Client + Auth Infra [CONCLUÍDO]
+> Plan detalhado: `plans/infra-http-client.plan.md`
+
+- [x] Criar `AuthState` + `AuthNotifier` (Riverpod AsyncNotifier) com persistência via shared_preferences
+- [x] Criar `DioClient` como Riverpod Provider com interceptor Bearer + auto-refresh por role
+- [x] Converter `UsuarioService` para Riverpod Provider (substituiu static class)
+- [x] Implementar `HotelService` Riverpod Provider
+- [x] Atualizar `main.dart` com `ProviderScope` + `GoRouter`
+- [x] Remover `MockAuth` do roteador e de todas as páginas — conectado ao `authProvider` real
 
 ---
 

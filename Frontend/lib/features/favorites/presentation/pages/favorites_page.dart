@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/mocks/mock_auth.dart';
+import '../../../../core/auth/auth_notifier.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/favorite_card.dart';
 
@@ -14,7 +14,7 @@ class FavoritesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filteredFavorites = ref.watch(filteredFavoritesProvider);
     final searchQuery = ref.watch(searchQueryProvider);
-    final isLoggedIn = MockAuth.isLoggedIn;
+    final isLoggedIn = ref.watch(authProvider).asData?.value.isAuthenticated ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.bgSecondary,

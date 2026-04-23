@@ -28,7 +28,7 @@
 
 ---
 
-## Fase 1 — Autenticação [PENDENTE]
+## Fase 1 — Autenticação [EM ANDAMENTO]
 
 > Spec: `specs/auth.spec.md`
 
@@ -39,7 +39,7 @@
 - [ ] Integração Google OAuth
 - [ ] Middleware de autenticação (validar JWT)
 - [ ] Tela de login no app (e-mail/senha + Google)
-- [ ] Tela de cadastro no app
+- [x] Tela de cadastro no app
 - [ ] Tela de esqueci minha senha
 - [ ] Sessão persistente no app (armazenar token localmente)
 

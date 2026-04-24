@@ -57,14 +57,14 @@ class UserOrHostPage extends StatelessWidget {
               ),
               const SizedBox(height: 48),
               TextButton(
-                onPressed: () => context.push('/auth/login'),
+                onPressed: () => context.pop(),
                 child: RichText(
                   text: const TextSpan(
-                    text: 'Já tem uma conta? ',
+                    text: 'Já tem conta? ',
                     style: TextStyle(color: AppColors.primary, fontSize: 16),
                     children: [
                       TextSpan(
-                        text: 'Entrar',
+                        text: 'acesse agora',
                         style: TextStyle(
                           color: AppColors.secondary,
                           fontWeight: FontWeight.bold,

@@ -38,7 +38,8 @@
 - [ ] Endpoint POST /auth/forgot-password
 - [ ] Integração Google OAuth
 - [ ] Middleware de autenticação (validar JWT)
-- [ ] Tela de login no app (e-mail/senha + Google)
+- [x] Tela de login no app (e-mail/senha + Google)
+  - [x] Login page integrada (P2-A) — plan: plans/login-page.plan.md
 - [x] Tela de cadastro no app
   - [x] Tela de cadastro de anfitrião (P1-C) — plan: plans/host-signup-page.plan.md
   - [x] CEP autofill no cadastro de hotel (cep-autofill) — plan: plans/cep-autofill.plan.md

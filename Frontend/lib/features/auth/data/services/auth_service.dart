@@ -31,6 +31,14 @@ class AuthService {
     );
     return AuthResponse.fromJson(response.data!);
   }
+
+  Future<AuthResponse> loginGuest(String email, String senha) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/usuarios/login',
+      data: {'email': email, 'senha': senha},
+    );
+    return AuthResponse.fromJson(response.data!);
+  }
 }
 
 final authServiceProvider = Provider<AuthService>((ref) {

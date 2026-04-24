@@ -40,6 +40,8 @@
 - [ ] Middleware de autenticação (validar JWT)
 - [ ] Tela de login no app (e-mail/senha + Google)
 - [x] Tela de cadastro no app
+  - [x] Tela de cadastro de anfitrião (P1-C) — plan: plans/host-signup-page.plan.md
+  - [x] CEP autofill no cadastro de hotel (cep-autofill) — plan: plans/cep-autofill.plan.md
 - [ ] Tela de esqueci minha senha
 - [ ] Sessão persistente no app (armazenar token localmente)
 

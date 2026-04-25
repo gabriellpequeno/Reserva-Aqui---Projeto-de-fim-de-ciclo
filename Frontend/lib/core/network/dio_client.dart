@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/auth_notifier.dart';
 import '../auth/auth_state.dart';
 
-const _baseUrl = 'http://localhost:3000/api/v1';
+const _baseUrl = 'http://10.0.2.2:3000/api/v1';
 
 // Dio separado exclusivamente para chamadas de refresh — evita loop de interceptor.
 final _refreshDio = Dio(

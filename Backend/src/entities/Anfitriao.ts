@@ -31,10 +31,10 @@ export class Anfitriao {
     const ok =
       /[A-Z]/.test(senha) &&
       /[a-z]/.test(senha) &&
-      /@/.test(senha) &&
-      /[0-9]/.test(senha);
+      /[0-9]/.test(senha) &&
+      /[^A-Za-z0-9]/.test(senha);
     if (!ok)
-      throw new Error('Senha fraca: requer letra maiúscula, minúscula, @ e número');
+      throw new Error('Senha fraca: requer maiúscula, minúscula, número e caractere especial');
   }
 
   private static validateCnpj(cnpj: string): void {

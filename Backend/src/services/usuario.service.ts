@@ -113,6 +113,10 @@ async function _registerUsuario(input: RegisterUsuarioInput): Promise<UsuarioSaf
   Usuario.validate(input);
   const senhaHash = await argon2.hash(input.senha, ARGON2_OPTIONS);
 
+  // Converte dd/mm/aaaa → YYYY-MM-DD para o PostgreSQL DATE
+  const [day, month, year] = input.data_nascimento.split('/');
+  const dataNascimentoIso = `${year}-${month}-${day}`;
+
   const { rows } = await masterPool.query<UsuarioSafe>(
     `INSERT INTO usuario (nome_completo, email, senha, cpf, data_nascimento, numero_celular)
      VALUES ($1, $2, $3, $4, $5, $6)
@@ -122,7 +126,7 @@ async function _registerUsuario(input: RegisterUsuarioInput): Promise<UsuarioSaf
       input.email.toLowerCase(),
       senhaHash,
       input.cpf.replace(/\D/g, ''),
-      input.data_nascimento,
+      dataNascimentoIso,
       input.numero_celular ?? null,
     ],
   );

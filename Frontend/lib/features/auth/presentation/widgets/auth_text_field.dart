@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class AuthTextField extends StatelessWidget {
@@ -9,6 +10,7 @@ class AuthTextField extends StatelessWidget {
   final TextInputType keyboardType;
   final Widget? suffixIcon;
   final void Function(String)? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
 
   const AuthTextField({
     super.key,
@@ -19,6 +21,7 @@ class AuthTextField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.suffixIcon,
     this.onChanged,
+    this.inputFormatters,
   });
 
   @override
@@ -35,6 +38,7 @@ class AuthTextField extends StatelessWidget {
         validator: validator,
         keyboardType: keyboardType,
         onChanged: onChanged,
+        inputFormatters: inputFormatters,
         style: const TextStyle(
           color: AppColors.primary,
           fontSize: 16,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/auth_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/phone_mask_formatter.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../data/models/register_host_request.dart';
 import '../../data/services/auth_service.dart';
@@ -112,7 +113,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
     final request = RegisterHostRequest(
       nomeHotel: _nomeHotelController.text.trim(),
       cnpj: _cnpjController.text.replaceAll(RegExp(r'\D'), ''),
-      telefone: _telefoneController.text.replaceAll(RegExp(r'\D'), ''),
+      telefone: _telefoneController.text,
       email: email,
       senha: senha,
       cep: _cepController.text.replaceAll(RegExp(r'\D'), ''),
@@ -201,14 +202,14 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                 ),
                 const SizedBox(height: 16),
                 AuthTextField(
-                  hintText: 'Telefone',
+                  hintText: '(xx) xxxxx-xxxx',
                   keyboardType: TextInputType.phone,
                   controller: _telefoneController,
+                  inputFormatters: [PhoneMaskFormatter()],
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Informe o telefone';
-                    if (!RegExp(r'^[\d\s\-\(\)\+]+$').hasMatch(value)) return 'Telefone inválido';
                     final digits = value.replaceAll(RegExp(r'\D'), '');
-                    if (digits.length < 10) return 'Telefone inválido';
+                    if (digits.length < 10 || digits.length > 11) return 'Telefone inválido (10 ou 11 dígitos com DDD)';
                     return null;
                   },
                 ),
@@ -365,12 +366,13 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                   controller: _senhaController,
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Informe a senha';
-                    if (value.length < 8) return 'Mínimo 8 caracteres';
-                    if (!value.contains(RegExp(r'[A-Z]'))) return 'Deve conter letra maiúscula';
-                    if (!value.contains(RegExp(r'[a-z]'))) return 'Deve conter letra minúscula';
-                    if (!value.contains(RegExp(r'[0-9]'))) return 'Deve conter um número';
-                    if (!value.contains('@')) return 'Deve conter o caractere @';
-                    return null;
+                    final erros = <String>[];
+                    if (!RegExp(r'[A-Z]').hasMatch(value)) erros.add('uma letra maiúscula');
+                    if (!RegExp(r'[a-z]').hasMatch(value)) erros.add('uma letra minúscula');
+                    if (!RegExp(r'[0-9]').hasMatch(value)) erros.add('um número');
+                    if (!RegExp(r'[^A-Za-z0-9]').hasMatch(value)) erros.add('um caractere especial');
+                    if (erros.isEmpty) return null;
+                    return 'A senha precisa ter: ${erros.join(', ')}';
                   },
                 ),
                 const SizedBox(height: 16),

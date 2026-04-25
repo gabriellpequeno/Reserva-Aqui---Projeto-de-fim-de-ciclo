@@ -8,10 +8,32 @@ class AuthService {
   AuthService(this._dio);
   final Dio _dio;
 
-  Future<AuthResponse> register(RegisterRequest request) async {
-    final response = await _dio.post<Map<String, dynamic>>(
+  Future<void> register(RegisterRequest request) async {
+    await _dio.post<Map<String, dynamic>>(
       '/usuarios/register',
       data: request.toJson(),
+    );
+  }
+
+  Future<AuthResponse> login(String email, String senha) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/usuarios/login',
+      data: {'email': email, 'senha': senha},
+    );
+    return AuthResponse.fromJson(response.data!);
+  }
+
+  Future<void> registerHotel(Map<String, dynamic> hotelData) async {
+    await _dio.post<Map<String, dynamic>>(
+      '/hotel/register',
+      data: hotelData,
+    );
+  }
+
+  Future<AuthResponse> loginHotel(String email, String senha) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/hotel/login',
+      data: {'email': email, 'senha': senha},
     );
     return AuthResponse.fromJson(response.data!);
   }

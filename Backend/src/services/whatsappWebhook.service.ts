@@ -1,5 +1,7 @@
 import { masterPool } from '../database/masterDb';
 import { WhatsAppService } from './whatsapp.service';
+import { ContextResolverService } from './ai/contextResolver.service';
+import { AgentOrchestratorService } from './ai/agentOrchestrator.service';
 
 interface UsuarioRow {
   user_id: string;
@@ -293,26 +295,67 @@ export async function processIncomingWhatsAppMessage(input: ProcessIncomingWhats
     metadata: inboundMetadata,
   });
 
-  const replyText =
-    input.messageType === 'text'
-      ? buildProvisionalReply(input.textBody?.trim() ?? '')
-      : buildMediaAcknowledgementReply(input.messageType);
+  if (input.messageType !== 'text') {
+    // Tratamento de Mídia: Retorna mensagem rápida para acalmar o SLA de 5s da Meta
+    const replyText = buildMediaAcknowledgementReply(input.messageType);
+    const metaResponse = await WhatsAppService.sendText(normalizedPhone, replyText);
+    const outboundMetaMessageId = metaResponse.messages?.[0]?.id ?? null;
 
-  const metaResponse = await WhatsAppService.sendText(normalizedPhone, replyText);
-  const outboundMetaMessageId = metaResponse.messages?.[0]?.id ?? null;
+    await persistChatMessage({
+      sessionId,
+      origem: ORIGEM_BOT,
+      conteudo: replyText,
+      tipoMensagem: 'TEXT',
+      metaMessageId: outboundMetaMessageId,
+      metaStatus: 'ACCEPTED',
+      metadata: { deliveryChannel: 'WHATSAPP', usedTemplate: false },
+    });
+  } else {
+    // Processamento de Texto via IA (Em Background para evitar Timeout da Meta)
+    const userText = input.textBody?.trim() ?? '';
+    
+    Promise.resolve().then(async () => {
+      try {
+        let context = await ContextResolverService.getContext(sessionId);
+        if (!context) {
+          context = { sessionId, userId, hotelId: null, schemaName: null };
+        }
 
-  await persistChatMessage({
-    sessionId,
-    origem: ORIGEM_BOT,
-    conteudo: replyText,
-    tipoMensagem: 'TEXT',
-    metaMessageId: outboundMetaMessageId,
-    metaStatus: 'ACCEPTED',
-    metadata: {
-      deliveryChannel: 'WHATSAPP',
-      usedTemplate: false,
-    },
-  });
+        const agentReply = await AgentOrchestratorService.processMessage(sessionId, userText, context);
+
+        const metaResponse = await WhatsAppService.sendText(normalizedPhone, agentReply);
+        const outboundMetaMessageId = metaResponse.messages?.[0]?.id ?? null;
+
+        await persistChatMessage({
+          sessionId,
+          origem: ORIGEM_BOT,
+          conteudo: agentReply,
+          tipoMensagem: 'TEXT',
+          metaMessageId: outboundMetaMessageId,
+          metaStatus: 'ACCEPTED',
+          metadata: { deliveryChannel: 'WHATSAPP', usedTemplate: false },
+        });
+      } catch (err) {
+        console.error('[WhatsApp Webhook] Erro crítico no motor de IA em background:', err);
+        try {
+          const fallbackReply = 'Desculpe, nosso assistente está instável no momento. Tente novamente em alguns instantes.';
+          const metaResponse = await WhatsAppService.sendText(normalizedPhone, fallbackReply);
+          const outboundMetaMessageId = metaResponse.messages?.[0]?.id ?? null;
+          await persistChatMessage({
+            sessionId,
+            origem: ORIGEM_BOT,
+            conteudo: fallbackReply,
+            tipoMensagem: 'TEXT',
+            metaMessageId: outboundMetaMessageId,
+            metaStatus: 'ACCEPTED',
+            metadata: { deliveryChannel: 'WHATSAPP', usedTemplate: false, fallback: true },
+          });
+        } catch (sendErr) {
+          console.error('[WhatsApp Webhook] Falha ao enviar fallback ao usuário:', sendErr);
+        }
+      }
+    });
+  }
 }
 
 export async function processStatusEvent(events: ProcessStatusEventInput[]): Promise<void> {

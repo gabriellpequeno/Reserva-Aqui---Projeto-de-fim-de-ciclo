@@ -65,6 +65,23 @@ Nova mensagem de 5581XXXXXXXXX: <sua mensagem>
 - A infraestrutura descrita acima de `sessao_chat` foi rigorosamente idealizada para alimentar o *Contexto de Conversa* em requisições de LLM instanciadas por **LangChain**. 
 - Antes de evocar a inferência principal do Gemini ou equivalente, o sistema busca a memória atrelada à API rest, injeta-a num Prompt e usa Vectorization (Pgvector) com Tool Callings para devolver respostas coesas de quartos, custos ou roteiros.
 
+## A Implementar
+
+### Validação de Assinatura (X-Hub-Signature-256)
+A Meta envia um header `X-Hub-Signature-256` em cada POST do webhook. Validar esse hash garante que o payload realmente veio da Meta e não de um terceiro mal-intencionado. Deve ser feito com `crypto.createHmac('sha256', appSecret)` comparando com o header recebido.
+
+### Política de Retenção de Dados (LGPD)
+As mensagens salvas em `mensagem_chat` crescem indefinidamente. Para conformidade com a LGPD e performance do banco:
+- Definir um período de retenção (ex: 90 dias)
+- Criar um job agendado (cron) para fechar sessões ociosas há mais de 24h (`status = 'FECHADA'`)
+- Arquivar ou deletar mensagens fora do período de retenção
+
+### Tempo de Resposta do Webhook (Regra Oficial da Meta)
+A Meta exige que o servidor retorne `200 OK` em até **5 segundos**. Caso contrário, ela reenvia o payload (retry) e, após falhas consecutivas, desativa o webhook. Atualmente o controller já responde `200` antes de processar — mas ao integrar a IA (Gemini), garantir que a inferência **nunca bloqueie** o retorno do 200 será crítico.
+
+### Rate Limiting
+Adicionar limitador de requisições no endpoint do webhook para proteger contra abuso ou loops de retry da Meta em cenários de instabilidade.
+
 ## Affected Project Files
 | File | Uses this system? | Relationship |
 |------|:-----------------:|--------------|

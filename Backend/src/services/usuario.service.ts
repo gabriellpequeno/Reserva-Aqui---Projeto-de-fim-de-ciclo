@@ -6,6 +6,11 @@ import { Usuario } from '../entities/Usuario';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
+function parseDataBrToEn(data: string): string {
+  const [dd, mm, yyyy] = data.split('/');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export interface RegisterUsuarioInput {
   nome_completo:   string;
   email:           string;
@@ -122,7 +127,7 @@ async function _registerUsuario(input: RegisterUsuarioInput): Promise<UsuarioSaf
       input.email.toLowerCase(),
       senhaHash,
       input.cpf.replace(/\D/g, ''),
-      input.data_nascimento,
+      parseDataBrToEn(input.data_nascimento),
       input.numero_celular ?? null,
     ],
   );
@@ -253,7 +258,7 @@ async function _updateUsuario(
   if (input.nome_completo  != null) { fields.push(`nome_completo = $${idx++}`);  values.push(input.nome_completo); }
   if (input.email          != null) { fields.push(`email = $${idx++}`);           values.push(input.email.toLowerCase()); }
   if (input.numero_celular != null) { fields.push(`numero_celular = $${idx++}`);  values.push(input.numero_celular); }
-  if (input.data_nascimento!= null) { fields.push(`data_nascimento = $${idx++}`); values.push(input.data_nascimento); }
+  if (input.data_nascimento!= null) { fields.push(`data_nascimento = $${idx++}`); values.push(parseDataBrToEn(input.data_nascimento)); }
 
   if (!fields.length) throw new Error('Nenhum campo para atualizar');
 

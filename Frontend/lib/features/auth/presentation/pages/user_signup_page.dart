@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
@@ -22,16 +23,31 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _cpfController = TextEditingController();
+  final _dataController = TextEditingController();
   final _telefoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   final _confirmController = TextEditingController();
   bool _isLoading = false;
 
+  final _cpfFormatter = MaskTextInputFormatter(
+    mask: '###.###.###-##',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
+  final _dataFormatter = MaskTextInputFormatter(
+    mask: '##/##/####',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
+  final _telefoneFormatter = MaskTextInputFormatter(
+    mask: '(##) #####-####',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
+
   @override
   void dispose() {
     _nomeController.dispose();
     _cpfController.dispose();
+    _dataController.dispose();
     _telefoneController.dispose();
     _emailController.dispose();
     _senhaController.dispose();
@@ -45,15 +61,19 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
     setState(() => _isLoading = true);
 
     final request = RegisterRequest(
-      nome: _nomeController.text.trim(),
+      nomeCompleto: _nomeController.text.trim(),
       cpf: _cpfController.text.replaceAll(RegExp(r'\D'), ''),
-      telefone: _telefoneController.text.replaceAll(RegExp(r'\D'), ''),
+      dataNascimento: _dataController.text.trim(),
+      numeroCelular: _telefoneController.text.trim(),
       email: _emailController.text.trim(),
       senha: _senhaController.text,
     );
 
     try {
-      final response = await ref.read(authServiceProvider).register(request);
+      final service = ref.read(authServiceProvider);
+
+      await service.register(request);
+      final response = await service.login(request.email, request.senha);
 
       await ref.read(authProvider.notifier).setAuth(
             response.accessToken,
@@ -111,9 +131,10 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                 ),
                 const SizedBox(height: 16),
                 AuthTextField(
-                  hintText: 'Cpf',
+                  hintText: 'CPF',
                   keyboardType: TextInputType.number,
                   controller: _cpfController,
+                  inputFormatters: [_cpfFormatter],
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Informe o CPF';
                     final digits = value.replaceAll(RegExp(r'\D'), '');
@@ -123,13 +144,29 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                 ),
                 const SizedBox(height: 16),
                 AuthTextField(
-                  hintText: 'Telefone',
+                  hintText: 'dd/mm/aaaa',
+                  keyboardType: TextInputType.datetime,
+                  controller: _dataController,
+                  inputFormatters: [_dataFormatter],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Informe a data de nascimento';
+                    if (!RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(value)) {
+                      return 'Formato inválido. Use dd/mm/aaaa';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                AuthTextField(
+                  hintText: '(11) 99999-9999',
                   keyboardType: TextInputType.phone,
                   controller: _telefoneController,
+                  inputFormatters: [_telefoneFormatter],
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Informe o telefone';
-                    final digits = value.replaceAll(RegExp(r'\D'), '');
-                    if (digits.length < 10) return 'Telefone inválido';
+                    if (!RegExp(r'^\(\d{2}\) \d{4,5}-\d{4}$').hasMatch(value)) {
+                      return 'Formato inválido. Use (xx) xxxxx-xxxx';
+                    }
                     return null;
                   },
                 ),
@@ -152,6 +189,10 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Informe a senha';
                     if (value.length < 8) return 'A senha deve ter pelo menos 8 caracteres';
+                    if (!RegExp(r'[A-Z]').hasMatch(value)) return 'A senha deve ter pelo menos uma letra maiúscula';
+                    if (!RegExp(r'[a-z]').hasMatch(value)) return 'A senha deve ter pelo menos uma letra minúscula';
+                    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>_]').hasMatch(value)) return 'A senha deve conter um caractere especial';
+                    if (!RegExp(r'[0-9]').hasMatch(value)) return 'A senha deve conter pelo menos um número';
                     return null;
                   },
                 ),

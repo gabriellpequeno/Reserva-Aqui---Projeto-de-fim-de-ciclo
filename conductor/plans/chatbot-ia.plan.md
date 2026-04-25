@@ -69,22 +69,31 @@ Camada de robustez/observabilidade construída durante a validação de ponta a 
 
 ---
 
+## Multimodal & Observabilidade [CONCLUÍDO]
+
+- [x] **Processamento real de áudio** (`MediaProcessorService.transcribeAudio`):
+  - Download via Meta Graph API (`GET /{mediaId}` → URL → GET binário com Bearer).
+  - Transcrição via Groq Whisper `whisper-large-v3-turbo` (`language: 'pt'`, free tier).
+  - Fluxo no webhook: ack imediato `"🎧 Analisando seu áudio..."` → background download → Whisper → `AgentOrchestrator.processMessage(sessionId, textoTranscrito, context)`.
+  - Transcrição persistida como mensagem `CLIENTE` no histórico com `metadata_json.audioTranscript` para auditoria.
+- [x] **Processamento real de imagem** (`MediaProcessorService.describeImage`):
+  - Modelo: `meta-llama/llama-4-scout-17b-16e-instruct` via Groq (multimodal, free tier).
+  - System prompt orienta: descrever conteúdo; se houver texto legível (CPF, RG, datas, comprovante), transcrever literalmente.
+  - Fluxo simétrico ao áudio; descrição registrada em `metadata_json.imageDescription`.
+- [x] **Fallback amigável em falha de mídia**: se o download, Whisper ou vision falhar, o bot pede pra reformular em texto em vez de silenciar.
+- [x] **Observabilidade com LangSmith**:
+  - Variáveis configuradas em `.env.example` e `docker-compose.yml`: `LANGCHAIN_TRACING_V2`, `LANGCHAIN_API_KEY`, `LANGCHAIN_PROJECT=reservaqui-chatbot`, `LANGCHAIN_ENDPOINT`.
+  - LangChain auto-instrumenta ao ver as envs — sem código adicional.
+  - Painel: https://smith.langchain.com (web, não há CLI). Traces aparecem filtráveis por projeto e `run_id`.
+
+---
+
 ## A Fazer [PENDENTE - próximas rodadas]
 
 ### P1 — Próxima iteração
 
-- [ ] **Processamento real de áudio** (`MediaProcessorService`):
-  - Download via Meta Graph API (`GET /{mediaId}` → URL → GET binário com Bearer).
-  - Transcrição via Groq Whisper `whisper-large-v3-turbo` (`language: 'pt'`, free tier).
-  - Fluxo: ack imediato `"🎧 Analisando seu áudio..."` → background download → Whisper → `AgentOrchestrator.processMessage(sessionId, textoTranscrito, context)`.
-- [ ] **Processamento real de imagem** (mesmo `MediaProcessorService`):
-  - Modelo: `meta-llama/llama-4-scout-17b-16e-instruct` via Groq (multimodal, free tier).
-  - Prompt: descrever conteúdo; se houver texto legível (CPF, datas, documentos), transcrever.
-  - Caso especial: foto de RG/CNH durante fluxo de reserva → extrair Nome/CPF para alimentar `criar_reserva`.
-- [ ] **Observabilidade com LangSmith**:
-  - Variáveis: `LANGCHAIN_TRACING_V2=true`, `LANGCHAIN_API_KEY`, `LANGCHAIN_PROJECT=reservaqui-chatbot`.
-  - LangChain auto-instrumenta — sem código adicional, só env.
-  - Adicionar `runName`/`tags` em `invokeWithFallback` para filtrar por `sessionId`.
+- [ ] **Enriquecer tags LangSmith** — adicionar `runName` e `metadata` (sessionId, intent) em `invokeWithFallback` para filtrar traces por conversa no painel.
+- [ ] **Extração automática de Nome+CPF de fotos de documento** — quando o fluxo walk-in receber imagem durante coleta de identificação, a descrição via Llama 4 Scout já transcreve texto; falta parser/regex de CPF (`\d{3}\.?\d{3}\.?\d{3}-?\d{2}`) para alimentar a tool `criar_reserva` automaticamente.
 
 ### P2 — Integração WhatsApp
 

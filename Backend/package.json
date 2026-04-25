@@ -26,6 +26,7 @@
     "express-rate-limit": "^8.3.2",
     "file-type": "^22.0.1",
     "firebase-admin": "^13.8.0",
+    "groq-sdk": "^1.1.2",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "pg": "^8.12.0",

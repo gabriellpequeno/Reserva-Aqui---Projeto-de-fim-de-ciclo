@@ -19,6 +19,7 @@ O fluxo determinístico em grafo (LangGraph) fica anotado como débito futuro, e
 - **Novo (ADICIONADO):** `LLMFactory` (`src/services/ai/llmFactory.ts`) — Camada de abstração multi-provider (Gemini + Groq) com fallback automático em erros recuperáveis e retry respeitando `retry-after`.
 - **Novo (ADICIONADO):** `DynamicIngestionService` (`src/services/ai/dynamicIngestion.service.ts`) — Lê dados canônicos do tenant (hotel + categorias + quartos) e materializa chunks em `documento_hotel` com embeddings Gemini.
 - **Novo (ADICIONADO):** `tools.ts` (`src/services/ai/tools.ts`) — Agrega as 4 tools LangChain com Zod: `buscar_hoteis`, `selecionar_hotel`, `checar_disponibilidade`, `criar_reserva`.
+- **Novo (ADICIONADO):** `MediaProcessorService` (`src/services/ai/mediaProcessor.service.ts`) — Download de mídia da Meta Graph API + transcrição de áudio (Groq Whisper `whisper-large-v3-turbo`) + descrição/OCR de imagem (Groq Llama 4 Scout `meta-llama/llama-4-scout-17b-16e-instruct`). Texto resultante é roteado pelo `AgentOrchestrator` como se fosse mensagem de texto comum.
 - **Modificado:** `whatsappWebhook.service.ts` — Alterar para disparar o pipeline de IA assincronamente e intercalar mensagens de "Analisando áudio/imagem...".
 
 ### Frontend
@@ -106,3 +107,24 @@ Camada construída durante a validação para blindar o produto contra falhas de
 ### Orçamento de tokens
 - **Histórico limitado a 6 mensagens** (antes: 10) — reduz tokens por chamada mantendo contexto útil.
 - **System prompt de `RESERVA` enxuto** — consolidou 8 regras prolixas em 7 linhas diretivas.
+
+## Multimodal (áudio e imagem) [ADICIONADO]
+
+### Pipeline unificado
+Áudio e imagem seguem o mesmo esqueleto assíncrono no webhook:
+
+1. **Ack imediato** em <1s: `"🎧 Analisando seu áudio..."` ou `"🖼️ Analisando sua imagem..."` — preserva SLA de 5s da Meta.
+2. **Background job** (`Promise.resolve().then`): baixa o binário da Meta Graph API, interpreta, registra no histórico, invoca o agent.
+3. **Texto interpretado** é persistido como `mensagem_chat` com `origem='CLIENTE'` e `tipo_mensagem='AUDIO'|'IMAGE'`. O conteúdo é a transcrição/descrição; o binário/fonte original fica em `metadata_json`.
+4. **Roteamento idêntico ao texto**: `AgentOrchestratorService.processMessage(sessionId, textoInterpretado, context)` — fluxos de RESERVA/DUVIDA/OUTROS aplicam sem mudança.
+5. **Fallback amigável** se download/Whisper/vision falhar: bot pede pra reformular em texto.
+
+### Provider e modelos
+- **STT (áudio):** Groq `whisper-large-v3-turbo`, `language='pt'`, `response_format='text'`. Aceita `audio/ogg` (voice note padrão WhatsApp) + mp3/m4a/wav/webm.
+- **Vision (imagem):** Groq `meta-llama/llama-4-scout-17b-16e-instruct`. System prompt orienta a transcrever literalmente qualquer texto legível (CPF/RG/datas/comprovante).
+- Ambos usam o mesmo `GROQ_API_KEY`.
+
+### Observabilidade — LangSmith
+- Ativação 100% via env: `LANGCHAIN_TRACING_V2=true` + `LANGCHAIN_API_KEY` + `LANGCHAIN_PROJECT`.
+- LangChain auto-instrumenta cada invocação (classifier, orchestrator, tools, vision). Sem mudanças de código.
+- Painel web: https://smith.langchain.com (não há CLI). Cada run mostra prompt, resposta, tokens, latência e custo estimado.

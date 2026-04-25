@@ -13,19 +13,19 @@ A plataforma ReservAqui possui integração inicial com WhatsApp (Fase 4), mas a
 - **Fornecedores (Hotéis)** que necessitam automatizar seu atendimento, melhorar o tempo de conversão e captar reservas de forma autônoma.
 
 ## Requisitos Funcionais
-1. O sistema deve classificar a intenção da mensagem recebida no WhatsApp (dúvida, reserva, roteiro ou conversa) para roteamento inteligente, otimizando o uso de tokens da LLM.
-2. O sistema deve manter uma base de conhecimento RAG "hotel-scoped" (usando pgvector) para responder dúvidas operacionais baseadas nas configurações e FAQs extraídos do banco de dados relacional.
-3. O sistema deve disponibilizar ferramentas (Tools) para a IA consultar disponibilidade, listar hotéis que atendam a filtros específicos e checar preços consultando diretamente as tabelas canônicas de dados (sem cache no pgvector).
-4. A IA deve orquestrar a criação de uma reserva de forma conversacional: caso o hóspede não seja reconhecido no sistema (walk-in), o bot deve solicitar e coletar obrigatoriamente Nome e CPF.
-5. O sistema deve processar áudio e imagem, e para evitar timeout, deve disparar de forma antecipada uma mensagem avisando o usuário que a mídia "está sendo analisada" e pedindo para aguardar.
-6. A reserva via bot deve prever uma variável de ambiente (`INFINITEPAY_BYPASS=true`) para desativar temporariamente a chamada externa de pagamento em ambiente local/testes.
-7. O sistema deve registrar todas as respostas finais geradas pela IA no histórico permanente da sessão de chat.
+1. [x] O sistema deve classificar a intenção da mensagem recebida no WhatsApp (dúvida, reserva, roteiro ou conversa) para roteamento inteligente, otimizando o uso de tokens da LLM.
+2. [x] O sistema deve manter uma base de conhecimento RAG "hotel-scoped" (usando pgvector) para responder dúvidas operacionais baseadas nas configurações e FAQs extraídos do banco de dados relacional.
+3. [x] O sistema deve disponibilizar ferramentas (Tools) para a IA consultar disponibilidade, listar hotéis que atendam a filtros específicos e checar preços consultando diretamente as tabelas canônicas de dados (sem cache no pgvector).
+4. [x] A IA deve orquestrar a criação de uma reserva de forma conversacional: caso o hóspede não seja reconhecido no sistema (walk-in), o bot deve solicitar e coletar obrigatoriamente Nome e CPF.
+5. [x] O sistema deve processar áudio e imagem, e para evitar timeout, deve disparar de forma antecipada uma mensagem avisando o usuário que a mídia "está sendo analisada" e pedindo para aguardar. _(Áudio via Groq Whisper; imagem via Groq Llama 4 Scout vision. Ack imediato + background job.)_
+6. [x] A reserva via bot deve prever uma variável de ambiente (`INFINITEPAY_BYPASS=true`) para desativar temporariamente a chamada externa de pagamento em ambiente local/testes.
+7. [x] O sistema deve registrar todas as respostas finais geradas pela IA no histórico permanente da sessão de chat.
 
 ## Requisitos Não-Funcionais
 - [x] Performance: O webhook da Meta precisa obrigatoriamente retornar `200 OK` em menos de 5 segundos. O processamento da IA/Agents (incluindo processamento multimídia) deve ser totalmente assíncrono.
 - [x] Performance: O classificador de intenções inicial deve ser leve (sempre que possível, heurístico ou prompt barato) para evitar gargalos antes do RAG/Tools. _(Regex fast-path + `gemini-2.5-flash-lite` — classifica saudações com zero chamada de rede.)_
 - [x] Segurança: A IA precisa ser fortemente restringida via *Guardrails* (System Prompts estritos e schema validation via Zod) para evitar que atue fora das políticas do hotel ou altere dados não permitidos no banco. _(Guardrails de alucinação adicionados: cidades reais injetadas, prompts rígidos, respostas fixas quando não há dado confiável.)_
-- [ ] Observabilidade: A arquitetura deve permitir instrumentação com LangSmith (quando chaves de API estiverem disponíveis) para auditoria e rastreamento de custos das chamadas LangChain. _(Próximo passo — ver backlog.)_
+- [x] Observabilidade: A arquitetura deve permitir instrumentação com LangSmith (quando chaves de API estiverem disponíveis) para auditoria e rastreamento de custos das chamadas LangChain. _(Configurado via env — `LANGCHAIN_TRACING_V2`, `LANGCHAIN_API_KEY`, `LANGCHAIN_PROJECT`. Auto-instrumentação nativa do LangChain; painel em https://smith.langchain.com.)_
 - [x] **[ADICIONADO] Resiliência multi-provider**: fallback automático Gemini ⇄ Groq em quota/429, retry respeitando `retry-after`, provider primário configurável via `.env`. Protege contra quota zerada de um provider e bursts de TPM.
 
 ## Critérios de Aceitação
@@ -42,11 +42,10 @@ A plataforma ReservAqui possui integração inicial com WhatsApp (Fase 4), mas a
 - Pagamentos com outros métodos além da integração InfinitePay prevista.
 
 ## Backlog (diferido para próxima rodada)
-Ver: `conductor/backlog/chatbot-ia.backlog.md`
-- Processamento real de áudio recebido (transcrição via Whisper).
-- Processamento real de imagem recebida (descrição/OCR via modelo multimodal).
-- Observabilidade com LangSmith.
+Ver: `conductor/plans/chatbot-ia.plan.md` (seção "A Fazer")
 - Validação de assinatura da Meta (`X-Hub-Signature-256`).
 - Retry automático de envio outbound WhatsApp.
 - Transferência para atendimento humano.
 - Migração do agent loop para LangGraph (state machine).
+- Extração automática de Nome+CPF de fotos de documento no fluxo walk-in.
+- Enriquecimento de tags/metadata LangSmith (`runName`, `sessionId`) para filtrar traces por conversa.

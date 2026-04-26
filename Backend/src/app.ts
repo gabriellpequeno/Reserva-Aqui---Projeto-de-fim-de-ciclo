@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import cors from 'cors';
 import usuarioRoutes   from './routes/usuario.routes';
 import anfitriaoRoutes from './routes/anfitriao.routes';
 import catalogoRoutes      from './routes/catalogo.routes';
@@ -28,6 +29,11 @@ import searchRoomRoutes from './routes/searchRoom.routes';
 
 const app = express();
 
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
 
 // Rota padrão do .env

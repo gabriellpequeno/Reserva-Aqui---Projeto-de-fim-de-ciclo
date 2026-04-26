@@ -31,15 +31,28 @@ import '../../features/tickets/presentation/pages/ticket_details_page.dart';
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Um Notifier que limpa o estado de reconstrução do RouterNotifier 
+/// e permite que o GoRouter escute mudanças no authProvider.
+class RouterNotifier extends ChangeNotifier {
+  RouterNotifier(this._ref) {
+    _ref.listen(authProvider, (_, __) => notifyListeners());
+  }
+
+  final Ref _ref;
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authAsync = ref.watch(authProvider);
+  final notifier = RouterNotifier(ref);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     debugLogDiagnostics: true,
+    refreshListenable: notifier,
     redirect: (context, state) {
-      // Aguarda o estado de auth carregar do storage antes de redirecionar.
+      final authAsync = ref.read(authProvider);
+      
+      // Se ainda estiver carregando (estado inicial do storage), não tome decisões de roteamento.
       if (authAsync.isLoading) return null;
 
       final auth = authAsync.asData?.value;

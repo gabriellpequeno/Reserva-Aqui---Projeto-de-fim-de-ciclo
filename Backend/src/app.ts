@@ -25,6 +25,7 @@ import {
 } from './routes/pagamentoReserva.routes';
 import saldoRoutes from './routes/saldo.routes';
 import whatsappRoutes from './routes/whatsapp.routes';
+import searchRoomRoutes from './routes/searchRoom.routes';
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use(`${API_PREFIX}/hotel/reservas/:reserva_id/pagamentos`,   hotelPagamentoR
 app.use(`${API_PREFIX}/pagamentos/webhook`,                       webhookPagamentoRouter);
 app.use(`${API_PREFIX}/hotel`,                                    saldoRoutes);
 app.use(`${API_PREFIX}/whatsapp`,                                 whatsappRoutes);
+app.use(`${API_PREFIX}/quartos`, searchRoomRoutes);
 
 // Exporta e/ou inicia o servidor
 const PORT = process.env.PORT || 3000;

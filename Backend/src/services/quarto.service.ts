@@ -55,7 +55,7 @@ async function _getSchemaName(hotelId: string): Promise<string> {
  * Query reutilizada para buscar quartos com itens agregados em JSON.
  * Usa LEFT JOIN + json_agg para evitar N+1.
  */
-const SELECT_QUARTO_COM_ITENS = `
+export const SELECT_QUARTO_COM_ITENS = `
   SELECT
     q.id,
     q.numero,

@@ -137,6 +137,7 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                   inputFormatters: [_cpfFormatter],
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Informe o CPF';
+                    if (!RegExp(r'^[\d\.\-]+$').hasMatch(value)) return 'CPF inválido';
                     final digits = value.replaceAll(RegExp(r'\D'), '');
                     if (digits.length != 11) return 'CPF inválido';
                     return null;
@@ -164,9 +165,9 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                   inputFormatters: [_telefoneFormatter],
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Informe o telefone';
-                    if (!RegExp(r'^\(\d{2}\) \d{4,5}-\d{4}$').hasMatch(value)) {
-                      return 'Formato inválido. Use (xx) xxxxx-xxxx';
-                    }
+                    if (!RegExp(r'^[\d\s\-\(\)\+]+$').hasMatch(value)) return 'Telefone inválido';
+                    final digits = value.replaceAll(RegExp(r'\D'), '');
+                    if (digits.length < 10) return 'Telefone inválido';
                     return null;
                   },
                 ),
@@ -177,7 +178,7 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                   controller: _emailController,
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Informe o e-mail';
-                    if (!value.contains('@') || !value.contains('.')) return 'E-mail inválido';
+                    if (!RegExp(r'^[\w\.\+\-]+@[\w\-]+\.[a-zA-Z]{2,}$').hasMatch(value.trim())) return 'E-mail inválido';
                     return null;
                   },
                 ),

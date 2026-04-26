@@ -26,6 +26,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
   final _cepController = TextEditingController();
   final _cidadeController = TextEditingController();
   final _ufController = TextEditingController();
+  String? _selectedUf;
   final _ruaController = TextEditingController();
   final _numeroController = TextEditingController();
   final _complementoController = TextEditingController();
@@ -129,6 +130,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
           setState(() {
             _cidadeController.text = response.data['localidade'] ?? '';
             _ufController.text = response.data['uf'] ?? '';
+            _selectedUf = response.data['uf'];
             _ruaController.text = response.data['logradouro'] ?? '';
             _bairroController.text = response.data['bairro'] ?? '';
           });
@@ -236,14 +238,33 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                     const SizedBox(width: 8),
                     Expanded(
                       flex: 1,
-                      child: AuthTextField(
-                        hintText: 'uf',
-                        controller: _ufController,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) return 'UF';
-                          if (value.trim().length != 2) return 'UF inválida';
-                          return null;
-                        },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.strokeLight),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedUf,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            hintText: 'UF',
+                            hintStyle: TextStyle(color: AppColors.greyText, fontSize: 16),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            border: InputBorder.none,
+                          ),
+                          style: const TextStyle(color: AppColors.primary, fontSize: 16),
+                          items: const [
+                            'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA',
+                            'MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN',
+                            'RO','RR','RS','SC','SE','SP','TO',
+                          ].map((uf) => DropdownMenuItem(value: uf, child: Text(uf))).toList(),
+                          onChanged: (uf) => setState(() {
+                            _selectedUf = uf;
+                            _ufController.text = uf ?? '';
+                          }),
+                          validator: (_) => _selectedUf == null ? 'UF' : null,
+                        ),
                       ),
                     ),
                   ],

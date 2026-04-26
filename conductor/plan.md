@@ -40,6 +40,8 @@
 - [ ] Middleware de autenticação (validar JWT)
 - [ ] Tela de login no app (e-mail/senha + Google)
 - [x] Tela de cadastro no app
+  - [x] Tela de cadastro de anfitrião (P1-C) — plan: plans/host-signup-page.plan.md
+  - [x] CEP autofill no cadastro de hotel (cep-autofill) — plan: plans/cep-autofill.plan.md
 - [ ] Tela de esqueci minha senha
 - [ ] Sessão persistente no app (armazenar token localmente)
 
@@ -92,20 +94,20 @@
 
 ---
 
-## Fase 5 — Chatbot IA (RAG + Intenção) [PENDENTE]
+## Fase 5 — Chatbot IA (RAG + Intenção) [EM VALIDAÇÃO]
 
 > Spec: `specs/chatbot-ia.spec.md`
 
-- [ ] Configurar LangChain + Gemini Flash
-- [ ] Implementar resolucao de hotel na conversa e enriquecer `sessao_chat.hotel_id` antes do RAG hotel-scoped
-- [ ] Consultar dados canonicos no banco relacional (preco, disponibilidade, reserva)
-- [ ] Criar estrutura de documentos do hotel com embeddings em `pgvector`
-- [ ] Criar script de ingestao e reindexacao de documentos do hotel
-- [ ] Implementar `RagService` com busca vetorial por hotel
-- [ ] Implementar classificador de intencao (duvida / reserva / roteiro)
-- [ ] Integrar o fluxo RAG ao webhook do WhatsApp
-- [ ] Substituir a resposta provisoria pelo fluxo de IA
-- [ ] Garantir persistencia das respostas do bot no historico
+- [x] Configurar LangChain + Gemini Flash
+- [x] Implementar resolucao de hotel na conversa e enriquecer `sessao_chat.hotel_id` antes do RAG hotel-scoped
+- [x] Consultar dados canonicos no banco relacional (preco, disponibilidade, reserva)
+- [x] Criar estrutura de documentos do hotel com embeddings em `pgvector`
+- [x] Criar script de ingestao e reindexacao de documentos do hotel
+- [x] Implementar `RagService` com busca vetorial por hotel
+- [x] Implementar classificador de intencao (duvida / reserva / roteiro)
+- [x] Integrar o fluxo RAG ao webhook do WhatsApp
+- [x] Substituir a resposta provisoria pelo fluxo de IA
+- [x] Garantir persistencia das respostas do bot no historico
 
 ---
 

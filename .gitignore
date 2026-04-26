@@ -41,3 +41,7 @@ Frontend/android/app/release
 *.log
 *.pyc
 __pycache__/
+
+# ─── tasks ────────────────────────────────────────────────────────
+_tasks/
+

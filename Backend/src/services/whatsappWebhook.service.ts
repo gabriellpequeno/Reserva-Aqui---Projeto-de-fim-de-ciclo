@@ -1,5 +1,8 @@
 import { masterPool } from '../database/masterDb';
 import { WhatsAppService } from './whatsapp.service';
+import { ContextResolverService } from './ai/contextResolver.service';
+import { AgentOrchestratorService } from './ai/agentOrchestrator.service';
+import { downloadWhatsAppMedia, transcribeAudio, describeImage } from './ai/mediaProcessor.service';
 
 interface UsuarioRow {
   user_id: string;
@@ -82,13 +85,13 @@ export function buildProvisionalReply(incomingText: string): string {
 export function buildMediaAcknowledgementReply(messageType: ProcessIncomingWhatsAppMessageInput['messageType']): string {
   switch (messageType) {
     case 'audio':
-      return 'Recebi seu audio. Ainda nao consigo processa-lo automaticamente, mas sua mensagem ja foi registrada.';
+      return '🎧 Analisando seu áudio, só um instante...';
     case 'image':
-      return 'Recebi sua imagem. Ainda nao consigo processa-la automaticamente, mas sua mensagem ja foi registrada.';
+      return '🖼️ Analisando sua imagem, só um instante...';
     case 'document':
-      return 'Recebi seu documento. Ainda nao consigo processa-lo automaticamente, mas sua mensagem ja foi registrada.';
+      return 'Recebi seu documento. Ainda não consigo processá-lo automaticamente.';
     default:
-      return 'Recebi sua mensagem. Ainda nao consigo processa-la automaticamente, mas sua mensagem ja foi registrada.';
+      return 'Recebi sua mensagem. Vou processá-la em instantes.';
   }
 }
 
@@ -293,26 +296,162 @@ export async function processIncomingWhatsAppMessage(input: ProcessIncomingWhats
     metadata: inboundMetadata,
   });
 
-  const replyText =
-    input.messageType === 'text'
-      ? buildProvisionalReply(input.textBody?.trim() ?? '')
-      : buildMediaAcknowledgementReply(input.messageType);
+  if (input.messageType === 'audio' || input.messageType === 'image') {
+    // 1. Ack imediato para respeitar a SLA de 5s da Meta.
+    const ackText = buildMediaAcknowledgementReply(input.messageType);
+    const ackResponse = await WhatsAppService.sendText(normalizedPhone, ackText);
+    const ackMetaId = ackResponse.messages?.[0]?.id ?? null;
 
-  const metaResponse = await WhatsAppService.sendText(normalizedPhone, replyText);
-  const outboundMetaMessageId = metaResponse.messages?.[0]?.id ?? null;
+    await persistChatMessage({
+      sessionId,
+      origem: ORIGEM_BOT,
+      conteudo: ackText,
+      tipoMensagem: 'TEXT',
+      metaMessageId: ackMetaId,
+      metaStatus: 'ACCEPTED',
+      metadata: { deliveryChannel: 'WHATSAPP', usedTemplate: false, ack: true },
+    });
 
-  await persistChatMessage({
-    sessionId,
-    origem: ORIGEM_BOT,
-    conteudo: replyText,
-    tipoMensagem: 'TEXT',
-    metaMessageId: outboundMetaMessageId,
-    metaStatus: 'ACCEPTED',
-    metadata: {
-      deliveryChannel: 'WHATSAPP',
-      usedTemplate: false,
-    },
-  });
+    // 2. Processamento real em background: download → transcrição/descrição → agent.
+    const mediaId = input.media?.mediaId;
+    const mimeType = input.media?.mimeType ?? null;
+    const caption = input.media?.caption ?? null;
+    const messageType = input.messageType;
+
+    Promise.resolve().then(async () => {
+      if (!mediaId) {
+        console.warn(`[WhatsApp Webhook] ${messageType} sem mediaId; ignorando processamento.`);
+        return;
+      }
+      try {
+        const downloaded = await downloadWhatsAppMedia(mediaId, mimeType ?? undefined);
+        let interpretedText: string;
+        let mediaMetadataKey: string;
+
+        if (messageType === 'audio') {
+          interpretedText = await transcribeAudio(downloaded);
+          mediaMetadataKey = 'audioTranscript';
+        } else {
+          interpretedText = await describeImage(downloaded, caption);
+          mediaMetadataKey = 'imageDescription';
+        }
+
+        if (!interpretedText) {
+          throw new Error(`Interpretação da mídia veio vazia (${messageType}).`);
+        }
+
+        // Registra o texto interpretado como "ponte" no histórico do chat.
+        await persistChatMessage({
+          sessionId,
+          origem: ORIGEM_CLIENTE,
+          conteudo: interpretedText,
+          tipoMensagem: messageType.toUpperCase(),
+          metaMessageId: null,
+          metaStatus: null,
+          metadata: { source: 'whatsapp', derivedFrom: messageType, [mediaMetadataKey]: interpretedText, mediaId },
+        });
+
+        // Roteia pelo agent como se fosse texto.
+        let context = await ContextResolverService.getContext(sessionId);
+        if (!context) {
+          context = { sessionId, userId, hotelId: null, schemaName: null };
+        }
+        const agentReply = await AgentOrchestratorService.processMessage(sessionId, interpretedText, context);
+
+        const metaResponse = await WhatsAppService.sendText(normalizedPhone, agentReply);
+        const outboundMetaMessageId = metaResponse.messages?.[0]?.id ?? null;
+        await persistChatMessage({
+          sessionId,
+          origem: ORIGEM_BOT,
+          conteudo: agentReply,
+          tipoMensagem: 'TEXT',
+          metaMessageId: outboundMetaMessageId,
+          metaStatus: 'ACCEPTED',
+          metadata: { deliveryChannel: 'WHATSAPP', usedTemplate: false, derivedFrom: messageType },
+        });
+      } catch (err) {
+        console.error(`[WhatsApp Webhook] Falha no processamento de ${messageType}:`, err);
+        try {
+          const fallbackReply = messageType === 'audio'
+            ? 'Não consegui entender o áudio agora. Pode tentar escrever em texto?'
+            : 'Não consegui analisar a imagem agora. Pode me descrever em texto o que precisa?';
+          const metaResponse = await WhatsAppService.sendText(normalizedPhone, fallbackReply);
+          const outboundMetaMessageId = metaResponse.messages?.[0]?.id ?? null;
+          await persistChatMessage({
+            sessionId,
+            origem: ORIGEM_BOT,
+            conteudo: fallbackReply,
+            tipoMensagem: 'TEXT',
+            metaMessageId: outboundMetaMessageId,
+            metaStatus: 'ACCEPTED',
+            metadata: { deliveryChannel: 'WHATSAPP', usedTemplate: false, fallback: true, derivedFrom: messageType },
+          });
+        } catch (sendErr) {
+          console.error('[WhatsApp Webhook] Falha ao enviar fallback de mídia ao usuário:', sendErr);
+        }
+      }
+    });
+  } else if (input.messageType !== 'text') {
+    // Outros tipos (documento, etc): só ack, não processa.
+    const replyText = buildMediaAcknowledgementReply(input.messageType);
+    const metaResponse = await WhatsAppService.sendText(normalizedPhone, replyText);
+    const outboundMetaMessageId = metaResponse.messages?.[0]?.id ?? null;
+
+    await persistChatMessage({
+      sessionId,
+      origem: ORIGEM_BOT,
+      conteudo: replyText,
+      tipoMensagem: 'TEXT',
+      metaMessageId: outboundMetaMessageId,
+      metaStatus: 'ACCEPTED',
+      metadata: { deliveryChannel: 'WHATSAPP', usedTemplate: false },
+    });
+  } else {
+    // Processamento de Texto via IA (Em Background para evitar Timeout da Meta)
+    const userText = input.textBody?.trim() ?? '';
+    
+    Promise.resolve().then(async () => {
+      try {
+        let context = await ContextResolverService.getContext(sessionId);
+        if (!context) {
+          context = { sessionId, userId, hotelId: null, schemaName: null };
+        }
+
+        const agentReply = await AgentOrchestratorService.processMessage(sessionId, userText, context);
+
+        const metaResponse = await WhatsAppService.sendText(normalizedPhone, agentReply);
+        const outboundMetaMessageId = metaResponse.messages?.[0]?.id ?? null;
+
+        await persistChatMessage({
+          sessionId,
+          origem: ORIGEM_BOT,
+          conteudo: agentReply,
+          tipoMensagem: 'TEXT',
+          metaMessageId: outboundMetaMessageId,
+          metaStatus: 'ACCEPTED',
+          metadata: { deliveryChannel: 'WHATSAPP', usedTemplate: false },
+        });
+      } catch (err) {
+        console.error('[WhatsApp Webhook] Erro crítico no motor de IA em background:', err);
+        try {
+          const fallbackReply = 'Desculpe, nosso assistente está instável no momento. Tente novamente em alguns instantes.';
+          const metaResponse = await WhatsAppService.sendText(normalizedPhone, fallbackReply);
+          const outboundMetaMessageId = metaResponse.messages?.[0]?.id ?? null;
+          await persistChatMessage({
+            sessionId,
+            origem: ORIGEM_BOT,
+            conteudo: fallbackReply,
+            tipoMensagem: 'TEXT',
+            metaMessageId: outboundMetaMessageId,
+            metaStatus: 'ACCEPTED',
+            metadata: { deliveryChannel: 'WHATSAPP', usedTemplate: false, fallback: true },
+          });
+        } catch (sendErr) {
+          console.error('[WhatsApp Webhook] Falha ao enviar fallback ao usuário:', sendErr);
+        }
+      }
+    });
+  }
 }
 
 export async function processStatusEvent(events: ProcessStatusEventInput[]): Promise<void> {

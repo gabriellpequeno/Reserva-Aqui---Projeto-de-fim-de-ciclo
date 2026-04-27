@@ -45,7 +45,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     try {
       final authService = ref.read(authServiceProvider);
-      final AuthResponse response;
+      late AuthResponse response;
 
       if (_role == 'host') {
         response = await authService.loginHotel(
@@ -53,34 +53,58 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           _senhaController.text,
         );
       } else {
-        response = await authService.loginGuest(
-          _emailController.text,
-          _senhaController.text,
-        );
+        try {
+          response = await authService.loginGuest(
+            _emailController.text,
+            _senhaController.text,
+          );
+        } catch (e) {
+          // Como o router pode mandar para cá sem a role definida (extra nulo),
+          // tentamos fazer o login como anfitrião caso as credenciais não existam para hóspede.
+          if (e is DioException && e.response?.statusCode == 401) {
+            response = await authService.loginHotel(
+              _emailController.text,
+              _senhaController.text,
+            );
+            _role =
+                'host'; // Atualiza a role para salvar corretamente no storage
+          } else {
+            rethrow;
+          }
+        }
       }
 
       final role = _role == 'host' ? AuthRole.host : AuthRole.guest;
-      await ref.read(authProvider.notifier).setAuth(
-            response.accessToken,
-            response.refreshToken,
-            role,
-          );
+      await ref
+          .read(authProvider.notifier)
+          .setAuth(response.accessToken, response.refreshToken, role);
 
       if (mounted) {
         context.go('/home');
       }
-    } on DioException catch (e) {
+    } catch (e, stack) {
       if (!mounted) return;
 
       String message = 'Erro ao realizar login. Tente novamente.';
-      if (e.response?.statusCode == 401) {
-        message = 'E-mail ou senha incorretos.';
-      } else if (e.response?.statusCode == 429) {
-        message = 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+      if (e is DioException) {
+        if (e.response?.statusCode == 401) {
+          message = 'E-mail ou senha incorretos.';
+        } else if (e.response?.statusCode == 429) {
+          message = 'Muitas tentativas. Aguarde alguns minutos.';
+        } else {
+          message = 'Erro de conexão: ${e.message}';
+        }
+      } else {
+        message = 'ERRO INESPERADO: $e';
+        print('STACK TRACE: $stack');
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(message), 
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 10),
+        ),
       );
     } finally {
       if (mounted) {
@@ -117,8 +141,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   hintText: 'email@domain.com',
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Informe o e-mail';
-                    final emailRegex = RegExp(r'^[\w\.\+\-]+@[\w\-]+\.[a-zA-Z]{2,}$');
+                    if (value == null || value.isEmpty)
+                      return 'Informe o e-mail';
+                    final emailRegex = RegExp(
+                      r'^[\w\.\+\-]+@[\w\-]+\.[a-zA-Z]{2,}$',
+                    );
                     if (!emailRegex.hasMatch(value)) return 'E-mail inválido';
                     return null;
                   },
@@ -129,17 +156,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   hintText: 'senha',
                   isPassword: true,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Informe a senha';
+                    if (value == null || value.isEmpty)
+                      return 'Informe a senha';
                     return null;
                   },
                 ),
                 const SizedBox(height: 24),
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : PrimaryButton(
-                        text: 'Login',
-                        onPressed: _submit,
-                      ),
+                    : PrimaryButton(text: 'Login', onPressed: _submit),
                 const SizedBox(height: 48),
                 PrimaryButton(
                   text: 'cadastre-se agora',

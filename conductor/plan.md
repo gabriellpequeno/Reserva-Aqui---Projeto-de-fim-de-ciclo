@@ -48,6 +48,20 @@
 
 ---
 
+## Fase P3-B — Host Profile Page [EM ANDAMENTO]
+
+> Spec: `specs/host-profile-page.spec.md`
+> Plan detalhado: `plans/host-profile-page.plan.md`
+
+- [ ] Criar `HostProfileNotifier` + provider
+- [ ] Converter `HostProfilePage` para `ConsumerWidget`
+- [ ] Integrar `GET /hotel/me` no notifier
+- [ ] Integrar `GET /uploads/hotels/:hotel_id/cover` no notifier
+- [ ] Mapear dados para os widgets e exibir foto de capa
+- [ ] Tratar loading, erro e lista de fotos vazia
+
+---
+
 ## Fase 2 — Gestão de Hotéis e Quartos [PENDENTE]
 
 > Spec: `specs/gestao-hotel.spec.md`

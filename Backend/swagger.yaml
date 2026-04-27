@@ -57,6 +57,8 @@ tags:
     description: Leitura pública de avaliações de um hotel
   - name: Reservas Públicas
     description: Consulta pública de uma reserva por código
+  - name: Busca de Quartos
+    description: Busca pública cross-tenant de quartos por hotel, cidade ou estado
 
 # ─────────────────────────────────────────────
 # SECURITY SCHEMES
@@ -682,6 +684,42 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/QuartoItem"
+
+    SearchRoomResult:
+      type: object
+      properties:
+        quarto_id:
+          type: integer
+          description: ID único do quarto
+        hotel_id:
+          type: string
+          format: uuid
+          description: ID do hotel
+        numero:
+          type: string
+          description: Número ou identificação do quarto
+        descricao:
+          type: string
+          nullable: true
+          description: Descrição adicional do quarto
+        valor_diaria:
+          type: string
+          description: Valor da diária em formato decimal do Postgres (requer parse cliente)
+        itens:
+          type: array
+          description: Itens/comodidades do quarto
+          items:
+            $ref: "#/components/schemas/QuartoItem"
+        nome_hotel:
+          type: string
+          description: Nome do hotel enriquecido na busca
+        cidade:
+          type: string
+          description: Cidade do hotel
+        uf:
+          type: string
+          maxLength: 2
+          description: Unidade Federativa (estado) do hotel
 
     QuartoUpdateRequest:
       type: object
@@ -2802,3 +2840,69 @@ paths:
                     $ref: "#/components/schemas/Reserva"
         "404":
           description: Reserva não encontrada
+
+  # ════════════════════════════════════════════
+  # BUSCA DE QUARTOS
+  # ════════════════════════════════════════════
+  /quartos/busca:
+    get:
+      tags: [Busca de Quartos]
+      summary: Buscar quartos cross-tenant por hotel, cidade ou estado
+      description: |
+        Busca pública de quartos sem autenticação. Aceita o parâmetro `q` (obrigatório)
+        e retorna quartos de hotéis ativos cujo nome, cidade ou UF contenham o termo
+        (case-insensitive, acento-insensitive). Os parâmetros `checkin`, `checkout`
+        e `hospedes` são aceitos mas ignorados nesta versão (fica para iteração futura).
+
+        **Nota:** O campo `rating` não faz parte do payload desta versão (EXT-1).
+        Será adicionado na versão EXT-2.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: Termo de busca (mínimo 2 caracteres). Busca acento-insensitive em nome_hotel, cidade, uf.
+        - name: checkin
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Data de check-in (ISO 8601). Aceito mas ignorado nesta versão.
+        - name: checkout
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Data de check-out (ISO 8601). Aceito mas ignorado nesta versão.
+        - name: hospedes
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          description: Número de hóspedes. Aceito mas ignorado nesta versão.
+      responses:
+        "200":
+          description: Lista de quartos encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchRoomResult"
+        "400":
+          description: Validação falhou (q ausente ou muito curto)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"

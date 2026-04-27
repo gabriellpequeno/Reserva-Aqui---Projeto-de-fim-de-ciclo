@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
@@ -29,6 +30,11 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
   final _confirmController = TextEditingController();
   final _dataNascimentoController = TextEditingController();
   bool _isLoading = false;
+
+  final _cpfFormatter = MaskTextInputFormatter(
+    mask: '###.###.###-##',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
 
   @override
   void dispose() {
@@ -73,16 +79,19 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
     setState(() => _isLoading = true);
 
     final request = RegisterRequest(
-      nome: _nomeController.text.trim(),
+      nomeCompleto: _nomeController.text.trim(),
       cpf: _cpfController.text.replaceAll(RegExp(r'\D'), ''),
-      telefone: _telefoneController.text,
+      numeroCelular: _telefoneController.text,
       email: _emailController.text.trim(),
       senha: _senhaController.text,
       dataNascimento: _dataNascimentoController.text,
     );
 
     try {
-      final response = await ref.read(authServiceProvider).register(request);
+      final service = ref.read(authServiceProvider);
+
+      await service.register(request);
+      final response = await service.login(request.email, request.senha);
 
       await ref.read(authProvider.notifier).setAuth(
             response.accessToken,
@@ -144,6 +153,7 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                   hintText: 'CPF',
                   keyboardType: TextInputType.number,
                   controller: _cpfController,
+                  inputFormatters: [_cpfFormatter],
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Informe o CPF';
                     if (!RegExp(r'^[\d\.\-]+$').hasMatch(value)) return 'CPF inválido';

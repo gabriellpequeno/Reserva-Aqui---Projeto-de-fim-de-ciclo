@@ -6,6 +6,11 @@ import { Usuario } from '../entities/Usuario';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
+function parseDataBrToEn(data: string): string {
+  const [dd, mm, yyyy] = data.split('/');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export interface RegisterUsuarioInput {
   nome_completo:   string;
   email:           string;
@@ -113,10 +118,6 @@ async function _registerUsuario(input: RegisterUsuarioInput): Promise<UsuarioSaf
   Usuario.validate(input);
   const senhaHash = await argon2.hash(input.senha, ARGON2_OPTIONS);
 
-  // Converte dd/mm/aaaa → YYYY-MM-DD para o PostgreSQL DATE
-  const [day, month, year] = input.data_nascimento.split('/');
-  const dataNascimentoIso = `${year}-${month}-${day}`;
-
   const { rows } = await masterPool.query<UsuarioSafe>(
     `INSERT INTO usuario (nome_completo, email, senha, cpf, data_nascimento, numero_celular)
      VALUES ($1, $2, $3, $4, $5, $6)
@@ -126,7 +127,7 @@ async function _registerUsuario(input: RegisterUsuarioInput): Promise<UsuarioSaf
       input.email.toLowerCase(),
       senhaHash,
       input.cpf.replace(/\D/g, ''),
-      dataNascimentoIso,
+      parseDataBrToEn(input.data_nascimento),
       input.numero_celular ?? null,
     ],
   );
@@ -257,7 +258,7 @@ async function _updateUsuario(
   if (input.nome_completo  != null) { fields.push(`nome_completo = $${idx++}`);  values.push(input.nome_completo); }
   if (input.email          != null) { fields.push(`email = $${idx++}`);           values.push(input.email.toLowerCase()); }
   if (input.numero_celular != null) { fields.push(`numero_celular = $${idx++}`);  values.push(input.numero_celular); }
-  if (input.data_nascimento!= null) { fields.push(`data_nascimento = $${idx++}`); values.push(input.data_nascimento); }
+  if (input.data_nascimento!= null) { fields.push(`data_nascimento = $${idx++}`); values.push(parseDataBrToEn(input.data_nascimento)); }
 
   if (!fields.length) throw new Error('Nenhum campo para atualizar');
 

@@ -29,12 +29,15 @@ export class Anfitriao {
 
   private static validateSenha(senha: string): void {
     const ok =
+      senha.length >= 8 &&
       /[A-Z]/.test(senha) &&
       /[a-z]/.test(senha) &&
-      /[0-9]/.test(senha) &&
-      /[^A-Za-z0-9]/.test(senha);
+      /[!@#$%^&*(),.?":{}|<>_]/.test(senha) &&
+      /[0-9]/.test(senha);
     if (!ok)
-      throw new Error('Senha fraca: requer maiúscula, minúscula, número e caractere especial');
+      throw new Error(
+        'Senha fraca: mínimo 8 caracteres, letra maiúscula, minúscula, caractere especial e número'
+      );
   }
 
   private static validateCnpj(cnpj: string): void {

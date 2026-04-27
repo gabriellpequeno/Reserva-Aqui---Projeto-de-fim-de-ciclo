@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
@@ -9,7 +10,6 @@ import '../../../../core/widgets/phone_mask_formatter.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../data/models/register_host_request.dart';
 import '../../data/services/auth_service.dart';
-import '../../data/services/cep_service.dart';
 import '../widgets/auth_text_field.dart';
 
 class HostSignUpPage extends ConsumerStatefulWidget {
@@ -21,62 +21,31 @@ class HostSignUpPage extends ConsumerStatefulWidget {
 
 class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
   final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
-  bool _isCepLoading = false;
-
-  // Controllers
   final _nomeHotelController = TextEditingController();
   final _cnpjController = TextEditingController();
   final _telefoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _cepController = TextEditingController();
   final _cidadeController = TextEditingController();
-  final _bairroController = TextEditingController();
+  final _ufController = TextEditingController();
+  String? _selectedUf;
   final _ruaController = TextEditingController();
   final _numeroController = TextEditingController();
   final _complementoController = TextEditingController();
+  final _bairroController = TextEditingController();
   final _descricaoController = TextEditingController();
   final _senhaController = TextEditingController();
-  final _confirmSenhaController = TextEditingController();
+  final _confirmController = TextEditingController();
+  bool _isLoading = false;
 
-  String? _selectedUf;
-
-  final List<String> _estados = [
-    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-    'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
-  ];
-
-  void _onCepChanged(String value) {
-    final digits = value.replaceAll(RegExp(r'\D'), '');
-    if (digits.length != 8) return;
-
-    setState(() => _isCepLoading = true);
-
-    ref.read(cepServiceProvider).lookup(digits).then((result) {
-      if (!mounted) return;
-      if (result.erro) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('CEP não encontrado. Verifique e preencha manualmente.')),
-        );
-      } else {
-        setState(() {
-          _ruaController.text = result.logradouro ?? '';
-          _bairroController.text = result.bairro ?? '';
-          _cidadeController.text = result.localidade ?? '';
-          if (result.uf != null && _estados.contains(result.uf)) {
-            _selectedUf = result.uf;
-          }
-        });
-      }
-    }).catchError((_) {
-      // Silent error as per plan
-    }).whenComplete(() {
-      if (mounted) {
-        setState(() => _isCepLoading = false);
-      }
-    });
-  }
+  final _cnpjFormatter = MaskTextInputFormatter(
+    mask: '##.###.###/####-##',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
+  final _cepFormatter = MaskTextInputFormatter(
+    mask: '#####-###',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
 
   @override
   void dispose() {
@@ -86,24 +55,19 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
     _emailController.dispose();
     _cepController.dispose();
     _cidadeController.dispose();
-    _bairroController.dispose();
+    _ufController.dispose();
     _ruaController.dispose();
     _numeroController.dispose();
     _complementoController.dispose();
+    _bairroController.dispose();
     _descricaoController.dispose();
     _senhaController.dispose();
-    _confirmSenhaController.dispose();
+    _confirmController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedUf == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione o estado (UF)')),
-      );
-      return;
-    }
 
     setState(() => _isLoading = true);
 
@@ -127,16 +91,15 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
     );
 
     try {
-      // Step 1: registrar hotel
-      await ref.read(authServiceProvider).registerHotel(request);
+      final service = ref.read(authServiceProvider);
 
-      // Step 2: auto-login para obter tokens
-      final authResponse = await ref.read(authServiceProvider).loginHotel(email, senha);
+      await service.registerHotel(request);
 
-      // Step 3: persistir sessão com role host
+      final response = await service.loginHotel(email, senha);
+
       await ref.read(authProvider.notifier).setAuth(
-            authResponse.accessToken,
-            authResponse.refreshToken,
+            response.accessToken,
+            response.refreshToken,
             AuthRole.host,
           );
 
@@ -146,13 +109,33 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
       if (!mounted) return;
       final status = e.response?.statusCode;
       final msg = switch (status) {
-        409 => 'Este CNPJ ou e-mail já está cadastrado.',
+        409 => 'Este e-mail ou CNPJ já está cadastrado.',
         400 => 'Dados inválidos. Verifique os campos.',
         _ => 'Erro no servidor. Tente novamente mais tarde.',
       };
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _onCepChanged(String value) async {
+    final cep = value.replaceAll(RegExp(r'\D'), '');
+    if (cep.length == 8) {
+      try {
+        final response = await Dio().get('https://viacep.com.br/ws/$cep/json/');
+        if (response.data != null && response.data['erro'] == null) {
+          setState(() {
+            _cidadeController.text = response.data['localidade'] ?? '';
+            _ufController.text = response.data['uf'] ?? '';
+            _selectedUf = response.data['uf'];
+            _ruaController.text = response.data['logradouro'] ?? '';
+            _bairroController.text = response.data['bairro'] ?? '';
+          });
+        }
+      } catch (e) {
+        debugPrint('Erro ao buscar CEP: $e');
+      }
     }
   }
 
@@ -168,7 +151,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 80),
+                const SizedBox(height: 120),
                 const Text(
                   'cadastre seu hotel',
                   style: TextStyle(
@@ -192,9 +175,9 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                   hintText: 'cnpj',
                   keyboardType: TextInputType.number,
                   controller: _cnpjController,
+                  inputFormatters: [_cnpjFormatter],
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Informe o CNPJ';
-                    if (!RegExp(r'^[\d\.\-\/]+$').hasMatch(value)) return 'CNPJ inválido';
                     final digits = value.replaceAll(RegExp(r'\D'), '');
                     if (digits.length != 14) return 'CNPJ inválido (14 dígitos)';
                     return null;
@@ -220,7 +203,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                   controller: _emailController,
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Informe o e-mail';
-                    if (!RegExp(r'^[\w\.\+\-]+@[\w\-]+\.[a-zA-Z]{2,}$').hasMatch(value.trim())) return 'E-mail inválido';
+                    if (!value.contains('@') || !value.contains('.')) return 'E-mail inválido';
                     return null;
                   },
                 ),
@@ -229,28 +212,17 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                   hintText: 'cep',
                   keyboardType: TextInputType.number,
                   controller: _cepController,
+                  inputFormatters: [_cepFormatter],
                   onChanged: _onCepChanged,
-                  suffixIcon: _isCepLoading
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        )
-                      : null,
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Informe o CEP';
-                    if (!RegExp(r'^[\d\-]+$').hasMatch(value)) return 'CEP inválido';
                     final digits = value.replaceAll(RegExp(r'\D'), '');
-                    if (digits.length != 8) return 'CEP inválido (8 dígitos)';
+                    if (digits.length != 8) return 'CEP inválido';
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       flex: 3,
@@ -265,55 +237,40 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      flex: 2,
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedUf,
-                        isExpanded: true,
-                        hint: const Text('UF', style: TextStyle(color: AppColors.greyText, fontSize: 14)),
-                        items: _estados.map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (newValue) {
-                          setState(() {
-                            _selectedUf = newValue;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.strokeLight),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.strokeLight),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.strokeLight),
-                          ),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.red),
-                          ),
-                          focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.red),
-                          ),
+                      flex: 1,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.strokeLight),
                         ),
-                        validator: (value) => value == null ? 'Obrigatório' : null,
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedUf,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            hintText: 'UF',
+                            hintStyle: TextStyle(color: AppColors.greyText, fontSize: 16),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            border: InputBorder.none,
+                          ),
+                          style: const TextStyle(color: AppColors.primary, fontSize: 16),
+                          items: const [
+                            'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA',
+                            'MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN',
+                            'RO','RR','RS','SC','SE','SP','TO',
+                          ].map((uf) => DropdownMenuItem(value: uf, child: Text(uf))).toList(),
+                          onChanged: (uf) => setState(() {
+                            _selectedUf = uf;
+                            _ufController.text = uf ?? '';
+                          }),
+                          validator: (_) => _selectedUf == null ? 'UF' : null,
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       flex: 3,
@@ -342,6 +299,11 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                 ),
                 const SizedBox(height: 16),
                 AuthTextField(
+                  hintText: 'complemento',
+                  controller: _complementoController,
+                ),
+                const SizedBox(height: 16),
+                AuthTextField(
                   hintText: 'bairro',
                   controller: _bairroController,
                   validator: (value) {
@@ -351,12 +313,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                 ),
                 const SizedBox(height: 16),
                 AuthTextField(
-                  hintText: 'complemento',
-                  controller: _complementoController,
-                ),
-                const SizedBox(height: 16),
-                AuthTextField(
-                  hintText: 'descrição do hotel',
+                  hintText: 'descrição do hotel (até 100 palavras)',
                   controller: _descricaoController,
                 ),
                 const SizedBox(height: 16),
@@ -379,7 +336,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                 AuthTextField(
                   hintText: 'confirmar senha',
                   isPassword: true,
-                  controller: _confirmSenhaController,
+                  controller: _confirmController,
                   validator: (value) {
                     if (value != _senhaController.text) return 'As senhas não coincidem';
                     return null;

@@ -1,24 +1,24 @@
 class RegisterRequest {
-  final String nome;
-  final String cpf;            // normalizado: só dígitos (11 chars)
-  final String telefone;       // normalizado: só dígitos
+  final String nomeCompleto;
+  final String cpf;
+  final String numeroCelular;
   final String email;
   final String senha;
-  final String dataNascimento; // formato dd/mm/aaaa
+  final String dataNascimento;
 
   const RegisterRequest({
-    required this.nome,
+    required this.nomeCompleto,
     required this.cpf,
-    required this.telefone,
+    required this.numeroCelular,
     required this.email,
     required this.senha,
     required this.dataNascimento,
   });
 
   Map<String, dynamic> toJson() => {
-    'nome_completo': nome,
+    'nome_completo': nomeCompleto,
     'cpf': cpf,
-    'numero_celular': telefone,
+    'numero_celular': numeroCelular,
     'email': email,
     'senha': senha,
     'data_nascimento': dataNascimento,

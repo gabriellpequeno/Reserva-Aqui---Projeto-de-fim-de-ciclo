@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import cors from 'cors';
 import usuarioRoutes   from './routes/usuario.routes';
 import anfitriaoRoutes from './routes/anfitriao.routes';
 import catalogoRoutes      from './routes/catalogo.routes';
@@ -24,9 +25,15 @@ import {
 } from './routes/pagamentoReserva.routes';
 import saldoRoutes from './routes/saldo.routes';
 import whatsappRoutes from './routes/whatsapp.routes';
+import searchRoomRoutes from './routes/searchRoom.routes';
 
 const app = express();
 
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
 
 // Rota padrão do .env
@@ -51,6 +58,7 @@ app.use(`${API_PREFIX}/hotel/reservas/:reserva_id/pagamentos`,   hotelPagamentoR
 app.use(`${API_PREFIX}/pagamentos/webhook`,                       webhookPagamentoRouter);
 app.use(`${API_PREFIX}/hotel`,                                    saldoRoutes);
 app.use(`${API_PREFIX}/whatsapp`,                                 whatsappRoutes);
+app.use(`${API_PREFIX}/quartos`, searchRoomRoutes);
 
 // Exporta e/ou inicia o servidor
 const PORT = process.env.PORT || 3000;

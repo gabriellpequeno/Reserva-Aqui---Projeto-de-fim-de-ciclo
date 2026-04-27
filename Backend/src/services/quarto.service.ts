@@ -55,7 +55,7 @@ async function _getSchemaName(hotelId: string): Promise<string> {
  * Query reutilizada para buscar quartos com itens agregados em JSON.
  * Usa LEFT JOIN + json_agg para evitar N+1.
  */
-const SELECT_QUARTO_COM_ITENS = `
+export const SELECT_QUARTO_COM_ITENS = `
   SELECT
     q.id,
     q.numero,
@@ -121,7 +121,7 @@ async function _listQuartos(hotelId: string): Promise<QuartoSafe[]> {
     const { rows } = await client.query<QuartoSafe>(
       `${SELECT_QUARTO_COM_ITENS}
        WHERE q.deleted_at IS NULL
-       GROUP BY q.id
+       GROUP BY q.id, cq.id
        ORDER BY q.numero`,
     );
     return rows;
@@ -138,7 +138,7 @@ async function _getQuarto(hotelId: string, quartoId: number): Promise<QuartoSafe
     const { rows } = await client.query<QuartoSafe>(
       `${SELECT_QUARTO_COM_ITENS}
        WHERE q.id = $1 AND q.deleted_at IS NULL
-       GROUP BY q.id`,
+       GROUP BY q.id, cq.id`,
       [quartoId],
     );
     if (!rows[0]) throw new Error('Quarto não encontrado');
@@ -191,7 +191,7 @@ async function _createQuarto(hotelId: string, input: CreateQuartoInput): Promise
     const { rows: full } = await client.query<QuartoSafe>(
       `${SELECT_QUARTO_COM_ITENS}
        WHERE q.id = $1
-       GROUP BY q.id`,
+       GROUP BY q.id, cq.id`,
       [quartoId],
     );
     return full[0];
@@ -253,7 +253,7 @@ async function _updateQuarto(hotelId: string, quartoId: number, input: UpdateQua
     const { rows: full } = await client.query<QuartoSafe>(
       `${SELECT_QUARTO_COM_ITENS}
        WHERE q.id = $1 AND q.deleted_at IS NULL
-       GROUP BY q.id`,
+       GROUP BY q.id, cq.id`,
       [quartoId],
     );
     if (!full[0]) throw new Error('Quarto não encontrado');

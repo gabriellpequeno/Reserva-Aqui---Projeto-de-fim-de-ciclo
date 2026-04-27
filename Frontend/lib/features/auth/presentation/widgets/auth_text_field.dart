@@ -8,6 +8,7 @@ class AuthTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String? Function(String?)? validator;
   final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final Widget? suffixIcon;
   final void Function(String)? onChanged;
   final List<TextInputFormatter>? inputFormatters;
@@ -19,6 +20,7 @@ class AuthTextField extends StatelessWidget {
     this.controller,
     this.validator,
     this.keyboardType = TextInputType.text,
+    this.inputFormatters,
     this.suffixIcon,
     this.onChanged,
     this.inputFormatters,
@@ -37,6 +39,7 @@ class AuthTextField extends StatelessWidget {
         obscureText: isPassword,
         validator: validator,
         keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
         onChanged: onChanged,
         inputFormatters: inputFormatters,
         style: const TextStyle(

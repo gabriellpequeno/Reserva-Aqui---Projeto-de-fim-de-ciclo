@@ -6,6 +6,7 @@ class PrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final Color? color;
   final Color? textColor;
+  final Color? borderColor;
   final bool isLoading;
   final double? width;
 
@@ -15,6 +16,7 @@ class PrimaryButton extends StatelessWidget {
     this.onPressed,
     this.color,
     this.textColor,
+    this.borderColor,
     this.isLoading = false,
     this.width,
   });
@@ -32,6 +34,9 @@ class PrimaryButton extends StatelessWidget {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
+            side: borderColor != null
+                ? BorderSide(color: borderColor!)
+                : BorderSide.none,
           ),
         ),
         child: isLoading

@@ -2,10 +2,17 @@ import { masterPool } from '../database/masterDb';
 import { withTenant } from '../database/schemaWrapper';
 import { SELECT_QUARTO_COM_ITENS } from './quarto.service';
 
+/**
+ * Status de reserva que bloqueiam a disponibilidade de um quarto em um intervalo.
+ * Centralizado aqui para facilitar futuras mudanças de política de disponibilidade.
+ */
+export const BLOCKING_RESERVATION_STATUSES = ['SOLICITADA', 'AGUARDANDO_PAGAMENTO', 'APROVADA'] as const;
+
 interface SearchRoomRefinos {
   checkin?: string;
   checkout?: string;
   hospedes?: number;
+  amenidadeIds?: number[];
 }
 
 interface QuartoItem {
@@ -101,38 +108,84 @@ export async function searchRooms(
     await Promise.all(
       hotels.map(async hotel => {
         try {
-          // Reusa SELECT_QUARTO_COM_ITENS com filtro de deleted_at
-          const quartoQuery = `
-            ${SELECT_QUARTO_COM_ITENS}
-            WHERE q.deleted_at IS NULL
-            GROUP BY q.id, q.numero, cq.preco_base, q.valor_override, q.categoria_quarto_id, q.disponivel, q.descricao
-          `;
+          await withTenant(hotel.schema_name, async client => {
+            // Monta WHERE com filtros condicionais
+            let whereConditions = [
+              'q.deleted_at IS NULL',
+              'cq.deleted_at IS NULL',
+              'c.deleted_at IS NULL',
+            ];
+            const queryParams: any[] = [];
 
-          const tenantResults = await withTenant(hotel.schema_name, async client => {
+            // Filtro de capacidade (hospedes)
+            if (refinos?.hospedes) {
+              whereConditions.push('cq.capacidade_pessoas >= $' + (queryParams.length + 1));
+              queryParams.push(refinos.hospedes);
+            }
+
+            // Filtro de disponibilidade por data
+            if (refinos?.checkin && refinos?.checkout) {
+              whereConditions.push(`
+                NOT EXISTS (
+                  SELECT 1 FROM reserva r
+                  WHERE r.quarto_id = q.id
+                    AND r.status = ANY($${queryParams.length + 1}::text[])
+                    AND r.data_checkin < $${queryParams.length + 2}::date
+                    AND r.data_checkout > $${queryParams.length + 3}::date
+                )
+              `);
+              queryParams.push(
+                Array.from(BLOCKING_RESERVATION_STATUSES),
+                refinos.checkout,
+                refinos.checkin,
+              );
+            }
+
+            // Filtro de amenidades (AND lógico)
+            if (refinos?.amenidadeIds && refinos.amenidadeIds.length > 0) {
+              whereConditions.push(`
+                q.id IN (
+                  SELECT quarto_id FROM itens_do_quarto
+                  WHERE catalogo_id = ANY($${queryParams.length + 1}::int[])
+                  GROUP BY quarto_id
+                  HAVING COUNT(DISTINCT catalogo_id) = $${queryParams.length + 2}::int
+                )
+              `);
+              queryParams.push(refinos.amenidadeIds, refinos.amenidadeIds.length);
+            }
+
+            const whereClause = whereConditions.join(' AND ');
+
+            // Reusa SELECT_QUARTO_COM_ITENS com JOINs para JOIN categoria_quarto
+            const quartoQuery = `
+              ${SELECT_QUARTO_COM_ITENS}
+              WHERE ${whereClause}
+              GROUP BY q.id, q.numero, cq.preco_base, q.valor_override, q.categoria_quarto_id, q.disponivel, q.descricao
+            `;
+
             const { rows } = await client.query<{
               id: number;
               numero: string;
               descricao: string | null;
               valor_diaria: string;
               itens: QuartoItem[];
-            }>(quartoQuery);
-            return rows;
-          });
+            }>(quartoQuery, queryParams);
 
-          // Exenrich com dados do hotel
-          for (const row of tenantResults) {
-            results.push({
-              quarto_id: row.id,
-              hotel_id: hotel.hotel_id,
-              numero: row.numero,
-              descricao: row.descricao,
-              valor_diaria: row.valor_diaria,
-              itens: row.itens || [],
-              nome_hotel: hotel.nome_hotel,
-              cidade: hotel.cidade,
-              uf: hotel.uf,
-            });
-          }
+            // Enrich com dados do hotel
+            for (const row of rows) {
+              results.push({
+                quarto_id: row.id,
+                hotel_id: hotel.hotel_id,
+                numero: row.numero,
+                descricao: row.descricao,
+                valor_diaria: row.valor_diaria,
+                itens: row.itens || [],
+                nome_hotel: hotel.nome_hotel,
+                cidade: hotel.cidade,
+                uf: hotel.uf,
+              });
+            }
+          });
         } catch (error) {
           console.warn(
             `[searchRoom] Erro ao buscar quartos no tenant ${hotel.hotel_id} (${hotel.schema_name}):`,

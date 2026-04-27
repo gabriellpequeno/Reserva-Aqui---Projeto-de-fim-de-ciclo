@@ -11,7 +11,6 @@ class AuthTextField extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final Widget? suffixIcon;
   final void Function(String)? onChanged;
-  final List<TextInputFormatter>? inputFormatters;
 
   const AuthTextField({
     super.key,
@@ -23,7 +22,6 @@ class AuthTextField extends StatelessWidget {
     this.inputFormatters,
     this.suffixIcon,
     this.onChanged,
-    this.inputFormatters,
   });
 
   @override
@@ -41,7 +39,6 @@ class AuthTextField extends StatelessWidget {
         keyboardType: keyboardType,
         inputFormatters: inputFormatters,
         onChanged: onChanged,
-        inputFormatters: inputFormatters,
         style: const TextStyle(
           color: AppColors.primary,
           fontSize: 16,

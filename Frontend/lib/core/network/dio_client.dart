@@ -1,9 +1,13 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/auth_notifier.dart';
 import '../auth/auth_state.dart';
 
-const _baseUrl = 'http://localhost:3000/api/v1';
+// Android emulator uses 10.0.2.2 to reach host; web/desktop use localhost
+final _baseUrl = kIsWeb
+    ? 'http://localhost:3000/api/v1'
+    : 'http://10.0.2.2:3000/api/v1';
 
 // Dio separado exclusivamente para chamadas de refresh — evita loop de interceptor.
 final _refreshDio = Dio(

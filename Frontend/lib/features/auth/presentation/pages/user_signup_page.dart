@@ -6,11 +6,12 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/auth_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/date_picker_field.dart';
+import '../../../../core/widgets/phone_mask_formatter.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../data/models/register_request.dart';
 import '../../data/services/auth_service.dart';
 import '../widgets/auth_text_field.dart';
-import '../widgets/social_button.dart';
 
 class UserSignUpPage extends ConsumerStatefulWidget {
   const UserSignUpPage({super.key});
@@ -23,23 +24,15 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _cpfController = TextEditingController();
-  final _dataController = TextEditingController();
   final _telefoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   final _confirmController = TextEditingController();
+  final _dataNascimentoController = TextEditingController();
   bool _isLoading = false;
 
   final _cpfFormatter = MaskTextInputFormatter(
     mask: '###.###.###-##',
-    filter: {"#": RegExp(r'[0-9]')},
-  );
-  final _dataFormatter = MaskTextInputFormatter(
-    mask: '##/##/####',
-    filter: {"#": RegExp(r'[0-9]')},
-  );
-  final _telefoneFormatter = MaskTextInputFormatter(
-    mask: '(##) #####-####',
     filter: {"#": RegExp(r'[0-9]')},
   );
 
@@ -47,12 +40,37 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
   void dispose() {
     _nomeController.dispose();
     _cpfController.dispose();
-    _dataController.dispose();
     _telefoneController.dispose();
     _emailController.dispose();
     _senhaController.dispose();
     _confirmController.dispose();
+    _dataNascimentoController.dispose();
     super.dispose();
+  }
+
+  String? _validateSenha(String? value) {
+    if (value == null || value.isEmpty) return 'Informe a senha';
+    final erros = <String>[];
+    if (!RegExp(r'[A-Z]').hasMatch(value)) erros.add('uma letra maiúscula');
+    if (!RegExp(r'[a-z]').hasMatch(value)) erros.add('uma letra minúscula');
+    if (!RegExp(r'[0-9]').hasMatch(value)) erros.add('um número');
+    if (!RegExp(r'[^A-Za-z0-9]').hasMatch(value)) erros.add('um caractere especial');
+    if (erros.isEmpty) return null;
+    return 'A senha precisa ter: ${erros.join(', ')}';
+  }
+
+  String? _validateData(String? value) {
+    if (value == null || value.isEmpty) return 'Informe a data de nascimento';
+    if (!RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(value)) return 'Use o formato dd/mm/aaaa';
+    final parts = value.split('/');
+    final day = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    final year = int.tryParse(parts[2]);
+    if (day == null || month == null || year == null) return 'Data inválida';
+    if (month < 1 || month > 12) return 'Mês inválido';
+    if (day < 1 || day > 31) return 'Dia inválido';
+    if (year < 1900 || year > DateTime.now().year) return 'Ano inválido';
+    return null;
   }
 
   Future<void> _submit() async {
@@ -63,10 +81,10 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
     final request = RegisterRequest(
       nomeCompleto: _nomeController.text.trim(),
       cpf: _cpfController.text.replaceAll(RegExp(r'\D'), ''),
-      dataNascimento: _dataController.text.trim(),
-      numeroCelular: _telefoneController.text.trim(),
+      numeroCelular: _telefoneController.text,
       email: _emailController.text.trim(),
       senha: _senhaController.text,
+      dataNascimento: _dataNascimentoController.text,
     );
 
     try {
@@ -86,9 +104,10 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
     } on DioException catch (e) {
       if (!mounted) return;
       final status = e.response?.statusCode;
+      final serverMsg = (e.response?.data as Map?)?['error'] as String?;
       final msg = switch (status) {
         409 => 'Este e-mail já está cadastrado.',
-        400 => 'Dados inválidos. Verifique os campos.',
+        400 => serverMsg ?? 'Dados inválidos. Verifique os campos.',
         _ => 'Erro no servidor. Tente novamente mais tarde.',
       };
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
@@ -145,29 +164,14 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                 ),
                 const SizedBox(height: 16),
                 AuthTextField(
-                  hintText: 'dd/mm/aaaa',
-                  keyboardType: TextInputType.datetime,
-                  controller: _dataController,
-                  inputFormatters: [_dataFormatter],
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Informe a data de nascimento';
-                    if (!RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(value)) {
-                      return 'Formato inválido. Use dd/mm/aaaa';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                AuthTextField(
-                  hintText: '(11) 99999-9999',
+                  hintText: '(xx) xxxxx-xxxx',
                   keyboardType: TextInputType.phone,
                   controller: _telefoneController,
-                  inputFormatters: [_telefoneFormatter],
+                  inputFormatters: [PhoneMaskFormatter()],
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Informe o telefone';
-                    if (!RegExp(r'^[\d\s\-\(\)\+]+$').hasMatch(value)) return 'Telefone inválido';
                     final digits = value.replaceAll(RegExp(r'\D'), '');
-                    if (digits.length < 10) return 'Telefone inválido';
+                    if (digits.length < 10 || digits.length > 11) return 'Telefone inválido (10 ou 11 dígitos com DDD)';
                     return null;
                   },
                 ),
@@ -183,19 +187,16 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                   },
                 ),
                 const SizedBox(height: 16),
+                DatePickerField(
+                  controller: _dataNascimentoController,
+                  validator: _validateData,
+                ),
+                const SizedBox(height: 16),
                 AuthTextField(
                   hintText: 'senha',
                   isPassword: true,
                   controller: _senhaController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Informe a senha';
-                    if (value.length < 8) return 'A senha deve ter pelo menos 8 caracteres';
-                    if (!RegExp(r'[A-Z]').hasMatch(value)) return 'A senha deve ter pelo menos uma letra maiúscula';
-                    if (!RegExp(r'[a-z]').hasMatch(value)) return 'A senha deve ter pelo menos uma letra minúscula';
-                    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>_]').hasMatch(value)) return 'A senha deve conter um caractere especial';
-                    if (!RegExp(r'[0-9]').hasMatch(value)) return 'A senha deve conter pelo menos um número';
-                    return null;
-                  },
+                  validator: _validateSenha,
                 ),
                 const SizedBox(height: 16),
                 AuthTextField(
@@ -214,35 +215,6 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                         text: 'Cadastrar',
                         onPressed: _submit,
                       ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(child: Divider(color: AppColors.strokeLight)),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(
-                        'ou',
-                        style: TextStyle(color: AppColors.greyText),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: AppColors.strokeLight)),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    SocialButton(
-                      text: 'Continue with Google',
-                      onPressed: () {},
-                    ),
-                    const SizedBox(width: 12),
-                    SocialButton(
-                      text: 'Continue with Apple',
-                      isApple: true,
-                      onPressed: () {},
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 24),
                 Center(
                   child: TextButton(

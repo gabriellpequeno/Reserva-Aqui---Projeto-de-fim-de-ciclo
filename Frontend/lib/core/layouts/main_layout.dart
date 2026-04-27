@@ -33,7 +33,7 @@ class MainLayout extends ConsumerWidget {
         context.go('/profile/user');
       }
     } else {
-      context.go('/auth');
+      context.go('/auth/login');
     }
   }
 

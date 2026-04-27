@@ -23,16 +23,9 @@ class AuthService {
     return AuthResponse.fromJson(response.data!);
   }
 
-  Future<void> registerHotel(Map<String, dynamic> hotelData) async {
-    await _dio.post<Map<String, dynamic>>(
-      '/hotel/register',
-      data: hotelData,
-    );
-  }
-
-  Future<AuthResponse> loginHotel(String email, String senha) async {
+  Future<AuthResponse> loginGuest(String email, String senha) async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/hotel/login',
+      '/usuarios/login',
       data: {'email': email, 'senha': senha},
     );
     return AuthResponse.fromJson(response.data!);

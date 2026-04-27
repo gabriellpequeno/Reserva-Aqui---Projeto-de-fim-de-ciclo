@@ -1,17 +1,23 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../providers/user_profile_provider.dart';
 import '../widgets/profile_form_section.dart';
+import '../../../../utils/Usuario.dart';
 
-class EditUserProfilePage extends StatefulWidget {
+class EditUserProfilePage extends ConsumerStatefulWidget {
   const EditUserProfilePage({super.key});
 
   @override
-  State<EditUserProfilePage> createState() => _EditUserProfilePageState();
+  ConsumerState<EditUserProfilePage> createState() => _EditUserProfilePageState();
 }
 
-class _EditUserProfilePageState extends State<EditUserProfilePage> {
+class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _emailController;
@@ -25,13 +31,44 @@ class _EditUserProfilePageState extends State<EditUserProfilePage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
+
+  final _dateMask = MaskTextInputFormatter(
+    mask: '##/##/####',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
+
+  bool _isLoadingPassword = false;
+
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: 'Acesse agora');
-    _emailController = TextEditingController(text: 'usuario@user.com');
-    _phoneController = TextEditingController();
-    _birthdateController = TextEditingController();
+    final profile = ref.read(userProfileProvider).value;
+
+    // Converter data de YYYY-MM-DDTHH:mm:ss para DD/MM/AAAA
+    String birthDateStr = profile?.dataNascimento ?? '';
+    if (birthDateStr.isNotEmpty) {
+      try {
+        if (birthDateStr.contains('T')) {
+          birthDateStr = birthDateStr.split('T')[0];
+        }
+        final parts = birthDateStr.split('-');
+        if (parts.length == 3) {
+          birthDateStr = '${parts[2]}/${parts[1]}/${parts[0]}';
+        }
+      } catch (_) {}
+    }
+
+    String phone = profile?.numeroCelular ?? '';
+    if (phone.length == 11) {
+      phone = '(${phone.substring(0, 2)}) ${phone.substring(2, 7)}-${phone.substring(7)}';
+    } else if (phone.length == 10) {
+      phone = '(${phone.substring(0, 2)}) ${phone.substring(2, 6)}-${phone.substring(6)}';
+    }
+
+    _nameController = TextEditingController(text: profile?.nomeCompleto ?? '');
+    _emailController = TextEditingController(text: profile?.email ?? '');
+    _phoneController = TextEditingController(text: phone);
+    _birthdateController = TextEditingController(text: birthDateStr);
     _currentPasswordController = TextEditingController();
     _passwordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
@@ -49,19 +86,79 @@ class _EditUserProfilePageState extends State<EditUserProfilePage> {
     super.dispose();
   }
 
-  Future<void> _savProfile() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-      try {
-        await Future.delayed(const Duration(seconds: 1));
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Perfil atualizado com sucesso')),
-        );
-        context.pop();
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
-      }
+  Future<void> _handleSave() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    // Salvar dados pessoais
+    final successPersonal = await _savePersonalData();
+    if (!successPersonal) return;
+
+    // Se a senha estiver preenchida, tenta salvar a senha
+    if (_passwordController.text.isNotEmpty) {
+      await _savePassword();
+      // O pop() já acontece dentro do _savePassword em caso de sucesso
+    } else {
+      // Se não tem senha pra mudar, e o personal deu certo, volta agora
+      if (mounted) context.pop();
+    }
+  }
+
+  Future<bool> _savePersonalData() async {
+    setState(() => _isLoading = true);
+    final completer = Completer<bool>();
+
+    try {
+      await ref.read(usuarioServiceProvider).update(
+            nomeCompleto: _nameController.text,
+            email: _emailController.text,
+            numeroCelular: _phoneController.text,
+            dataNascimento: _birthdateController.text,
+            onSuccess: (u) {
+              ref.invalidate(userProfileProvider);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Perfil atualizado com sucesso ✓')),
+              );
+              completer.complete(true);
+            },
+            onError: (message) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(message)),
+              );
+              completer.complete(false);
+            },
+          );
+      return await completer.future;
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _savePassword() async {
+    setState(() => _isLoadingPassword = true);
+    final completer = Completer<void>();
+
+    try {
+      await ref.read(usuarioServiceProvider).changePassword(
+            senhaAtual: _currentPasswordController.text,
+            novaSenha: _passwordController.text,
+            confirmarNovaSenha: _confirmPasswordController.text,
+            onSuccess: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Senha alterada com sucesso ✓')),
+              );
+              if (mounted) context.pop();
+              completer.complete();
+            },
+            onError: (message) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(message)),
+              );
+              completer.complete();
+            },
+          );
+      await completer.future;
+    } finally {
+      if (mounted) setState(() => _isLoadingPassword = false);
     }
   }
 
@@ -118,14 +215,22 @@ class _EditUserProfilePageState extends State<EditUserProfilePage> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(
+                     _buildTextField(
                       controller: _phoneController,
                       label: 'Número de Celular',
                       icon: Icons.phone_outlined,
                       keyboardType: TextInputType.phone,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        _BrazilianPhoneFormatter(),
+                      ],
                       validator: (value) {
                         if (value?.isEmpty ?? true) {
                           return 'Celular é obrigatório';
+                        }
+                        final clean = value!.replaceAll(RegExp(r'\D'), '');
+                        if (clean.length != 10 && clean.length != 11) {
+                          return 'Telefone incompleto';
                         }
                         return null;
                       },
@@ -135,10 +240,16 @@ class _EditUserProfilePageState extends State<EditUserProfilePage> {
                       controller: _birthdateController,
                       label: 'Data de Nascimento',
                       icon: Icons.calendar_today_outlined,
+                      keyboardType: TextInputType.datetime,
+                      inputFormatters: [_dateMask],
                       hint: 'DD/MM/YYYY',
                       validator: (value) {
                         if (value?.isEmpty ?? true) {
                           return 'Data de nascimento é obrigatória';
+                        }
+                        final clean = value!.replaceAll(RegExp(r'\D'), '');
+                        if (clean.length != 8) {
+                          return 'Data incompleta';
                         }
                         return null;
                       },
@@ -160,9 +271,6 @@ class _EditUserProfilePageState extends State<EditUserProfilePage> {
                       validator: (value) {
                         if (_passwordController.text.isNotEmpty && (value?.isEmpty ?? true)) {
                           return 'Insira sua senha atual para alterar';
-                        }
-                        if (_passwordController.text.isNotEmpty && value != '123456') {
-                          return 'Senha atual incorreta';
                         }
                         return null;
                       },
@@ -199,16 +307,16 @@ class _EditUserProfilePageState extends State<EditUserProfilePage> {
                 ),
                 const SizedBox(height: 32),
                 PrimaryButton(
-                  text: _isLoading ? 'Salvando...' : 'Salvar Alterações',
-                  isLoading: _isLoading,
-                  onPressed: _savProfile,
+                  text: (_isLoading || _isLoadingPassword) ? 'Salvando...' : 'Salvar Alterações',
+                  isLoading: _isLoading || _isLoadingPassword,
+                  onPressed: (_isLoading || _isLoadingPassword) ? null : _handleSave,
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: OutlinedButton(
-                    onPressed: () => context.pop(),
+                    onPressed: (_isLoading || _isLoadingPassword) ? null : () => context.pop(),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: AppColors.primary),
                       shape: RoundedRectangleBorder(
@@ -241,12 +349,16 @@ class _EditUserProfilePageState extends State<EditUserProfilePage> {
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
     String? hint,
+    List<TextInputFormatter>? inputFormatters,
+    void Function(String)? onChanged,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
+      inputFormatters: inputFormatters,
+      onChanged: onChanged,
       minLines: maxLines == 1 ? 1 : maxLines,
       validator: validator,
       style: const TextStyle(
@@ -342,6 +454,42 @@ class _EditUserProfilePageState extends State<EditUserProfilePage> {
           vertical: 16,
         ),
       ),
+    );
+  }
+}
+
+class _BrazilianPhoneFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (text.length > 11) return oldValue;
+
+    String formatted = '';
+    if (text.isNotEmpty) {
+      formatted += '(';
+      formatted += text.substring(0, text.length > 2 ? 2 : text.length);
+      if (text.length > 2) {
+        formatted += ') ';
+        if (text.length <= 10) {
+          formatted += text.substring(2, text.length > 6 ? 6 : text.length);
+          if (text.length > 6) {
+            formatted += '-';
+            formatted += text.substring(6);
+          }
+        } else {
+          formatted += text.substring(2, 7);
+          formatted += '-';
+          formatted += text.substring(7);
+        }
+      }
+    }
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

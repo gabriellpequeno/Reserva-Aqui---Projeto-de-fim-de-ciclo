@@ -68,18 +68,50 @@ class RoomCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.only(right: 40), // Space for rating
-                          child: Text(
-                            title.toUpperCase(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: AppColors.primary,
+                        // Título e badge de nota em Row — texto colapsa antes do badge
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title.toUpperCase(),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  height: 1.25,
+                                  color: AppColors.primary,
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            // Badge de nota ao lado do título
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.star, size: 14, color: AppColors.secondary),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    rating,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Row(
                           children: amenities.map((icon) => Padding(
                             padding: const EdgeInsets.only(right: 8),
@@ -87,33 +119,6 @@ class RoomCard extends StatelessWidget {
                           )).toList(),
                         ),
                       ],
-                    ),
-                  ),
-                  // Rating Tag (Posicionado dentro do card, afastado da borda)
-                  Positioned(
-                    top: 8, 
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star, size: 14, color: AppColors.secondary),
-                          const SizedBox(width: 4),
-                          Text(
-                            rating,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ],

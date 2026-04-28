@@ -45,6 +45,7 @@
   - [x] CEP autofill no cadastro de hotel (cep-autofill) — plan: plans/cep-autofill.plan.md
 - [ ] Tela de esqueci minha senha
 - [ ] Sessão persistente no app (armazenar token localmente)
+- [ ] Tela de perfil do hóspede (P3-A) — plan: plans/user-profile-page.plan.md
 
 ---
 

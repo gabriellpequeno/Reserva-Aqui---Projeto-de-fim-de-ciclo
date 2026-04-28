@@ -44,9 +44,22 @@ final dioProvider = Provider<Dio>((ref) {
       },
       onError: (error, handler) async {
         final auth = ref.read(authProvider).asData?.value;
+        final path = error.requestOptions.path;
+        final isBusinessAuth =
+            path.endsWith('/change-password') ||
+            path.endsWith('/login');
+        final alreadyRetried =
+            error.requestOptions.extra['_retried'] == true;
 
-        if (error.response?.statusCode != 401 || auth?.refreshToken == null) {
-          if (error.response?.statusCode == 401) {
+        if (error.response?.statusCode != 401 ||
+            auth?.refreshToken == null ||
+            isBusinessAuth ||
+            alreadyRetried) {
+          // 401 em endpoints de senha/login = erro de credencial, não token expirado.
+          // 401 em retry já refeito = credencial inválida após refresh.
+          if (error.response?.statusCode == 401 &&
+              !isBusinessAuth &&
+              alreadyRetried) {
             await ref.read(authProvider.notifier).clear();
           }
           handler.next(error);
@@ -79,6 +92,7 @@ final dioProvider = Provider<Dio>((ref) {
 
           for (final pending in _pendingQueue) {
             pending.options.headers['Authorization'] = 'Bearer $newAccess';
+            pending.options.extra['_retried'] = true;
             dio
                 .fetch(pending.options)
                 .then(
@@ -89,6 +103,7 @@ final dioProvider = Provider<Dio>((ref) {
           _pendingQueue.clear();
 
           error.requestOptions.headers['Authorization'] = 'Bearer $newAccess';
+          error.requestOptions.extra['_retried'] = true;
           handler.resolve(await dio.fetch(error.requestOptions));
         } catch (_) {
           _pendingQueue.clear();

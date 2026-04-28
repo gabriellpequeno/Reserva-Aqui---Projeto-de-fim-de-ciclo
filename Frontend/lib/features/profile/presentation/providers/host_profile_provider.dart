@@ -8,6 +8,16 @@ class HostProfileState {
   final List<Map<String, dynamic>> fotos;
 
   const HostProfileState({required this.hotel, required this.fotos});
+
+  HostProfileState copyWith({
+    Map<String, dynamic>? hotel,
+    List<Map<String, dynamic>>? fotos,
+  }) {
+    return HostProfileState(
+      hotel: hotel ?? this.hotel,
+      fotos: fotos ?? this.fotos,
+    );
+  }
 }
 
 class HostProfileNotifier extends AsyncNotifier<HostProfileState> {
@@ -49,6 +59,46 @@ class HostProfileNotifier extends AsyncNotifier<HostProfileState> {
     }
 
     return HostProfileState(hotel: hotelData, fotos: fotosData);
+  }
+
+  Future<void> updateProfile(Map<String, dynamic> diff) async {
+    if (diff.isEmpty) {
+      throw Exception('Nenhuma alteração a salvar.');
+    }
+
+    final hotelService = ref.read(hotelServiceProvider);
+    final completer = Completer<Map<String, dynamic>>();
+
+    await hotelService.updateMe(
+      body: diff,
+      onSuccess: (hotel) => completer.complete(hotel),
+      onError: (message) => completer.completeError(Exception(message)),
+    );
+
+    final updated = await completer.future;
+    final current = state.value;
+    if (current != null) {
+      state = AsyncData(current.copyWith(hotel: updated));
+    }
+  }
+
+  Future<void> changePassword({
+    required String senhaAtual,
+    required String novaSenha,
+    required String confirmarNovaSenha,
+  }) async {
+    final hotelService = ref.read(hotelServiceProvider);
+    final completer = Completer<void>();
+
+    await hotelService.changePassword(
+      senhaAtual: senhaAtual,
+      novaSenha: novaSenha,
+      confirmarNovaSenha: confirmarNovaSenha,
+      onSuccess: () => completer.complete(),
+      onError: (message) => completer.completeError(Exception(message)),
+    );
+
+    await completer.future;
   }
 }
 

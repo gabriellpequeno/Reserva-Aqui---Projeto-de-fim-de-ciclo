@@ -21,8 +21,9 @@ class HomeNotifier extends Notifier<HomeState> {
         final data = json as Map<String, dynamic>;
         return Room(
           id: data['roomId'] as String? ?? '',
+          hotelId: data['hotelId'] as String? ?? '',
           title: data['title'] as String? ?? '',
-          hotelName: data['hotelId'] as String? ?? '',
+          hotelName: data['title'] as String? ?? '',
           destination: data['destination'] as String? ?? '',
           description: '',
           imageUrls: [data['imageUrl'] as String? ?? ''],

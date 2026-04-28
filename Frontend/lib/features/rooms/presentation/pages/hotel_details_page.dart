@@ -375,6 +375,7 @@ class HotelDetailsPage extends ConsumerWidget {
           final room = rooms[index];
           return RoomCard(
             roomId: room['roomId'] as String,
+            hotelId: room['hotelId'] as String? ?? '',
             title: room['title'] as String,
             imageUrl: room['imageUrl'] as String,
             rating: room['rating'] as String,

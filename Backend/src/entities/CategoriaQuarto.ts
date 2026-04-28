@@ -29,11 +29,12 @@ export interface CategoriaItemSafe {
 }
 
 export interface CategoriaQuartoSafe {
-  id:                 number;
-  nome:               string;
-  valor_diaria:       string;   // DECIMAL retorna como string pelo driver pg
-  capacidade_pessoas: number;
-  itens:              CategoriaItemSafe[];
+  id:                  number;
+  nome:                string;
+  valor_diaria:        string;   // DECIMAL retorna como string pelo driver pg
+  capacidade_pessoas:  number;
+  itens:               CategoriaItemSafe[];
+  primeiro_quarto_id:  number | null;
 }
 
 export class CategoriaQuarto {

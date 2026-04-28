@@ -61,6 +61,20 @@
 
 ---
 
+## Fase P4-C — Hotel Details Page [PENDENTE]
+
+> Plan: `plans/hotel-details-page.plan.md`
+> Spec: `specs/hotel-details-page.spec.md`
+
+- [ ] Verificar endpoint `GET /hotel/:hotel_id` sem autenticação
+- [ ] Criar `HotelDetailsState` com loading/error por seção
+- [ ] Criar modelos: `HotelModel`, `AvaliacaoModel`, `ComodidadeModel`, `PoliticasModel`, `CategoriaModel`
+- [ ] Criar `HotelDetailsNotifier` com `Future.wait` e tratamento individual por seção
+- [ ] Auditar e atualizar `hotel_details_page.dart` (substituir mocks, adicionar comodidades, filtro de camas)
+- [ ] Validar renderização ponta a ponta com dados reais
+
+---
+
 ## Fase 3 — Sistema de Reservas [PENDENTE]
 
 > Spec: `specs/reservas.spec.md`

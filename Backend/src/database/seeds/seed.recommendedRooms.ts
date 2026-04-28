@@ -167,14 +167,14 @@ const SEED_USER = {
   data_nascimento: '1990-01-01',
 };
 
-async function seedRecommendedRooms(): Promise<void> {
-  // Busca hotel ativo para inserir os quartos de seed
+export async function seedRecommendedRooms(): Promise<void> {
+  // Busca especificamente o Hotel Paradiso criado pelo seed.hotels.ts
   const { rows: hoteis } = await masterPool.query<{ hotel_id: string; schema_name: string }>(
-    `SELECT hotel_id, schema_name FROM anfitriao WHERE ativo = TRUE LIMIT 1`
+    `SELECT hotel_id, schema_name FROM anfitriao WHERE email = 'paradiso@teste.com' AND ativo = TRUE LIMIT 1`
   );
 
   if (!hoteis.length) {
-    console.warn('[seed/recommendedRooms] Nenhum hotel ativo encontrado — rode seed-hotel.ts primeiro');
+    console.warn('[seed/recommendedRooms] Hotel Paradiso não encontrado — rode db:seed:hotels primeiro');
     process.exit(1);
   }
 
@@ -329,9 +329,12 @@ async function seedRecommendedRooms(): Promise<void> {
   });
 }
 
-seedRecommendedRooms()
-  .catch((err) => {
-    console.error('[seed/recommendedRooms] Erro fatal:', err);
-    process.exit(1);
-  })
-  .finally(() => masterPool.end());
+// Auto-execução apenas quando rodado diretamente (não via orquestrador)
+if (require.main === module) {
+  seedRecommendedRooms()
+    .catch((err) => {
+      console.error('[seed/recommendedRooms] Erro fatal:', err);
+      process.exit(1);
+    })
+    .finally(() => masterPool.end());
+}

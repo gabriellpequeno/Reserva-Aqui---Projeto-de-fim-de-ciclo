@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { handleSearchRooms } from '../controllers/searchRoom.controller';
+import { handleGetRecommendedRooms } from '../controllers/recommendedRooms.controller';
 
 const router = Router();
 
@@ -9,5 +10,8 @@ const router = Router();
  * Query params: q (obrigatório), checkin?, checkout?, hospedes?
  */
 router.get('/busca', handleSearchRooms);
+
+// Rota pública — GET /api/quartos/recomendados
+router.get('/recomendados', handleGetRecommendedRooms);
 
 export default router;

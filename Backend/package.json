@@ -10,6 +10,7 @@
     "start": "node dist/app.js",
     "prod": "npm run build && npm run start",
     "db:reset": "ts-node --transpile-only src/scripts/reset-db.ts",
+    "db:seed:recommended": "ts-node --transpile-only src/database/seeds/seed.recommendedRooms.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

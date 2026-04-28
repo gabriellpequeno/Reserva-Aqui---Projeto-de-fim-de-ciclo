@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/providers/ui_providers.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../notifiers/home_notifier.dart';
+import '../notifiers/home_state.dart';
 import '../widgets/room_card.dart';
+import '../widgets/home_shimmer.dart';
+import '../../../search/presentation/providers/search_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -14,6 +19,15 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   final PageController _pageController = PageController();
+  final TextEditingController _searchController = TextEditingController();
+  bool _hasLoadedRecommendations = false;
+  bool _isFilterOpen = false;
+  final Set<String> _selectedFilters = {};
+
+  static const _filterOptions = [
+    'Wi-Fi', 'Piscina', 'Ar-condicionado',
+    'Estacionamento', 'Restaurante', 'Spa', 'Fitness',
+  ];
 
   @override
   void initState() {
@@ -25,7 +39,31 @@ class _HomePageState extends ConsumerState<HomePage> {
   void dispose() {
     _pageController.removeListener(_scrollListener);
     _pageController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasLoadedRecommendations) {
+      _hasLoadedRecommendations = true;
+      Future.microtask(() {
+        ref.read(homeNotifierProvider.notifier).loadRecommended();
+      });
+    }
+  }
+
+  // Submete a busca: atualiza destination no provider e navega para search_page
+  void _submitSearch(String query) {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      context.push('/search');
+      return;
+    }
+    ref.read(searchProvider.notifier).updateDestination(trimmed);
+    if (_isFilterOpen) setState(() => _isFilterOpen = false);
+    context.push('/search');
   }
 
   void _scrollListener() {
@@ -167,6 +205,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildContentScreen(Size size, bool isWeb) {
+    final homeState = ref.watch(homeNotifierProvider);
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -192,42 +232,12 @@ class _HomePageState extends ConsumerState<HomePage> {
           const SizedBox(height: 20),
           Stack(
             children: [
-              SizedBox(
-                height: 400,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: const [
-                    RoomCard(
-                      roomId: '1',
-                      title: 'Copacabana Palace',
-                      imageUrl: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=2070',
-                      rating: '5,0',
-                      amenities: [Icons.wifi, Icons.ac_unit, Icons.pool],
-                    ),
-                    RoomCard(
-                      roomId: '2',
-                      title: 'Fasano Rio',
-                      imageUrl: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=2000',
-                      rating: '4,9',
-                      amenities: [Icons.wifi, Icons.restaurant, Icons.spa],
-                    ),
-                    RoomCard(
-                      roomId: '3',
-                      title: 'Hotel Unique SP',
-                      imageUrl: 'https://images.unsplash.com/photo-1541971802814-ced3bbff94a5?q=80&w=2070',
-                      rating: '4,8',
-                      amenities: [Icons.wifi, Icons.pool, Icons.fitness_center],
-                    ),
-                    RoomCard(
-                      roomId: '4',
-                      title: 'Belmond Cataratas',
-                      imageUrl: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?q=80&w=2070',
-                      rating: '5,0',
-                      amenities: [Icons.wifi, Icons.nature, Icons.park],
-                    ),
-                  ],
-                ),
-              ),
+              if (homeState.isLoading)
+                const HomeShimmer()
+              else if (homeState.rooms.isEmpty)
+                _buildEmptyState()
+              else
+                _buildRoomCards(homeState),
               Positioned(
                 right: 0,
                 top: 180,
@@ -250,7 +260,55 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
+  Widget _buildRoomCards(HomeState homeState) {
+    return SizedBox(
+      height: 400,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: homeState.rooms.length,
+        itemBuilder: (context, index) {
+          final room = homeState.rooms[index];
+          final roomId = room.id;
+          return RoomCard(
+            roomId: roomId.isNotEmpty ? roomId : '0',
+            title: room.title,
+            imageUrl: room.imageUrls.isNotEmpty ? room.imageUrls.first : '',
+            rating: room.rating,
+            amenities: room.amenities.map((a) => a.icon).toList(),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return SizedBox(
+      height: 200,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.hotel, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 12),
+            Text(
+              'Nenhum quarto disponível no momento',
+              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSearchSection() {
+    // Ajusta o border radius da barra quando o dropdown está aberto para parecer conectado
+    final barRadius = _isFilterOpen
+        ? const BorderRadius.only(
+            topLeft: Radius.circular(15),
+            topRight: Radius.circular(15),
+          )
+        : BorderRadius.circular(15);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -277,26 +335,141 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ),
         const SizedBox(height: 20),
-          Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              color: AppColors.bgSecondary,
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: Colors.black12),
-            ),
-            child: const TextField(
-              textAlignVertical: TextAlignVertical.center,
-              decoration: InputDecoration(
-                hintText: 'Para onde você vai?',
-                hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                prefixIcon: Icon(Icons.search, color: AppColors.primary),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
+        // Barra de busca: toque no campo navega para search_page
+        Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: AppColors.bgSecondary,
+            borderRadius: barRadius,
+            border: Border.all(color: Colors.black12),
+          ),
+          child: Row(
+            children: [
+              // Campo de busca: digitável, submeter navega para search_page com query
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  textAlignVertical: TextAlignVertical.center,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: _submitSearch,
+                  decoration: const InputDecoration(
+                    hintText: 'Para onde você vai?',
+                    hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+                    prefixIcon: Icon(Icons.search, color: AppColors.primary),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
               ),
+              // Ícone de filtro: abre dropdown de comodidades sem sair da home
+              IconButton(
+                icon: Icon(
+                  Icons.tune,
+                  // Indica visualmente que há filtros ativos
+                  color: _selectedFilters.isNotEmpty
+                      ? AppColors.secondary
+                      : AppColors.primary,
+                ),
+                onPressed: () => setState(() => _isFilterOpen = !_isFilterOpen),
+              ),
+            ],
+          ),
+        ),
+        // Dropdown de filtros: abre abaixo da barra com mesma largura
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          child: _isFilterOpen ? _buildFilterPanel() : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
+  // Painel de filtros com chips de seleção múltipla
+  Widget _buildFilterPanel() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      decoration: BoxDecoration(
+        color: AppColors.bgSecondary,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(15),
+          bottomRight: Radius.circular(15),
+        ),
+        border: const Border(
+          left: BorderSide(color: Colors.black12),
+          right: BorderSide(color: Colors.black12),
+          bottom: BorderSide(color: Colors.black12),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(height: 1, color: Colors.black12),
+          const SizedBox(height: 8),
+          const Text(
+            'Comodidades',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey,
+              letterSpacing: 0.8,
             ),
           ),
-      ],
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: _filterOptions.map((option) {
+              final isSelected = _selectedFilters.contains(option);
+              return FilterChip(
+                label: Text(option),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (selected) {
+                      _selectedFilters.add(option);
+                    } else {
+                      _selectedFilters.remove(option);
+                    }
+                  });
+                  debugPrint('[home] Filtros ativos: $_selectedFilters');
+                },
+                selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                checkmarkColor: AppColors.primary,
+                labelStyle: TextStyle(
+                  fontSize: 13,
+                  color: isSelected ? AppColors.primary : Colors.grey[700],
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+                backgroundColor: Colors.white,
+                side: BorderSide(
+                  color: isSelected ? AppColors.primary : Colors.black12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              );
+            }).toList(),
+          ),
+          if (_selectedFilters.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            // Botão para limpar todos os filtros selecionados
+            GestureDetector(
+              onTap: () => setState(() => _selectedFilters.clear()),
+              child: Text(
+                'Limpar filtros',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.secondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

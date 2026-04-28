@@ -100,6 +100,21 @@ async function seedRecommendedRooms(): Promise<void> {
 
     const catId = categorias[0].id;
 
+    // Garante um usuário para testes (para avaliações)
+    const { rows: userRows } = await masterPool.query<{ user_id: string }>(
+      `INSERT INTO usuario (nome_completo, email, senha, cpf, data_nascimento) 
+       VALUES ('Hóspede Seed', 'hospede_seed@example.com', 'dummy_hash', '00000000000', '1990-01-01') 
+       ON CONFLICT (email) DO UPDATE SET nome_completo = EXCLUDED.nome_completo
+       RETURNING user_id`
+    );
+    const mockUserId = userRows[0].user_id;
+
+    // Garante hospede no schema do hotel
+    await client.query(
+      `INSERT INTO hospede (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING`,
+      [mockUserId]
+    );
+
     for (const bloco of BLOCOS) {
       console.log(`\n[seed] ${bloco.label}`);
 
@@ -136,11 +151,11 @@ async function seedRecommendedRooms(): Promise<void> {
           // Insere reserva com status CONCLUIDA para que a avaliação seja elegível
           const { rows: reservaRows } = await client.query<{ id: number }>(
             `INSERT INTO reserva
-               (quarto_id, num_hospedes, data_checkin, data_checkout, status, canal_origem, valor_total, codigo_publico)
+               (quarto_id, user_id, num_hospedes, data_checkin, data_checkout, status, canal_origem, valor_total, codigo_publico)
              VALUES
-               ($1, 1, '2025-01-01', '2025-01-02', 'CONCLUIDA', 'APP', $2, gen_random_uuid())
+               ($1, $2, 1, '2025-01-01', '2025-01-02', 'CONCLUIDA', 'APP', $3, gen_random_uuid())
              RETURNING id`,
-            [quartoId, q.valor]
+            [quartoId, mockUserId, q.valor]
           );
 
           if (!reservaRows.length) continue;
@@ -151,10 +166,10 @@ async function seedRecommendedRooms(): Promise<void> {
           // Insere avaliação vinculada à reserva CONCLUIDA
           await client.query(
             `INSERT INTO avaliacao
-               (reserva_id, nota_limpeza, nota_atendimento, nota_conforto, nota_organizacao, nota_localizacao, nota_total)
-             VALUES ($1, $2, $2, $2, $2, $2, $2)
+               (user_id, reserva_id, nota_limpeza, nota_atendimento, nota_conforto, nota_organizacao, nota_localizacao, nota_total)
+             VALUES ($1, $2, $3, $3, $3, $3, $3, $3)
              ON CONFLICT DO NOTHING`,
-            [reservaId, nota]
+            [mockUserId, reservaId, nota]
           );
         }
 

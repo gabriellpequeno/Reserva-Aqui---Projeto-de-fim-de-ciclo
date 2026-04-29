@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../domain/models/favorite_room.dart';
+import '../../domain/models/favorite_hotel.dart';
 import '../providers/favorites_provider.dart';
 
 class FavoriteCard extends ConsumerStatefulWidget {
-  final FavoriteRoom room;
+  final FavoriteHotel hotel;
 
   const FavoriteCard({
     super.key,
-    required this.room,
+    required this.hotel,
   });
 
   @override
   ConsumerState<FavoriteCard> createState() => _FavoriteCardState();
 }
 
-class _FavoriteCardState extends ConsumerState<FavoriteCard> with SingleTickerProviderStateMixin {
+class _FavoriteCardState extends ConsumerState<FavoriteCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _heartController;
   late Animation<double> _heartScale;
-  bool _isFavorite = true;
 
   @override
   void initState() {
@@ -41,16 +42,27 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard> with SingleTickerPr
     super.dispose();
   }
 
-  void _handleToggleFavorite() {
+  String? _buildCoverUrl() {
+    if (widget.hotel.coverStoragePath == null) return null;
+    final dio = ref.read(dioProvider);
+    final baseUri = Uri.parse(dio.options.baseUrl);
+    final serverRoot =
+        '${baseUri.scheme}://${baseUri.host}${baseUri.hasPort ? ':${baseUri.port}' : ''}';
+    return '$serverRoot/api/uploads/hotels/${widget.hotel.hotelId}/cover';
+  }
+
+  void _handleRemove() {
     _heartController.forward(from: 0).then((_) {
-      ref.read(favoritesProvider.notifier).removeFavorite(widget.room.id);
+      ref.read(favoritesProvider.notifier).removeFavorite(widget.hotel.hotelId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final coverUrl = _buildCoverUrl();
+
     return Dismissible(
-      key: Key('fav_${widget.room.id}'),
+      key: Key('fav_${widget.hotel.hotelId}'),
       direction: DismissDirection.startToEnd,
       background: Container(
         alignment: Alignment.centerLeft,
@@ -58,22 +70,18 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard> with SingleTickerPr
         color: Colors.red.shade400,
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      onDismissed: (direction) {
-        ref.read(favoritesProvider.notifier).removeFavorite(widget.room.id);
+      onDismissed: (_) {
+        ref
+            .read(favoritesProvider.notifier)
+            .removeFavorite(widget.hotel.hotelId);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${widget.room.title} removido dos favoritos'),
-            action: SnackBarAction(
-              label: 'Desfazer',
-              onPressed: () {
-                ref.read(favoritesProvider.notifier).toggleFavorite(widget.room);
-              },
-            ),
+            content: Text('${widget.hotel.nomeHotel} removido dos favoritos'),
           ),
         );
       },
       child: GestureDetector(
-        onTap: () => context.push('/room_details/${widget.room.id}'),
+        onTap: () => context.push('/hotel_details/${widget.hotel.hotelId}'),
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
@@ -96,15 +104,15 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard> with SingleTickerPr
                     topLeft: Radius.circular(16),
                     bottomLeft: Radius.circular(16),
                   ),
-                  child: Hero(
-                    tag: 'room_img_${widget.room.id}',
-                    child: Image.network(
-                      widget.room.imageUrl,
-                      width: 120,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+                  child: coverUrl != null
+                      ? Image.network(
+                          coverUrl,
+                          width: 120,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                        )
+                      : _buildPlaceholder(),
                 ),
                 // Details Section
                 Expanded(
@@ -118,7 +126,7 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard> with SingleTickerPr
                           children: [
                             Expanded(
                               child: Text(
-                                widget.room.title,
+                                widget.hotel.nomeHotel,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
@@ -128,32 +136,28 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard> with SingleTickerPr
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            // 'X' button
                             IconButton(
-                              onPressed: () => ref.read(favoritesProvider.notifier).removeFavorite(widget.room.id),
-                              icon: const Icon(Icons.cancel_outlined, size: 20, color: AppColors.greyText),
+                              onPressed: () => ref
+                                  .read(favoritesProvider.notifier)
+                                  .removeFavorite(widget.hotel.hotelId),
+                              icon: const Icon(Icons.cancel_outlined,
+                                  size: 20, color: AppColors.greyText),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                             ),
                           ],
                         ),
-                        Text(
-                          widget.room.hotelName,
-                          style: const TextStyle(
-                            color: AppColors.secondary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.location_on, size: 12, color: AppColors.greyText),
+                            const Icon(Icons.location_on,
+                                size: 12, color: AppColors.greyText),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                widget.room.destination,
-                                style: const TextStyle(color: AppColors.greyText, fontSize: 11),
+                                '${widget.hotel.bairro}, ${widget.hotel.cidade} - ${widget.hotel.uf}',
+                                style: const TextStyle(
+                                    color: AppColors.greyText, fontSize: 11),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -164,25 +168,13 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard> with SingleTickerPr
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.star, size: 14, color: Colors.amber),
-                                const SizedBox(width: 4),
-                                Text(
-                                  widget.room.rating,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                ),
-                              ],
-                            ),
-                            // Heart Animation Button
+                            const SizedBox.shrink(),
                             ScaleTransition(
                               scale: _heartScale,
                               child: IconButton(
-                                onPressed: _handleToggleFavorite,
-                                icon: Icon(
-                                  _isFavorite ? Icons.favorite : Icons.favorite_border,
-                                  color: _isFavorite ? Colors.red : AppColors.greyText,
-                                ),
+                                onPressed: _handleRemove,
+                                icon: const Icon(Icons.favorite,
+                                    color: Colors.red),
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(),
                               ),
@@ -194,7 +186,8 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard> with SingleTickerPr
                           width: double.infinity,
                           height: 32,
                           child: ElevatedButton(
-                            onPressed: () => context.push('/room_details/${widget.room.id}'),
+                            onPressed: () => context
+                                .push('/hotel_details/${widget.hotel.hotelId}'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
@@ -204,7 +197,10 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard> with SingleTickerPr
                               ),
                               padding: EdgeInsets.zero,
                             ),
-                            child: const Text('VER MAIS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            child: const Text('VER MAIS',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],
@@ -216,6 +212,14 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard> with SingleTickerPr
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      width: 120,
+      color: AppColors.primary.withValues(alpha: 0.08),
+      child: const Icon(Icons.hotel, color: AppColors.greyText, size: 36),
     );
   }
 }

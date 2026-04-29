@@ -1,30 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/theme_notifier.dart';
+import 'terms_page.dart';
+import 'privacy_page.dart';
+import 'about_page.dart';
 
-class SettingsPage extends StatefulWidget {
+const _notificationsKey = 'notifications_enabled';
+
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
+class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _notificationsEnabled = true;
-  bool _darkModeEnabled = false;
 
-  final Color _labelColor = const Color(0xFF8B93A0); // Greyish-blue from the design
-  final Color _borderColor = const Color(0xFFDCDFE5); // Lighter border color
+  final Color _labelColor = const Color(0xFF8B93A0);
+  final Color _borderColor = const Color(0xFFDCDFE5);
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final brightness = MediaQuery.of(context).platformBrightness;
-    _darkModeEnabled = brightness == Brightness.dark;
+  void initState() {
+    super.initState();
+    _loadNotificationsPref();
+  }
+
+  Future<void> _loadNotificationsPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _notificationsEnabled = prefs.getBool(_notificationsKey) ?? true;
+    });
+  }
+
+  Future<void> _setNotifications(bool value) async {
+    setState(() => _notificationsEnabled = value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notificationsKey, value);
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = ref.watch(themeProvider);
+    final isDark = themeMode == ThemeMode.dark;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
@@ -33,7 +55,7 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 60), // Adjusted space below CustomAppBar
+              const SizedBox(height: 60),
               const Text(
                 'Configurações',
                 textAlign: TextAlign.center,
@@ -44,8 +66,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               const SizedBox(height: 32),
-              
-              // Preferencias Section
+
               Text(
                 'Preferencias',
                 style: TextStyle(
@@ -67,31 +88,22 @@ class _SettingsPageState extends State<SettingsPage> {
                       icon: Icons.notifications_none,
                       title: 'Notificações',
                       value: _notificationsEnabled,
-                      onChanged: (val) {
-                        setState(() {
-                          _notificationsEnabled = val;
-                        });
-                      },
+                      onChanged: _setNotifications,
                     ),
                     Divider(color: _borderColor, height: 1, indent: 16, endIndent: 16),
                     _buildSwitchTile(
                       icon: Icons.light_mode_outlined,
                       title: 'Modo Claro',
                       subtitle: 'Preferência De Tema',
-                      value: _darkModeEnabled,
-                      onChanged: (val) {
-                        setState(() {
-                          _darkModeEnabled = val;
-                        });
-                      },
+                      value: isDark,
+                      onChanged: (val) => ref.read(themeProvider.notifier).setDark(val),
                     ),
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
-              // Legal Section
+
               Text(
                 'Legal',
                 style: TextStyle(
@@ -112,19 +124,28 @@ class _SettingsPageState extends State<SettingsPage> {
                     _buildActionTile(
                       icon: Icons.list_alt,
                       title: 'Termos De Uso',
-                      onTap: () {},
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const TermsPage()),
+                      ),
                     ),
                     Divider(color: _borderColor, height: 1, indent: 16, endIndent: 16),
                     _buildActionTile(
-                      icon: Icons.privacy_tip_outlined, // Shield icon
+                      icon: Icons.privacy_tip_outlined,
                       title: 'Privacidade',
-                      onTap: () {},
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PrivacyPage()),
+                      ),
                     ),
                     Divider(color: _borderColor, height: 1, indent: 16, endIndent: 16),
                     _buildActionTile(
                       icon: Icons.info_outline,
                       title: 'Sobre O App',
-                      onTap: () {},
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AboutPage()),
+                      ),
                     ),
                   ],
                 ),
@@ -162,7 +183,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                if (subtitle != null) ...[
+                if (subtitle != null)
                   Text(
                     subtitle,
                     style: TextStyle(
@@ -170,14 +191,13 @@ class _SettingsPageState extends State<SettingsPage> {
                       color: _labelColor.withAlpha(178),
                     ),
                   ),
-                ]
               ],
             ),
           ),
           CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: AppColors.secondary, // Orange color
+            activeTrackColor: AppColors.secondary,
             inactiveTrackColor: _borderColor,
           ),
         ],

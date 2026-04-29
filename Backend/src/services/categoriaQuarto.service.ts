@@ -81,6 +81,13 @@ const SELECT_CATEGORIA_COM_ITENS = `
     cq.nome,
     cq.preco_base AS valor_diaria,
     cq.capacidade_pessoas,
+    (
+      SELECT MIN(q.id)
+      FROM quarto q
+      WHERE q.categoria_quarto_id = cq.id
+        AND q.deleted_at IS NULL
+        AND q.disponivel = TRUE
+    ) AS primeiro_quarto_id,
     COALESCE(
       json_agg(
         json_build_object(

@@ -114,13 +114,16 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Title
-                                Text(
-                                  roomState.room!.hotelName,
-                                  style: const TextStyle(
-                                    color: AppColors.primary,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
+                                // Title — toque navega para hotel_details
+                                GestureDetector(
+                                  onTap: () => context.push('/hotel_details/${widget.hotelId}'),
+                                  child: Text(
+                                    roomState.room!.hotelName,
+                                    style: const TextStyle(
+                                      color: AppColors.primary,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 24),
@@ -394,39 +397,46 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const CircleAvatar(
-              radius: 20,
-              backgroundColor: Color(0xFFD9D9D9),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    host.name,
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, color: AppColors.secondary, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        host.rating,
-                        style: const TextStyle(color: AppColors.greyText, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ],
+        // Toque no avatar ou no nome do hotel navega para hotel_details
+        GestureDetector(
+          onTap: () => context.push('/hotel_details/${widget.hotelId}'),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: const Color(0xFFD9D9D9),
+                backgroundImage: host.imageUrl.isNotEmpty
+                    ? NetworkImage(host.imageUrl)
+                    : null,
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      host.name,
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: AppColors.secondary, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          host.rating,
+                          style: const TextStyle(color: AppColors.greyText, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         Text(

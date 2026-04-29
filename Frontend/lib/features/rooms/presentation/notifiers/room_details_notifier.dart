@@ -11,23 +11,35 @@ class RoomDetailsNotifier extends Notifier<RoomDetailsState> {
   }
 
   // Carregamento: chama GET /api/hotel/:hotelId/quartos/:quartoId e atualiza estado
+  // Busca dados do hotel (descrição, foto de capa, avaliações) em paralelo para
+  // popular a seção do anfitrião sem bloqueio adicional
   Future<void> loadRoom(String hotelId, String quartoId) async {
     state = state.copyWith(isLoading: true, hasError: false);
 
     try {
       final dio = ref.read(dioProvider);
-      final response = await dio.get<Map<String, dynamic>>(
-        '/hotel/$hotelId/quartos/$quartoId',
-      );
 
-      final data = response.data!['data'] as Map<String, dynamic>;
+      // Carregar quarto e dados do hotel em paralelo — falha individual não bloqueia
+      final results = await Future.wait([
+        dio.get<Map<String, dynamic>>('/hotel/$hotelId/quartos/$quartoId'),
+        _loadHotelConfiguracao(dio, hotelId),
+        _loadHotelRating(dio, hotelId),
+        _loadHotelCoverUrl(dio, hotelId),
+      ], eagerError: false);
+
+      final roomResponse = results[0] as dynamic;
+      final hotelConfig  = results[1] as Map<String, dynamic>?;
+      final hotelRating  = results[2] as double;
+      final hotelCover   = results[3] as String;
+
+      final data      = roomResponse.data!['data'] as Map<String, dynamic>;
       final categoria = data['categoria'] as Map<String, dynamic>? ?? {};
-      final itens = categoria['itens'] as List<dynamic>? ?? [];
+      final itens     = categoria['itens'] as List<dynamic>? ?? [];
       debugPrint('[roomDetailsNotifier] itens recebidos: ${itens.length} — $itens');
 
       // Extrair categoriaId diretamente para incluir no mesmo copyWith
       final categoriaId = (categoria['id'] as int?) ?? 0;
-      final room = _mapJsonToRoom(data, categoria);
+      final room        = _mapJsonToRoom(data, categoria, hotelConfig, hotelRating, hotelCover);
 
       state = state.copyWith(room: room, categoriaId: categoriaId, isLoading: false);
     } catch (error) {
@@ -36,25 +48,80 @@ class RoomDetailsNotifier extends Notifier<RoomDetailsState> {
     }
   }
 
-  Room _mapJsonToRoom(Map<String, dynamic> data, Map<String, dynamic> categoria) {
-    final itens = (categoria['itens'] as List<dynamic>? ?? []);
+  // Carrega descrição, cidade e uf do hotel via configuração
+  Future<Map<String, dynamic>?> _loadHotelConfiguracao(dynamic dio, String hotelId) async {
+    try {
+      final response = await dio.get<Map<String, dynamic>>('/hotel/$hotelId/configuracao');
+      return response.data?['data'] as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('[roomDetailsNotifier] Configuração do hotel indisponível: $e');
+      return null;
+    }
+  }
+
+  // Calcula nota média do hotel a partir das avaliações
+  Future<double> _loadHotelRating(dynamic dio, String hotelId) async {
+    try {
+      final response = await dio.get<Map<String, dynamic>>('/hotel/$hotelId/avaliacoes');
+      final items = (response.data?['data'] as List<dynamic>?) ?? [];
+      if (items.isEmpty) return 0.0;
+      final total = items
+          .map((i) => _parsePrice((i as Map<String, dynamic>)['nota_total']))
+          .reduce((a, b) => a + b);
+      return total / items.length;
+    } catch (e) {
+      debugPrint('[roomDetailsNotifier] Avaliações do hotel indisponíveis: $e');
+      return 0.0;
+    }
+  }
+
+  // Busca a URL da primeira foto de capa do hotel
+  // Endpoint fora do prefixo /api/v1 — constrói URL absoluta a partir do serverRoot
+  Future<String> _loadHotelCoverUrl(dynamic dio, String hotelId) async {
+    try {
+      final baseUri    = Uri.parse(dio.options.baseUrl as String);
+      final serverRoot = '${baseUri.scheme}://${baseUri.host}:${baseUri.port}';
+      final response   = await dio.get<Map<String, dynamic>>(
+        '$serverRoot/api/uploads/hotels/$hotelId/cover',
+      );
+      final fotos = (response.data?['fotos'] as List<dynamic>?) ?? [];
+      if (fotos.isEmpty) return '';
+      return '$serverRoot${(fotos.first as Map<String, dynamic>)['url'] as String}';
+    } catch (e) {
+      debugPrint('[roomDetailsNotifier] Foto de capa do hotel indisponível: $e');
+      return '';
+    }
+  }
+
+  Room _mapJsonToRoom(
+    Map<String, dynamic> data,
+    Map<String, dynamic> categoria,
+    Map<String, dynamic>? hotelConfig,
+    double hotelRating,
+    String hotelCoverUrl,
+  ) {
+    final itens      = (categoria['itens'] as List<dynamic>? ?? []);
+    final ratingStr  = hotelRating > 0
+        ? hotelRating.toStringAsFixed(1).replaceAll('.', ',')
+        : '—';
+    final hotelDescricao = hotelConfig?['descricao'] as String? ?? '';
 
     return Room(
-      id: (data['quarto_id'] ?? 0).toString(),
-      hotelId: data['hotel_id'] as String? ?? '',
-      title: categoria['nome'] as String? ?? '',
-      hotelName: data['nome_hotel'] as String? ?? '',
+      id:          (data['quarto_id'] ?? 0).toString(),
+      hotelId:     data['hotel_id'] as String? ?? '',
+      title:       categoria['nome'] as String? ?? '',
+      hotelName:   data['nome_hotel'] as String? ?? '',
       destination: '${data['cidade'] ?? ''}, ${data['uf'] ?? ''}',
       description: data['descricao'] as String? ?? categoria['nome'] as String? ?? '',
-      imageUrls: _parseImageUrls(data),
-      rating: '5,0',
-      amenities: _parseAmenities(itens),
-      price: _parsePrice(data['valor_diaria']),
+      imageUrls:   _parseImageUrls(data),
+      rating:      '5,0',
+      amenities:   _parseAmenities(itens),
+      price:       _parsePrice(data['valor_diaria']),
       host: Host(
-        name: data['nome_hotel'] as String? ?? '',
-        bio: '',
-        imageUrl: '',
-        rating: '0,0',
+        name:     data['nome_hotel'] as String? ?? '',
+        bio:      hotelDescricao,
+        imageUrl: hotelCoverUrl,
+        rating:   ratingStr,
       ),
     );
   }

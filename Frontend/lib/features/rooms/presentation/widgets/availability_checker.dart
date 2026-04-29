@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/theme/app_colors.dart';
 
-class AvailabilityChecker extends StatefulWidget {
+class AvailabilityChecker extends ConsumerStatefulWidget {
   final String hotelId;
   final int categoriaId;
 
@@ -13,10 +14,10 @@ class AvailabilityChecker extends StatefulWidget {
   });
 
   @override
-  State<AvailabilityChecker> createState() => _AvailabilityCheckerState();
+  ConsumerState<AvailabilityChecker> createState() => _AvailabilityCheckerState();
 }
 
-class _AvailabilityCheckerState extends State<AvailabilityChecker> {
+class _AvailabilityCheckerState extends ConsumerState<AvailabilityChecker> {
   DateTime? _checkInDate;
   DateTime? _checkOutDate;
   bool _isLoading = false;
@@ -49,11 +50,8 @@ class _AvailabilityCheckerState extends State<AvailabilityChecker> {
     setState(() => _isLoading = true);
 
     try {
-      final dio = Dio(BaseOptions(
-        baseUrl: 'http://10.0.2.2:3000/api',
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 15),
-      ));
+      // Usa dioProvider centralizado — resolve IP e prefixo por plataforma
+      final dio = ref.read(dioProvider);
 
       final response = await dio.get<Map<String, dynamic>>(
         '/hotel/${widget.hotelId}/disponibilidade',

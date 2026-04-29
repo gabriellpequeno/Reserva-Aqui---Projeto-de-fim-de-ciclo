@@ -154,47 +154,34 @@ class HotelService {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // FUNCTION: update
+  // FUNCTION: updateMe
   // ROUTE:    PATCH /hotel/me
   // AUTH:     HotelBearer
+  // Campos aceitos: nome_hotel, email, telefone, descricao,
+  //                 cep, uf, cidade, bairro, rua, numero, complemento
   // ─────────────────────────────────────────────────────────────────────────────
-  Future<void> update({
-    String? nomeHotel,
-    String? email,
-    String? telefone,
-    String? endereco,
-    String? descricao,
+  Future<void> updateMe({
+    required Map<String, dynamic> body,
     required void Function(Map<String, dynamic> hotel) onSuccess,
     required void Function(String message) onError,
   }) async {
-    if (email != null &&
+    if (body.isEmpty) {
+      onError('Nenhum dado informado para atualização.');
+      return;
+    }
+
+    final email = body['email'];
+    if (email is String &&
         email.trim().isNotEmpty &&
         !RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(email)) {
       onError('E-mail inválido.');
       return;
     }
 
-    final data = <String, dynamic>{
-      if (nomeHotel != null && nomeHotel.trim().isNotEmpty)
-        'nome_hotel': nomeHotel.trim(),
-      if (email != null && email.trim().isNotEmpty) 'email': email.trim(),
-      if (telefone != null && telefone.trim().isNotEmpty)
-        'telefone': telefone.trim(),
-      if (endereco != null && endereco.trim().isNotEmpty)
-        'endereco': endereco.trim(),
-      if (descricao != null && descricao.trim().isNotEmpty)
-        'descricao': descricao.trim(),
-    };
-
-    if (data.isEmpty) {
-      onError('Nenhum dado informado para atualização.');
-      return;
-    }
-
     try {
       final response = await _dio.patch<Map<String, dynamic>>(
         '/hotel/me',
-        data: data,
+        data: body,
       );
       onSuccess(response.data!['data'] as Map<String, dynamic>);
     } on DioException catch (e) {

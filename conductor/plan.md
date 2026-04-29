@@ -63,6 +63,19 @@
 
 ---
 
+## Fase P3-E — Settings Page [CONCLUÍDO]
+
+> Spec: `specs/settings-page.spec.md`
+> Plan detalhado: `plans/settings-page.plan.md`
+
+- [x] Criar `ThemeNotifier` em `lib/core/theme/theme_notifier.dart`
+- [x] Conectar `ThemeNotifier` ao `MaterialApp` no `main.dart`
+- [x] Conectar toggle Dark Mode ao `ThemeNotifier`
+- [x] Conectar toggle Notificações ao `shared_preferences`
+- [x] Criar telas estáticas legais e implementar navegação nos tiles
+
+---
+
 ## Fase 2 — Gestão de Hotéis e Quartos [PENDENTE]
 
 > Spec: `specs/gestao-hotel.spec.md`

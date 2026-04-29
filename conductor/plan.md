@@ -45,6 +45,21 @@
   - [x] CEP autofill no cadastro de hotel (cep-autofill) — plan: plans/cep-autofill.plan.md
 - [ ] Tela de esqueci minha senha
 - [ ] Sessão persistente no app (armazenar token localmente)
+- [ ] Tela de perfil do hóspede (P3-A) — plan: plans/user-profile-page.plan.md
+
+---
+
+## Fase P3-B — Host Profile Page [EM ANDAMENTO]
+
+> Spec: `specs/host-profile-page.spec.md`
+> Plan detalhado: `plans/host-profile-page.plan.md`
+
+- [ ] Criar `HostProfileNotifier` + provider
+- [ ] Converter `HostProfilePage` para `ConsumerWidget`
+- [ ] Integrar `GET /hotel/me` no notifier
+- [ ] Integrar `GET /uploads/hotels/:hotel_id/cover` no notifier
+- [ ] Mapear dados para os widgets e exibir foto de capa
+- [ ] Tratar loading, erro e lista de fotos vazia
 
 ---
 

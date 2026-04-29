@@ -62,12 +62,11 @@ class UsuarioService {
       return;
     }
 
-    String? cleanCelular;
+    // No backend, o celular deve vir com máscara: (xx) xxxxx-xxxx
     if (numeroCelular != null && numeroCelular.isNotEmpty) {
-      cleanCelular = numeroCelular.replaceAll(RegExp(r'[^\d]'), '');
-      if (cleanCelular.length != 11) {
+      if (!RegExp(r'^\(\d{2}\) \d{4,5}-\d{4}$').hasMatch(numeroCelular)) {
         onError(
-          'Número de celular deve conter exatamente 11 números (com DDD).',
+          'Celular inválido: formato esperado (xx) xxxx-xxxx ou (xx) xxxxx-xxxx',
         );
         return;
       }
@@ -82,7 +81,7 @@ class UsuarioService {
           'senha': senha,
           'cpf': cleanCpf,
           'data_nascimento': dataNascimento.trim(),
-          if (cleanCelular != null) 'numero_celular': cleanCelular,
+          if (numeroCelular != null) 'numero_celular': numeroCelular,
         },
       );
       onSuccess(response.data!['data'] as Map<String, dynamic>);
@@ -204,12 +203,11 @@ class UsuarioService {
       return;
     }
 
-    String? cleanCelular;
+    // No backend, o celular deve vir com máscara: (xx) xxxxx-xxxx
     if (numeroCelular != null && numeroCelular.trim().isNotEmpty) {
-      cleanCelular = numeroCelular.replaceAll(RegExp(r'[^\d]'), '');
-      if (cleanCelular.length != 11) {
+      if (!RegExp(r'^\(\d{2}\) \d{4,5}-\d{4}$').hasMatch(numeroCelular)) {
         onError(
-          'Número de celular deve conter exatamente 11 números (com DDD).',
+          'Celular inválido: formato esperado (xx) xxxx-xxxx ou (xx) xxxxx-xxxx',
         );
         return;
       }
@@ -221,7 +219,8 @@ class UsuarioService {
       if (email != null && email.trim().isNotEmpty) 'email': email.trim(),
       if (dataNascimento != null && dataNascimento.trim().isNotEmpty)
         'data_nascimento': dataNascimento.trim(),
-      if (cleanCelular != null) 'numero_celular': cleanCelular,
+      if (numeroCelular != null && numeroCelular.trim().isNotEmpty)
+        'numero_celular': numeroCelular,
     };
 
     if (data.isEmpty) {

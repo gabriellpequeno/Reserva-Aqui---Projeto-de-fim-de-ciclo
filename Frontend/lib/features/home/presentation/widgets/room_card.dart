@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 class RoomCard extends StatelessWidget {
   final String roomId;
+  final String hotelId;
   final String title;
   final String imageUrl;
   final String rating;
@@ -12,6 +13,7 @@ class RoomCard extends StatelessWidget {
   const RoomCard({
     super.key,
     required this.roomId,
+    required this.hotelId,
     required this.title,
     required this.imageUrl,
     required this.rating,
@@ -21,7 +23,7 @@ class RoomCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.push('/room_details/$roomId'),
+      onTap: () => context.push('/room_details/$hotelId/$roomId'),
       child: Container(
         width: 320,
         margin: const EdgeInsets.only(right: 16),
@@ -68,7 +70,6 @@ class RoomCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Título e badge de nota em Row — texto colapsa antes do badge
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -86,7 +87,6 @@ class RoomCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            // Badge de nota ao lado do título
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(

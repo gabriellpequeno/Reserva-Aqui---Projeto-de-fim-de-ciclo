@@ -3,137 +3,204 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/room.dart';
+import '../notifiers/room_details_notifier.dart';
+import '../widgets/availability_checker.dart';
 
-class RoomDetailsPage extends ConsumerWidget {
+class RoomDetailsPage extends ConsumerStatefulWidget {
+  final String hotelId;
   final String roomId;
 
   const RoomDetailsPage({
     super.key,
+    required this.hotelId,
     required this.roomId,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Mock room data for UI implementation
-    final room = Room(
-      id: roomId,
-      title: 'Quarto Deluxe',
-      hotelName: 'Grand Hotel Budapest',
-      destination: 'Budapest, Hungary',
-      description: 'Mussum Ipsum, cacilds vidis litro abertis. Todo mundo vê os porris que eu tomo, mas ninguém vê os tombis que eu levo! Per aumento de cachacis, eu reclamis.',
-      imageUrls: [
-        'lib/assets/images/home_page.jpeg',
-        'lib/assets/images/home_page.jpeg',
-        'lib/assets/images/home_page.jpeg',
-        'lib/assets/images/home_page.jpeg',
-      ],
-      rating: '5.0',
-      price: 128.0,
-      amenities: [
-        const Amenity('café da manhã', Icons.restaurant),
-        const Amenity('ar condicionado', Icons.air),
-        const Amenity('wifi', Icons.wifi),
-        const Amenity('2 camas', Icons.king_bed_outlined),
-      ],
-      host: const Host(
-        name: 'Grand Hotel Budapest',
-        bio: 'Mussum Ipsum, cacilds vidis litro abertis. Todo mundo vê os porris que eu tomo, mas ninguém vê os tombis que eu levo!',
-        imageUrl: 'lib/assets/images/home_page.jpeg',
-        rating: '5.0',
-      ),
-    );
+  ConsumerState<RoomDetailsPage> createState() => _RoomDetailsPageState();
+}
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // Scrollable Content
-          SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Image Section
-                _buildImageSection(context, room),
-                
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title
-                      Text(
-                        room.hotelName,
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      
-                      // Amenities Section
-                      const Text(
-                        'Comodidades',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildAmenitiesGrid(room.amenities),
-                      
-                      const SizedBox(height: 32),
-                      
-                      // Details Section
-                      const Text(
-                        'Detalhes',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        room.description,
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 14,
-                          height: 1.5,
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 32),
-                      
-                      // Host Section
-                      _buildHostSection(context, room.host),
-                      
-                      const SizedBox(height: 100), // Space for bottom bar
-                    ],
-                  ),
-                ),
-              ],
-            ),
+class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
+  late PageController _photoController;
+  int _currentPhotoIndex = 0;
+  bool _isFavorited = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _photoController = PageController();
+    // Gatilho de carregamento: dispara loadRoom ao montar a tela com hotelId e roomId
+    Future.microtask(() {
+      ref
+          .read(roomDetailsNotifierProvider.notifier)
+          .loadRoom(widget.hotelId, widget.roomId);
+    });
+  }
+
+  @override
+  void dispose() {
+    _photoController.dispose();
+    super.dispose();
+  }
+
+  void _showFavoriteModal() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Funcionalidade Exclusiva'),
+        content: const Text(
+          'Esta funcionalidade é disponível apenas para usuários cadastrados. Faça login para favoritar quartos.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
           ),
-
-          // Bottom Reservation Bar
-          _buildBottomBar(context, room),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.push('/auth/login');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.secondary,
+            ),
+            child: const Text('Fazer Login'),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildImageSection(BuildContext context, Room room) {
+  @override
+  Widget build(BuildContext context) {
+    final roomState = ref.watch(roomDetailsNotifierProvider);
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: roomState.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : roomState.hasError
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error, size: 48, color: Colors.grey[400]),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Erro ao carregar detalhes do quarto',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => ref
+                            .read(roomDetailsNotifierProvider.notifier)
+                            .loadRoom(widget.hotelId, widget.roomId),
+                        child: const Text('Tentar Novamente'),
+                      ),
+                    ],
+                  ),
+                )
+              : Stack(
+                  children: [
+                    SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Top Image Section
+                          _buildImageSection(roomState.room!),
+
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 58, 24, 24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Title
+                                Text(
+                                  roomState.room!.hotelName,
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+
+                                // Amenities Section
+                                const Text(
+                                  'Comodidades',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildAmenitiesGrid(roomState.room!.amenities),
+
+                                // Availability Checker
+                                if (roomState.categoriaId > 0)
+                                  AvailabilityChecker(
+                                    hotelId: widget.hotelId,
+                                    categoriaId: roomState.categoriaId,
+                                  ),
+
+                                const SizedBox(height: 32),
+
+                                // Details Section
+                                const Text(
+                                  'Detalhes',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  roomState.room!.description,
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: 14,
+                                    height: 1.5,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 32),
+
+                                // Host Section
+                                _buildHostSection(context, roomState.room!.host),
+
+                                const SizedBox(height: 100), // Space for bottom bar
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Bottom Reservation Bar
+                    _buildBottomBar(context, roomState.room!),
+                  ],
+                ),
+    );
+  }
+
+  Widget _buildImageSection(Room room) {
+    final mainImageUrl = room.imageUrls.isNotEmpty
+        ? room.imageUrls[_currentPhotoIndex]
+        : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800';
+
     return Stack(
+      clipBehavior: Clip.none,
       children: [
-        // Main Image
+        // Main Image — atualizada conforme thumbnail selecionada
         Container(
           height: 400,
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: AssetImage(room.imageUrls[0]),
+              image: NetworkImage(mainImageUrl),
               fit: BoxFit.cover,
+              onError: (exception, stackTrace) {},
             ),
             borderRadius: const BorderRadius.only(
               bottomLeft: Radius.circular(24),
@@ -141,7 +208,7 @@ class RoomDetailsPage extends ConsumerWidget {
             ),
           ),
         ),
-        
+
         // Gradient Top Overlay
         Positioned(
           top: 0,
@@ -162,92 +229,117 @@ class RoomDetailsPage extends ConsumerWidget {
           ),
         ),
 
-        // Back and Favorite Buttons
+        // Back Button
         Positioned(
           top: 50,
           left: 20,
-          right: 20,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildCircularButton(
-                icon: Icons.arrow_back_ios_new,
-                onTap: () => context.pop(),
-              ),
-              _buildCircularButton(
-                icon: Icons.favorite_border,
-                onTap: () {},
-              ),
-            ],
+          child: _buildCircularButton(
+            icon: Icons.arrow_back_ios_new,
+            onTap: () => context.pop(),
           ),
         ),
 
-        // Floating Price Tag
+        // Floating Price Tag — sangra à esquerda, centro vertical na borda da imagem
         Positioned(
-          bottom: 24,
-          left: 24,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                const Text(
-                  '\$',
-                  style: TextStyle(
-                    color: AppColors.secondary,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+          bottom: 0,
+          left: 0,
+          child: FractionalTranslation(
+            translation: const Offset(0, 0.5),
+            child: IntrinsicWidth(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(24, 14, 24, 14),
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
                   ),
                 ),
-                Text(
-                  '${room.price.toInt()}',
-                  style: const TextStyle(
-                    color: AppColors.secondary,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          '\$',
+                          style: TextStyle(
+                            color: AppColors.secondary,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            height: 0.9,
+                          ),
+                        ),
+                        Text(
+                          '${room.price.toInt()}',
+                          style: const TextStyle(
+                            color: AppColors.secondary,
+                            fontSize: 38,
+                            fontWeight: FontWeight.bold,
+                            height: 0.9,
+                          ),
+                        ),
+                      ],
+                    ),
+                    FittedBox(
+                      fit: BoxFit.fitWidth,
+                      alignment: Alignment.centerLeft,
+                      child: const Text(
+                        'por dia',
+                        style: TextStyle(
+                          color: AppColors.secondary,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w300,
+                          height: 0.9,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 4),
-                const Text(
-                  'por dia',
-                  style: TextStyle(
-                    color: AppColors.secondary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
 
-        // Gallery Thumbnails
-        Positioned(
-          bottom: 24,
-          right: 24,
-          child: Row(
-            children: room.imageUrls.skip(1).take(3).map((url) {
-              return Container(
-                width: 50,
-                height: 50,
-                margin: const EdgeInsets.only(left: 8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white, width: 2),
-                  image: DecorationImage(
-                    image: AssetImage(url),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              );
-            }).toList(),
+        // Carrossel de fotos — centro vertical alinhado à borda inferior da imagem
+        if (room.imageUrls.length > 1)
+          Positioned(
+            bottom: 0,
+            right: 24,
+            child: FractionalTranslation(
+              translation: const Offset(0, 0.5),
+              child: Row(
+                children: room.imageUrls.asMap().entries.take(4).map((entry) {
+                  final index = entry.key;
+                  final url = entry.value;
+                  final isSelected = _currentPhotoIndex == index;
+                  return GestureDetector(
+                    onTap: () => setState(() => _currentPhotoIndex = index),
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      margin: const EdgeInsets.only(left: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isSelected ? AppColors.secondary : Colors.white,
+                          width: isSelected ? 3 : 2,
+                        ),
+                        image: DecorationImage(
+                          image: NetworkImage(url),
+                          fit: BoxFit.cover,
+                          onError: (exception, stackTrace) {},
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -269,47 +361,32 @@ class RoomDetailsPage extends ConsumerWidget {
   }
 
   Widget _buildAmenitiesGrid(List<Amenity> amenities) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            childAspectRatio: 2.5,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: amenities.map((amenity) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(12),
           ),
-          itemCount: amenities.length,
-          itemBuilder: (context, index) {
-            final amenity = amenities[index];
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(amenity.icon, size: 18, color: AppColors.primary),
+              const SizedBox(width: 6),
+              Text(
+                amenity.label,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 12,
+                ),
               ),
-              child: Row(
-                children: [
-                  Icon(amenity.icon, size: 20, color: AppColors.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      amenity.label,
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 12,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+            ],
+          ),
         );
-      },
+      }).toList(),
     );
   }
 
@@ -322,7 +399,6 @@ class RoomDetailsPage extends ConsumerWidget {
             const CircleAvatar(
               radius: 20,
               backgroundColor: Color(0xFFD9D9D9),
-              // backgroundImage: AssetImage(host.imageUrl),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -364,7 +440,7 @@ class RoomDetailsPage extends ConsumerWidget {
         const SizedBox(height: 8),
         TextButton(
           onPressed: () {
-            context.push('/hotel_details/1');
+            context.push('/hotel_details/${widget.hotelId}');
           },
           style: TextButton.styleFrom(
             padding: EdgeInsets.zero,
@@ -403,16 +479,22 @@ class RoomDetailsPage extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            // Chat Icon Button
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+            // Favorite Button
+            GestureDetector(
+              onTap: _showFavoriteModal,
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+                ),
+                child: Icon(
+                  _isFavorited ? Icons.favorite : Icons.favorite_border,
+                  color: AppColors.primary,
+                ),
               ),
-              child: const Icon(Icons.chat_bubble_outline, color: AppColors.primary),
             ),
             const SizedBox(width: 16),
             // Reservation Button

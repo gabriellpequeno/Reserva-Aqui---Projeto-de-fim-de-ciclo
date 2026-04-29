@@ -9,6 +9,7 @@ import {
   removeItemCategoriaController,
   verificarDisponibilidadeController,
 } from '../controllers/categoriaQuarto.controller';
+import { handleGetRoomPublicDetails } from '../controllers/quartoPublico.controller';
 import { hotelGuard }    from '../middlewares/hotelGuard';
 import { requireFields } from '../middlewares/validateBody';
 
@@ -18,6 +19,9 @@ const router = Router();
 
 // Deve vir antes de /:hotel_id/categorias/:id para não ser capturado como parâmetro
 router.get('/:hotel_id/disponibilidade', verificarDisponibilidadeController);
+
+// Rota pública: retorna dados do quarto físico com categoria e itens — sem autenticação
+router.get('/:hotel_id/quartos/:quarto_id', handleGetRoomPublicDetails);
 
 router.get('/:hotel_id/categorias',     listCategoriasController);
 router.get('/:hotel_id/categorias/:id', getCategoriaController);

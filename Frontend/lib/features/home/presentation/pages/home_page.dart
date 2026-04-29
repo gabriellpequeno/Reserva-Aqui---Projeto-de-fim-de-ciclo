@@ -269,8 +269,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         itemBuilder: (context, index) {
           final room = homeState.rooms[index];
           final roomId = room.id;
+          final hotelId = room.hotelId;
           return RoomCard(
             roomId: roomId.isNotEmpty ? roomId : '0',
+            hotelId: hotelId.isNotEmpty ? hotelId : '0',
             title: room.title,
             imageUrl: room.imageUrls.isNotEmpty ? room.imageUrls.first : '',
             rating: room.rating,

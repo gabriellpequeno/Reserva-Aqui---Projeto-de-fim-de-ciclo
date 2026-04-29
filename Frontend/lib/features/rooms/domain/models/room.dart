@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class Room {
   final String id;
+  final String hotelId;
   final String title;
   final String hotelName;
   final String destination;
@@ -14,6 +15,7 @@ class Room {
 
   const Room({
     required this.id,
+    required this.hotelId,
     required this.title,
     required this.hotelName,
     required this.destination,

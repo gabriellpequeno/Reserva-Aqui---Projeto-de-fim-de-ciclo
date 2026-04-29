@@ -148,10 +148,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
-        path: '/room_details/:roomId',
+        path: '/room_details/:hotelId/:roomId',
         builder: (context, state) {
+          final hotelId = state.pathParameters['hotelId'] ?? '';
           final roomId = state.pathParameters['roomId'] ?? '';
-          return RoomDetailsPage(roomId: roomId);
+          return RoomDetailsPage(hotelId: hotelId, roomId: roomId);
         },
       ),
       GoRoute(

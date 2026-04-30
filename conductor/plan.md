@@ -116,6 +116,22 @@
 
 ---
 
+## Fase P4-E — My Rooms Page [EM ANDAMENTO]
+
+> Plan: `plans/my-rooms-page.plan.md`
+> Spec: `specs/my-rooms-page.spec.md`
+> PRD: `features/my-rooms-page.prd.md`
+
+- [ ] Ajustar backend: enum `CanalOrigem` + `Reserva.validateWalkin` aceitar `canal_origem: "manual"` sem identificação de hóspede
+- [x] Criar modelos: `QuartoModel`, `RoomCategoryCardModel`, `ReservaHotelModel` (reutiliza `CategoriaHotelModel`)
+- [x] Criar `AvailabilityCalculator` (utility puro) — testes unitários pendentes
+- [x] Criar `MyRoomsState` + `MyRoomsNotifier` com load paralelo, delete via N chamadas `DELETE` e reserva manual
+- [x] Criar `DeleteRoomDialog` (modal + quantity picker) e `ManualReservationDialog` (calendário de range com dias indisponíveis)
+- [x] Atualizar `my_rooms_page.dart` (remover mock, consumir notifier, busca/filtro, estados, navegação para add/edit room)
+- [ ] Validar fluxos: listagem, delete parcial/total, reserva manual, disponibilidade agregada, busca e filtro
+
+---
+
 ## Fase 3 — Sistema de Reservas [PENDENTE]
 
 > Spec: `specs/reservas.spec.md`

@@ -76,6 +76,19 @@
 
 ---
 
+## Fase P4-E — Favorites Page [PENDENTE]
+
+> Spec: `specs/favorites-page.spec.md`
+> Plan detalhado: `plans/favorites-page.plan.md`
+
+- [ ] Auditar referências ao modelo `FavoriteRoom` em todo o projeto
+- [ ] Renomear e adaptar `FavoriteRoom` → `FavoriteHotel` com campos do backend
+- [ ] Migrar `FavoritesNotifier` para `AsyncNotifier` com chamadas reais à API
+- [ ] Atualizar `FavoriteCard` com novo modelo, placeholder de imagem e navegação correta
+- [ ] Conectar botão de favorito na `RoomDetailsPage` via `favoritesProvider`
+
+---
+
 ## Fase 2 — Gestão de Hotéis e Quartos [PENDENTE]
 
 > Spec: `specs/gestao-hotel.spec.md`

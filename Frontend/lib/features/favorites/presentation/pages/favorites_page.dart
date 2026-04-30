@@ -12,51 +12,64 @@ class FavoritesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final favoritesAsync = ref.watch(favoritesProvider);
     final filteredFavorites = ref.watch(filteredFavoritesProvider);
     final searchQuery = ref.watch(searchQueryProvider);
-    final isLoggedIn = ref.watch(authProvider).asData?.value.isAuthenticated ?? false;
+    final isLoggedIn =
+        ref.watch(authProvider).asData?.value.isAuthenticated ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.bgSecondary,
       body: Column(
         children: [
-          // Custom Header (matching the target print)
           _buildHeader(context, ref),
-          
-          // Login Message (if not logged in)
-          if (!isLoggedIn)
-            _buildLoginMessage(context),
 
-          // Favorites List
+          if (!isLoggedIn) _buildLoginMessage(context),
+
           Expanded(
-            child: !isLoggedIn 
-              ? const SizedBox.shrink() // Or some other placeholder
-              : filteredFavorites.isEmpty
-                  ? _buildEmptyState(searchQuery.isNotEmpty)
-                  : LayoutBuilder(
-                      builder: (context, constraints) {
-                        // Responsividade: Grid para telas maiores, List para mobile
-                        if (constraints.maxWidth > 800) {
-                          return GridView.builder(
-                            padding: const EdgeInsets.only(bottom: 100, top: 10),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 2.2,
-                              mainAxisSpacing: 8,
-                              crossAxisSpacing: 8,
+            child: !isLoggedIn
+                ? const SizedBox.shrink()
+                : favoritesAsync.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : favoritesAsync.hasError
+                        ? Center(
+                            child: Text(
+                              'Erro ao carregar favoritos.',
+                              style: TextStyle(color: Colors.grey[600]),
                             ),
-                            itemCount: filteredFavorites.length,
-                            itemBuilder: (context, index) => FavoriteCard(room: filteredFavorites[index]),
-                          );
-                        }
-                        
-                        return ListView.builder(
-                          padding: const EdgeInsets.only(bottom: 100, top: 10),
-                          itemCount: filteredFavorites.length,
-                          itemBuilder: (context, index) => FavoriteCard(room: filteredFavorites[index]),
-                        );
-                      },
-                    ),
+                          )
+                        : filteredFavorites.isEmpty
+                            ? _buildEmptyState(searchQuery.isNotEmpty)
+                            : LayoutBuilder(
+                                builder: (context, constraints) {
+                                  if (constraints.maxWidth > 800) {
+                                    return GridView.builder(
+                                      padding: const EdgeInsets.only(
+                                          bottom: 100, top: 10),
+                                      gridDelegate:
+                                          const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        childAspectRatio: 2.2,
+                                        mainAxisSpacing: 8,
+                                        crossAxisSpacing: 8,
+                                      ),
+                                      itemCount: filteredFavorites.length,
+                                      itemBuilder: (context, index) =>
+                                          FavoriteCard(
+                                              hotel:
+                                                  filteredFavorites[index]),
+                                    );
+                                  }
+                                  return ListView.builder(
+                                    padding: const EdgeInsets.only(
+                                        bottom: 100, top: 10),
+                                    itemCount: filteredFavorites.length,
+                                    itemBuilder: (context, index) =>
+                                        FavoriteCard(
+                                            hotel: filteredFavorites[index]),
+                                  );
+                                },
+                              ),
           ),
         ],
       ),

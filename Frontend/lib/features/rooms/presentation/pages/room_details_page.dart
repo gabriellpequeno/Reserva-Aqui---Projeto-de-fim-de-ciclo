@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -23,7 +24,6 @@ class RoomDetailsPage extends ConsumerStatefulWidget {
 class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   late PageController _photoController;
   int _currentPhotoIndex = 0;
-  bool _isFavorited = false;
 
   @override
   void initState() {
@@ -43,31 +43,12 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
     super.dispose();
   }
 
-  void _showFavoriteModal() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Funcionalidade Exclusiva'),
-        content: const Text(
-          'Esta funcionalidade é disponível apenas para usuários cadastrados. Faça login para favoritar quartos.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.push('/auth/login');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.secondary,
-            ),
-            child: const Text('Fazer Login'),
-          ),
-        ],
-      ),
+  void _handleShareTap(Room room) {
+    final link =
+        'https://reservaqui.com/hotel/${widget.hotelId}/room/${widget.roomId}';
+    Clipboard.setData(ClipboardData(text: link));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Link copiado para a área de transferência')),
     );
   }
 
@@ -489,21 +470,19 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
         ),
         child: Row(
           children: [
-            // Favorite Button
+            // Share Button
             GestureDetector(
-              onTap: _showFavoriteModal,
+              onTap: () => _handleShareTap(room),
               child: Container(
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+                  border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.1)),
                 ),
-                child: Icon(
-                  _isFavorited ? Icons.favorite : Icons.favorite_border,
-                  color: AppColors.primary,
-                ),
+                child: const Icon(Icons.share_outlined, color: AppColors.primary),
               ),
             ),
             const SizedBox(width: 16),

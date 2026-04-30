@@ -1,80 +1,73 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/models/favorite_room.dart';
+import '../../../../core/auth/auth_notifier.dart';
+import '../../../../utils/Usuario.dart';
+import '../../domain/models/favorite_hotel.dart';
 
-class FavoritesNotifier extends Notifier<List<FavoriteRoom>> {
+class FavoritesNotifier extends AsyncNotifier<List<FavoriteHotel>> {
   @override
-  List<FavoriteRoom> build() {
-    // Mock initial data
-    return [
-      const FavoriteRoom(
-        id: '1',
-        title: 'Suíte Luxo Vista Mar',
-        hotelName: 'Hotel Paradiso',
-        destination: 'Rio de Janeiro, RJ',
-        imageUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        rating: '4.8',
-        price: 450.0,
-        amenities: [Icons.wifi, Icons.ac_unit, Icons.pool],
-      ),
-      const FavoriteRoom(
-        id: '2',
-        title: 'Quarto Standard Casal',
-        hotelName: 'Pousada das Flores',
-        destination: 'Gramado, RS',
-        imageUrl: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        rating: '4.5',
-        price: 280.0,
-        amenities: [Icons.wifi, Icons.tv],
-      ),
-      const FavoriteRoom(
-        id: '3',
-        title: 'Bangalô Presidencial',
-        hotelName: 'Resort Tropical',
-        destination: 'Porto de Galinhas, PE',
-        imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        rating: '5.0',
-        price: 1200.0,
-        amenities: [Icons.wifi, Icons.ac_unit, Icons.pool, Icons.hot_tub],
-      ),
-    ];
+  Future<List<FavoriteHotel>> build() async {
+    final auth = await ref.watch(authProvider.future);
+    if (!auth.isAuthenticated) return [];
+
+    final List<FavoriteHotel> result = [];
+    await ref.read(usuarioServiceProvider).listFavoritos(
+      onSuccess: (data) {
+        result.addAll(data.map(FavoriteHotel.fromJson));
+      },
+      onError: (msg) => throw Exception(msg),
+    );
+    return result;
   }
 
-  void removeFavorite(String id) {
-    state = state.where((room) => room.id != id).toList();
+  Future<void> removeFavorite(String hotelId) async {
+    await ref.read(usuarioServiceProvider).removeFavorito(
+      hotelId: hotelId,
+      onSuccess: () {
+        final current = state.value ?? [];
+        state = AsyncData(current.where((h) => h.hotelId != hotelId).toList());
+      },
+      onError: (msg) => throw Exception(msg),
+    );
   }
 
-  void toggleFavorite(FavoriteRoom room) {
-    if (state.any((r) => r.id == room.id)) {
-      removeFavorite(room.id);
-    } else {
-      state = [...state, room];
-    }
+  Future<void> addFavorite(String hotelId) async {
+    await ref.read(usuarioServiceProvider).addFavorito(
+      hotelId: hotelId,
+      onSuccess: (json) {
+        final hotel = FavoriteHotel.fromJson(json);
+        state = AsyncData([...state.value ?? [], hotel]);
+      },
+      onError: (msg) => throw Exception(msg),
+    );
+  }
+
+  bool isFavorite(String hotelId) {
+    return state.value?.any((h) => h.hotelId == hotelId) ?? false;
   }
 }
 
-final favoritesProvider = NotifierProvider<FavoritesNotifier, List<FavoriteRoom>>(FavoritesNotifier.new);
+final favoritesProvider =
+    AsyncNotifierProvider<FavoritesNotifier, List<FavoriteHotel>>(
+        FavoritesNotifier.new);
 
 class SearchQuery extends Notifier<String> {
   @override
   String build() => '';
   void update(String value) => state = value;
 }
-final searchQueryProvider = NotifierProvider<SearchQuery, String>(SearchQuery.new);
 
-final filteredFavoritesProvider = Provider<List<FavoriteRoom>>((ref) {
-  final List<FavoriteRoom> favorites = ref.watch(favoritesProvider);
-  final String query = ref.watch(searchQueryProvider).toLowerCase();
+final searchQueryProvider =
+    NotifierProvider<SearchQuery, String>(SearchQuery.new);
+
+final filteredFavoritesProvider = Provider<List<FavoriteHotel>>((ref) {
+  final favorites = ref.watch(favoritesProvider).value ?? [];
+  final query = ref.watch(searchQueryProvider).toLowerCase();
 
   if (query.isEmpty) return favorites;
 
-  return favorites.where((FavoriteRoom room) {
-    final title = room.title.toLowerCase();
-    final hotel = room.hotelName.toLowerCase();
-    final dest = room.destination.toLowerCase();
-    
-    return title.contains(query) ||
-           hotel.contains(query) ||
-           dest.contains(query);
+  return favorites.where((h) {
+    return h.nomeHotel.toLowerCase().contains(query) ||
+        '${h.cidade}, ${h.uf}'.toLowerCase().contains(query) ||
+        h.bairro.toLowerCase().contains(query);
   }).toList();
 });

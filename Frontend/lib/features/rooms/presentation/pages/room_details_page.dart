@@ -489,7 +489,12 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
             // Reservation Button
             Expanded(
               child: ElevatedButton(
-                onPressed: () => context.push('/booking/checkout/${room.id}'),
+                onPressed: () {
+                  final roomState = ref.read(roomDetailsNotifierProvider);
+                  context.push(
+                    '/booking/checkout/${widget.hotelId}/${roomState.categoriaId}/${room.id}',
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.secondary,
                   foregroundColor: Colors.white,

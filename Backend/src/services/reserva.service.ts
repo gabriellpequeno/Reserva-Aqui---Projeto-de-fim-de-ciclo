@@ -229,6 +229,23 @@ async function _createReservaUsuario(
     // Garante hospede registrado no tenant
     await _ensureHospede(client, userId);
 
+    // Verifica disponibilidade do quarto nas datas solicitadas (dentro da transação)
+    if (input.quarto_id) {
+      const { rows: dispRows } = await client.query<{ ocupado: boolean }>(
+        `SELECT EXISTS (
+           SELECT 1 FROM reserva
+           WHERE quarto_id    = $1
+             AND status       NOT IN ('CANCELADA')
+             AND data_checkin  < $3
+             AND data_checkout > $2
+         ) AS ocupado`,
+        [input.quarto_id, input.data_checkin, input.data_checkout],
+      );
+      if (dispRows[0]?.ocupado) {
+        throw new Error('Quarto indisponível nas datas selecionadas.');
+      }
+    }
+
     const valorTotal = input.quarto_id
       ? await _calcValorTotal(client, input.quarto_id, input.data_checkin, input.data_checkout)
       : input.valor_total!;

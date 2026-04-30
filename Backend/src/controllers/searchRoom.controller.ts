@@ -5,27 +5,17 @@ export async function handleSearchRooms(req: Request, res: Response): Promise<vo
   try {
     const { q, checkin, checkout, hospedes } = req.query;
 
-    // Valida q obrigatório
-    if (!q || typeof q !== 'string') {
-      res.status(400).json({ error: 'Parâmetro q é obrigatório' });
-      return;
-    }
+    // Aceita q vazio ou não fornecido — retorna todos os quartos disponíveis
+    const searchQuery = typeof q === 'string' ? q.trim() : '';
 
-    // Valida comprimento mínimo de q após trim
-    const trimmedQ = q.trim();
-    if (trimmedQ.length < 2) {
-      res.status(400).json({ error: 'Parâmetro q deve ter no mínimo 2 caracteres' });
-      return;
-    }
-
-    // Prepara refinos (aceitos mas ignorados nesta versão)
+    // Prepara refinos
     const refinos = {
       checkin: typeof checkin === 'string' ? checkin : undefined,
       checkout: typeof checkout === 'string' ? checkout : undefined,
       hospedes: typeof hospedes === 'string' ? parseInt(hospedes, 10) : undefined,
     };
 
-    const results = await searchRooms(trimmedQ, refinos);
+    const results = await searchRooms(searchQuery, refinos);
     res.status(200).json(results);
   } catch (error) {
     console.error('[searchRoom] Erro ao processar searchRooms:', error);

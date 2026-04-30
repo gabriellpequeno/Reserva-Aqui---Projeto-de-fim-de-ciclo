@@ -5,12 +5,13 @@ importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"
 importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js");
 
 firebase.initializeApp({
-  apiKey: "REPLACE_WITH_YOUR_API_KEY",
-  authDomain: "REPLACE_WITH_YOUR_AUTH_DOMAIN",
-  projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
-  storageBucket: "REPLACE_WITH_YOUR_STORAGE_BUCKET",
-  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
-  appId: "REPLACE_WITH_YOUR_APP_ID",
+  apiKey: "AIzaSyBhQw4awAFfnyYfx732B5LFZ59dZG4SZYo",
+  authDomain: "reservaqui-45478.firebaseapp.com",
+  projectId: "reservaqui-45478",
+  storageBucket: "reservaqui-45478.firebasestorage.app",
+  messagingSenderId: "153552996154",
+  appId: "1:153552996154:web:087f6a391c143e522f3203",
+  measurementId: "G-3NRWN1W7N4"
 });
 
 const messaging = firebase.messaging();

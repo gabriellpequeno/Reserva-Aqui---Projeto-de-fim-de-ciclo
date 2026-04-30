@@ -13,6 +13,8 @@
     "db:seed": "ts-node --transpile-only src/database/seeds/index.ts",
     "db:seed:hotels": "ts-node --transpile-only src/database/seeds/seed.hotels.ts",
     "db:seed:recommended": "ts-node --transpile-only src/database/seeds/seed.recommendedRooms.ts",
+    "db:seed:my-rooms": "ts-node --transpile-only src/database/seeds/seed.my-rooms-page.ts",
+    "db:seed:push": "ts-node --transpile-only src/database/seeds/seed.push-fcm.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

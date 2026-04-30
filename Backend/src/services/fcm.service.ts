@@ -84,6 +84,13 @@ export async function sendPush(tokens: string[], payload: FcmPayload): Promise<v
   try {
     const response = await admin.messaging().sendEachForMulticast(message);
 
+    console.log(`[FCM] Enviado: ${response.successCount} sucesso(s), ${response.failureCount} falha(s)`);
+    if (response.failureCount > 0) {
+      response.responses.forEach((r, i) => {
+        if (!r.success) console.warn(`[FCM] Token falhou (${tokens[i].slice(0, 20)}...): ${r.error?.message}`);
+      });
+    }
+
     // Remove tokens inválidos do banco em background (fire-and-forget)
     if (response.failureCount > 0) {
       const invalidTokens = response.responses

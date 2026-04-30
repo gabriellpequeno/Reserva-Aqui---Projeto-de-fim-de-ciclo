@@ -43,8 +43,9 @@ dependencies:
   flutter_svg: ^2.0.10
   image_picker: ^1.2.1
   mask_text_input_formatter: ^2.9.0
-  firebase_core: ^3.13.0
+  firebase_core: ^3.15.2
   firebase_messaging: ^15.2.5
+  flutter_local_notifications: ^18.0.0
   url_launcher: ^6.3.1
 
 dev_dependencies:

@@ -76,6 +76,19 @@
 
 ---
 
+## Fase P4-E — Favorites Page [PENDENTE]
+
+> Spec: `specs/favorites-page.spec.md`
+> Plan detalhado: `plans/favorites-page.plan.md`
+
+- [ ] Auditar referências ao modelo `FavoriteRoom` em todo o projeto
+- [ ] Renomear e adaptar `FavoriteRoom` → `FavoriteHotel` com campos do backend
+- [ ] Migrar `FavoritesNotifier` para `AsyncNotifier` com chamadas reais à API
+- [ ] Atualizar `FavoriteCard` com novo modelo, placeholder de imagem e navegação correta
+- [ ] Conectar botão de favorito na `RoomDetailsPage` via `favoritesProvider`
+
+---
+
 ## Fase 2 — Gestão de Hotéis e Quartos [PENDENTE]
 
 > Spec: `specs/gestao-hotel.spec.md`
@@ -114,6 +127,22 @@
 - [ ] Criar `HotelDetailsNotifier` com `Future.wait` e tratamento individual por seção
 - [ ] Auditar e atualizar `hotel_details_page.dart` (substituir mocks, adicionar comodidades, filtro de camas)
 - [ ] Validar renderização ponta a ponta com dados reais
+
+---
+
+## Fase P4-E — My Rooms Page [EM ANDAMENTO]
+
+> Plan: `plans/my-rooms-page.plan.md`
+> Spec: `specs/my-rooms-page.spec.md`
+> PRD: `features/my-rooms-page.prd.md`
+
+- [ ] Ajustar backend: enum `CanalOrigem` + `Reserva.validateWalkin` aceitar `canal_origem: "manual"` sem identificação de hóspede
+- [x] Criar modelos: `QuartoModel`, `RoomCategoryCardModel`, `ReservaHotelModel` (reutiliza `CategoriaHotelModel`)
+- [x] Criar `AvailabilityCalculator` (utility puro) — testes unitários pendentes
+- [x] Criar `MyRoomsState` + `MyRoomsNotifier` com load paralelo, delete via N chamadas `DELETE` e reserva manual
+- [x] Criar `DeleteRoomDialog` (modal + quantity picker) e `ManualReservationDialog` (calendário de range com dias indisponíveis)
+- [x] Atualizar `my_rooms_page.dart` (remover mock, consumir notifier, busca/filtro, estados, navegação para add/edit room)
+- [ ] Validar fluxos: listagem, delete parcial/total, reserva manual, disponibilidade agregada, busca e filtro
 
 ---
 

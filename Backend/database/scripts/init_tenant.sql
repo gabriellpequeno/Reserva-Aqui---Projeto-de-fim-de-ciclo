@@ -137,9 +137,10 @@ CREATE TABLE IF NOT EXISTS reserva (
     CONSTRAINT chk_status       CHECK (status IN ('SOLICITADA', 'AGUARDANDO_PAGAMENTO', 'APROVADA', 'CANCELADA', 'CONCLUIDA')),
     CONSTRAINT chk_canal        CHECK (canal_origem IN ('APP', 'WHATSAPP', 'BALCAO')),
 
-    -- Garante identificação mínima do hóspede
+    -- Identificação do hóspede opcional para walk-ins de balcão (bloqueio de agenda sem hóspede definido)
     CONSTRAINT chk_hospede_identificado CHECK (
-        user_id IS NOT NULL
+        canal_origem = 'BALCAO'
+        OR user_id IS NOT NULL
         OR (nome_hospede IS NOT NULL AND (cpf_hospede IS NOT NULL OR telefone_contato IS NOT NULL))
     ),
 

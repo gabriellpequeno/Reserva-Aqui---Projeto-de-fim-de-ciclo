@@ -37,6 +37,13 @@ const SEEDS: SeedEntry[] = [
       await seedRecommendedRooms();
     },
   },
+  {
+    name: 'myRoomsPage',
+    run: async () => {
+      const { seedMyRoomsPage } = await import('./seed.my-rooms-page');
+      await seedMyRoomsPage();
+    },
+  },
 ];
 // ──────────────────────────────────────────────────────────────────────────
 

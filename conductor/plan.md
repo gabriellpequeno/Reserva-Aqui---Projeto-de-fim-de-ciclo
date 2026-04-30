@@ -132,6 +132,18 @@
 
 ---
 
+## Fase P5-A — Add Room Page [PENDENTE]
+
+> Plan: `plans/add-room-page.plan.md`
+> Spec: `specs/add-room-page.spec.md`
+> PRD: `features/add-room-page.prd.md`
+
+- [ ] Criar `CatalogoItemModel`
+- [ ] Criar `AddRoomState` + `AddRoomNotifier` com `loadCatalogo()` e `submit()` (fluxo encadeado: categoria → itens → quartos → fotos)
+- [ ] Converter `add_room_page.dart` para `ConsumerStatefulWidget`: multi-select de comodidades (chips), campo numérico de valor, stepper de capacidade, progresso de submit, reload `MyRoomsNotifier` ao sucesso
+
+---
+
 ## Fase 3 — Sistema de Reservas [PENDENTE]
 
 > Spec: `specs/reservas.spec.md`

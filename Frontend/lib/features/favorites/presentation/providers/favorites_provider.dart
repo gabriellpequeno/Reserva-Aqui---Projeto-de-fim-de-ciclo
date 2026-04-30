@@ -9,6 +9,7 @@ class FavoritesNotifier extends Notifier<List<FavoriteRoom>> {
     return [
       const FavoriteRoom(
         id: '1',
+        hotelId: 'hotel-1',
         title: 'Suíte Luxo Vista Mar',
         hotelName: 'Hotel Paradiso',
         destination: 'Rio de Janeiro, RJ',
@@ -19,6 +20,7 @@ class FavoritesNotifier extends Notifier<List<FavoriteRoom>> {
       ),
       const FavoriteRoom(
         id: '2',
+        hotelId: 'hotel-2',
         title: 'Quarto Standard Casal',
         hotelName: 'Pousada das Flores',
         destination: 'Gramado, RS',
@@ -29,6 +31,7 @@ class FavoritesNotifier extends Notifier<List<FavoriteRoom>> {
       ),
       const FavoriteRoom(
         id: '3',
+        hotelId: 'hotel-3',
         title: 'Bangalô Presidencial',
         hotelName: 'Resort Tropical',
         destination: 'Porto de Galinhas, PE',

@@ -1,8 +1,14 @@
+import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/notifications/data/services/fcm_token_service.dart';
 import 'auth_state.dart';
+
+final _baseUrl = kIsWeb
+    ? 'http://localhost:3000/api'
+    : 'http://10.0.2.2:3000/api';
 
 class AuthNotifier extends AsyncNotifier<AuthState> {
   static const _accessKey = 'auth_access_token';
@@ -44,8 +50,12 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }
 
   Future<void> clear() async {
-    final role = state.asData?.value.role;
-    if (role != null) _removeFcmToken(role);
+    final current = state.asData?.value;
+
+    if (current?.role != null) _removeFcmToken(current!.role!);
+    if (current?.refreshToken != null && current?.role != null) {
+      _callLogoutEndpoint(current!.role!, current.refreshToken!);
+    }
 
     final prefs = await SharedPreferences.getInstance();
     await Future.wait([
@@ -54,6 +64,13 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       prefs.remove(_roleKey),
     ]);
     state = const AsyncData(AuthState());
+  }
+
+  void _callLogoutEndpoint(AuthRole role, String refreshToken) {
+    final path = role == AuthRole.host ? '/hotel/logout' : '/usuarios/logout';
+    Dio(BaseOptions(baseUrl: _baseUrl))
+        .post(path, data: {'refreshToken': refreshToken})
+        .catchError((_) {});
   }
 
   Future<void> _registerFcmToken(AuthRole role) async {

@@ -44,6 +44,13 @@ const SEEDS: SeedEntry[] = [
       await seedMyRoomsPage();
     },
   },
+  {
+    name: 'pushFcm',
+    run: async () => {
+      const { seedPushFcm } = await import('./seed.push-fcm');
+      await seedPushFcm();
+    },
+  },
 ];
 // ──────────────────────────────────────────────────────────────────────────
 

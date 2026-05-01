@@ -3,6 +3,8 @@
 *.jks
 *.keystore
 .env
+PRIVITE_KEY/
+android/app/google-services.json
 
 # Miscellaneous
 *.class

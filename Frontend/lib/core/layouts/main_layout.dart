@@ -20,6 +20,7 @@ class MainLayout extends ConsumerWidget {
     if (location.startsWith('/admin') ||
         location.startsWith('/host') ||
         location.startsWith('/profile') ||
+        location.startsWith('/tickets') ||
         location.startsWith('/auth')) return 4;
     return 0;
   }
@@ -63,6 +64,7 @@ class MainLayout extends ConsumerWidget {
         location == '/favorites' ||
         location == '/notifications' ||
         location == '/search' ||
+        location.startsWith('/tickets') ||
         location.startsWith('/room_details');
     final bool hideBottomNav = location.startsWith('/room_details');
 

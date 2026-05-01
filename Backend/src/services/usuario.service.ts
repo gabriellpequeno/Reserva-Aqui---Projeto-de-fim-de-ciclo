@@ -27,6 +27,8 @@ export interface UpdateUsuarioInput {
   data_nascimento?: string;
 }
 
+export type UsuarioPapel = 'usuario' | 'admin';
+
 export interface UsuarioSafe {
   user_id:         string;
   nome_completo:   string;
@@ -34,6 +36,7 @@ export interface UsuarioSafe {
   cpf:             string;
   data_nascimento: Date;
   numero_celular:  string | null;
+  papel:           UsuarioPapel;
   criado_em:       Date;
   ativo:           boolean;
 }
@@ -49,7 +52,7 @@ const JWT_SECRET          = process.env.JWT_SECRET!;
 const JWT_ACCESS_EXPIRES  = process.env.JWT_ACCESS_EXPIRES  ?? '1h';
 const JWT_REFRESH_EXPIRES = process.env.JWT_REFRESH_EXPIRES ?? '7d';
 
-function signAccessToken(payload: { user_id: string; email: string }): string {
+function signAccessToken(payload: { user_id: string; email: string; papel: UsuarioPapel }): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_ACCESS_EXPIRES } as jwt.SignOptions);
 }
 
@@ -121,7 +124,7 @@ async function _registerUsuario(input: RegisterUsuarioInput): Promise<UsuarioSaf
   const { rows } = await masterPool.query<UsuarioSafe>(
     `INSERT INTO usuario (nome_completo, email, senha, cpf, data_nascimento, numero_celular)
      VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING user_id, nome_completo, email, cpf, data_nascimento, numero_celular, criado_em, ativo`,
+     RETURNING user_id, nome_completo, email, cpf, data_nascimento, numero_celular, papel, criado_em, ativo`,
     [
       input.nome_completo,
       input.email.toLowerCase(),
@@ -159,7 +162,11 @@ async function _loginUsuario(
 
   const { senha: _, ...safeUser } = user;
 
-  const accessToken  = signAccessToken({ user_id: safeUser.user_id, email: safeUser.email });
+  const accessToken  = signAccessToken({
+    user_id: safeUser.user_id,
+    email:   safeUser.email,
+    papel:   safeUser.papel,
+  });
   const refreshToken = signRefreshToken({ user_id: safeUser.user_id });
 
   await masterPool.query(
@@ -196,16 +203,16 @@ async function _refreshUsuarioToken(
 
   await masterPool.query(`DELETE FROM refresh_tokens WHERE token_hash = $1`, [tokenHash]);
 
-  const { rows: userRows } = await masterPool.query<UsuarioSafe>(
-    `SELECT user_id, email FROM usuario WHERE user_id = $1 AND ativo = TRUE`,
+  const { rows: userRows } = await masterPool.query<Pick<UsuarioSafe, 'user_id' | 'email' | 'papel'>>(
+    `SELECT user_id, email, papel FROM usuario WHERE user_id = $1 AND ativo = TRUE`,
     [payload.user_id],
   );
 
   if (!userRows[0]) throw new Error('Usuário não encontrado ou inativo');
 
-  const { user_id, email } = userRows[0];
+  const { user_id, email, papel } = userRows[0];
 
-  const newAccessToken  = signAccessToken({ user_id, email });
+  const newAccessToken  = signAccessToken({ user_id, email, papel });
   const newRefreshToken = signRefreshToken({ user_id });
 
   await masterPool.query(
@@ -232,7 +239,7 @@ async function _logoutUsuario(refreshToken: string): Promise<void> {
  */
 async function _getUsuarioById(userId: string): Promise<UsuarioSafe> {
   const { rows } = await masterPool.query<UsuarioSafe>(
-    `SELECT user_id, nome_completo, email, cpf, data_nascimento, numero_celular, criado_em, ativo
+    `SELECT user_id, nome_completo, email, cpf, data_nascimento, numero_celular, papel, criado_em, ativo
      FROM usuario
      WHERE user_id = $1 AND ativo = TRUE`,
     [userId],
@@ -267,7 +274,7 @@ async function _updateUsuario(
   const { rows } = await masterPool.query<UsuarioSafe>(
     `UPDATE usuario SET ${fields.join(', ')}
      WHERE user_id = $${idx} AND ativo = TRUE
-     RETURNING user_id, nome_completo, email, cpf, data_nascimento, numero_celular, criado_em, ativo`,
+     RETURNING user_id, nome_completo, email, cpf, data_nascimento, numero_celular, papel, criado_em, ativo`,
     values,
   );
 

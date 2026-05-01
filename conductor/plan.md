@@ -158,15 +158,15 @@
 
 ---
 
-## Fase P5-B — Edit Room Page [PENDENTE]
+## Fase P5-B — Edit Room Page [CONCLUÍDO]
 
 > Plan: `plans/edit-room-page.plan.md`
 > Spec: `specs/edit-room-page.spec.md`
 > PRD: `features/edit-room-page.prd.md`
 
-- [ ] Criar `FotoExistente` model
-- [ ] Criar `EditRoomState` + `EditRoomNotifier` com `load()` (carrega quarto, categoria, fotos, catálogo) e `save()` (fluxo encadeado: PATCH categoria → diff comodidades → PATCH quarto → DELETE fotos → POST fotos)
-- [ ] Converter `edit_room_page.dart` para `ConsumerStatefulWidget`: pré-popular campos, seção de comodidades com chips, gestão real de fotos (carregar/remover/adicionar), progresso de save, reload `MyRoomsNotifier` ao sucesso, remover campos "Camas" e "Banheiros"
+- [x] Criar `FotoExistente` model
+- [x] Criar `EditRoomState` + `EditRoomNotifier` com `load()` (carrega quarto, categoria, fotos, catálogo) e `save()` (fluxo encadeado: PATCH categoria → diff comodidades → PATCH quarto → DELETE fotos → POST fotos)
+- [x] Converter `edit_room_page.dart` para `ConsumerStatefulWidget`: pré-popular campos, seção de comodidades com chips, gestão real de fotos (carregar/remover/adicionar), progresso de save, reload `MyRoomsNotifier` ao sucesso, remover campos "Camas" e "Banheiros"
 
 ---
 

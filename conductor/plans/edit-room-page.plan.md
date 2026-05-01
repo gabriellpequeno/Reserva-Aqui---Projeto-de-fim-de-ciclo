@@ -1,7 +1,7 @@
 # Plan — edit-room-page
 
 > Derivado de: conductor/specs/edit-room-page.spec.md
-> Status geral: [EM ANDAMENTO]
+> Status geral: [CONCLUÍDO]
 
 **Dependências:** Requer P0 (dioProvider), P2-A (login host com JWT), P4-E (my_rooms_page concluída), P5-A (CatalogoItemModel existente em `lib/features/rooms/domain/models/catalogo_item.dart`).
 **Bloqueia:** — (folha)
@@ -73,18 +73,18 @@
 
 ---
 
-## Validação [PENDENTE]
+## Validação [CONCLUÍDO]
 
-- [ ] **Carregamento:** navegar para `/edit_room/:roomId` → campos populados com dados reais do quarto/categoria
-- [ ] **Comodidades carregadas:** comodidades atuais da categoria aparecem como chips selecionados; restantes do catálogo como não selecionados
-- [ ] **Fotos existentes:** thumbnails das fotos do quarto exibidos com botão "X"
-- [ ] **Edição de categoria:** alterar nome, preço, capacidade → salvar → PATCH categoria executado com sucesso no backend
-- [ ] **Toggle de status:** desmarcar "Status do Quarto" → salvar → `disponivel: false` atualizado no backend
-- [ ] **Adicionar comodidade:** selecionar chip não selecionado → salvar → POST item executado
-- [ ] **Remover comodidade:** desmarcar chip selecionado → salvar → DELETE item executado
-- [ ] **Remover foto existente:** tocar "X" → opacidade reduzida → salvar → DELETE foto executado
-- [ ] **Adicionar foto nova:** selecionar da galeria → thumbnail exibido → salvar → POST foto executado
-- [ ] **Progresso visível:** `LinearProgressIndicator` + texto de etapa aparecem durante o save
-- [ ] **Erro no save:** simular falha num PATCH → SnackBar descritivo → formulário permanece aberto
-- [ ] **Quarto não encontrado:** navegar com `roomId` inválido → estado de erro com botão de voltar; sem crash
-- [ ] **Navegação pós-sucesso:** ao fechar, `my_rooms_page` exibe os dados atualizados sem navegação manual
+- [x] **Carregamento:** navegar para `/edit_room/:roomId` → campos populados com dados reais do quarto/categoria
+- [x] **Comodidades carregadas:** comodidades atuais da categoria aparecem como chips selecionados; restantes do catálogo como não selecionados
+- [x] **Fotos existentes:** thumbnails das fotos do quarto exibidos com botão "X"
+- [x] **Edição de categoria:** alterar nome, preço, capacidade → salvar → PATCH categoria executado com sucesso no backend
+- [x] **Toggle de status:** desmarcar "Status do Quarto" → salvar → `disponivel: false` atualizado no backend
+- [x] **Adicionar comodidade:** selecionar chip não selecionado → salvar → POST item executado
+- [x] **Remover comodidade:** desmarcar chip selecionado → salvar → DELETE item executado
+- [x] **Remover foto existente:** tocar "X" → opacidade reduzida → salvar → DELETE foto executado
+- [x] **Adicionar foto nova:** selecionar da galeria → thumbnail exibido → salvar → POST foto executado
+- [x] **Progresso visível:** `LinearProgressIndicator` + texto de etapa aparecem durante o save
+- [x] **Erro no save:** simular falha num PATCH → SnackBar descritivo → formulário permanece aberto
+- [x] **Quarto não encontrado:** navegar com `roomId` inválido → estado de erro com botão de voltar; sem crash
+- [x] **Navegação pós-sucesso:** ao fechar, `my_rooms_page` exibe os dados atualizados sem navegação manual

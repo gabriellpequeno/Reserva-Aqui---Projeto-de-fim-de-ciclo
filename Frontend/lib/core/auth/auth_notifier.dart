@@ -1,5 +1,7 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../features/notifications/data/services/fcm_token_service.dart';
 import 'auth_state.dart';
 
 class AuthNotifier extends AsyncNotifier<AuthState> {
@@ -38,9 +40,13 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     state = AsyncData(
       AuthState(accessToken: accessToken, refreshToken: refreshToken, role: role),
     );
+    _registerFcmToken(role);
   }
 
   Future<void> clear() async {
+    final role = state.asData?.value.role;
+    if (role != null) _removeFcmToken(role);
+
     final prefs = await SharedPreferences.getInstance();
     await Future.wait([
       prefs.remove(_accessKey),
@@ -48,6 +54,24 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       prefs.remove(_roleKey),
     ]);
     state = const AsyncData(AuthState());
+  }
+
+  Future<void> _registerFcmToken(AuthRole role) async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await ref.read(fcmTokenServiceProvider).register(token, role);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _removeFcmToken(AuthRole role) async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await ref.read(fcmTokenServiceProvider).remove(token, role);
+      }
+    } catch (_) {}
   }
 }
 

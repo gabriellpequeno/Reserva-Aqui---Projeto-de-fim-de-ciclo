@@ -102,6 +102,20 @@
 
 ---
 
+## Fase P4-B — Search Page Integration [EM ANDAMENTO]
+
+> Spec: `specs/search-page-integration.spec.md`
+> Plan detalhado: `plans/search-page-integration.plan.md`
+
+- [x] Criar `SearchRoomResult` model + `SearchService` + Riverpod provider
+- [x] Criar `GuestsPickerSheet` (bottom sheet com contador)
+- [x] Atualizar `SearchNotifier.performSearch()` — trocar mock por chamada real + mapping → `FavoriteRoom`
+- [x] Implementar `onTap` de datas (`showDateRangePicker`) e hóspedes (`showModalBottomSheet`) em `search_page.dart`
+- [x] Substituir `Image.asset` hardcoded por `Image.network` com fallback em `_buildHotelCard`
+- [ ] Validar fluxo ponta a ponta (busca, pickers, loading, vazio, imagens, navegação)
+
+---
+
 ## Fase P4-C — Hotel Details Page [PENDENTE]
 
 > Plan: `plans/hotel-details-page.plan.md`
@@ -129,6 +143,18 @@
 - [x] Criar `DeleteRoomDialog` (modal + quantity picker) e `ManualReservationDialog` (calendário de range com dias indisponíveis)
 - [x] Atualizar `my_rooms_page.dart` (remover mock, consumir notifier, busca/filtro, estados, navegação para add/edit room)
 - [ ] Validar fluxos: listagem, delete parcial/total, reserva manual, disponibilidade agregada, busca e filtro
+
+---
+
+## Fase P5-A — Add Room Page [PENDENTE]
+
+> Plan: `plans/add-room-page.plan.md`
+> Spec: `specs/add-room-page.spec.md`
+> PRD: `features/add-room-page.prd.md`
+
+- [ ] Criar `CatalogoItemModel`
+- [ ] Criar `AddRoomState` + `AddRoomNotifier` com `loadCatalogo()` e `submit()` (fluxo encadeado: categoria → itens → quartos → fotos)
+- [ ] Converter `add_room_page.dart` para `ConsumerStatefulWidget`: multi-select de comodidades (chips), campo numérico de valor, stepper de capacidade, progresso de submit, reload `MyRoomsNotifier` ao sucesso
 
 ---
 
@@ -208,15 +234,17 @@
 
 ## Fase 8 — Notificações In-App [PENDENTE]
 
-> Spec: `specs/notificacoes.spec.md`
+> Spec: `specs/notifications-system.spec.md`
+> Plan detalhado: `plans/notifications-system.plan.md`
 
-- [ ] Infraestrutura de notificações (WebSocket ou push)
-- [ ] Notificação: reserva confirmada pelo hotel
-- [ ] Notificação: reserva cancelada
-- [ ] Notificação: lembrete de check-in se aproximando
-- [ ] Notificação: nova mensagem no chat
-- [ ] Notificação: solicitação de avaliação após check-out
-- [ ] Tela de notificações no app
+- [ ] Setup Firebase (firebase_messaging, firebase_core, flutterfire configure, service worker web)
+- [ ] Criar `FcmTokenService` — registra/remove token por role via REST
+- [ ] Criar `NotificationService` — inicializa FCM, solicita permissão, escuta mensagens
+- [ ] Atualizar `app_notification.dart` — adicionar `tipo` e `payload`
+- [ ] Atualizar `auth_notifier.dart` — registrar/remover token FCM no login/logout
+- [ ] Atualizar `notifications_provider.dart` — estado real (host REST, hóspede SharedPreferences)
+- [ ] Atualizar `custom_bottom_nav.dart` — badge de não lidas
+- [ ] Atualizar `app_router.dart` — navegação por `tipo` + `payload`
 
 ---
 

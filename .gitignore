@@ -22,9 +22,11 @@ app.*.map.json
 
 # ─── Node ────────────────────────────────────────────────────────────────────
 Backend/node_modules
+Backend/dist
 Backend/bancos
 Backend/package-lock.json
 Backend/storage/
+Backend/dist
 
 # Android build artifacts
 Frontend/android/app/debug

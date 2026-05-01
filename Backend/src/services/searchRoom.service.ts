@@ -57,54 +57,115 @@ export async function searchRooms(
 
   try {
     const trimmedQ = q.trim();
-
-    // Escapa wildcards antes de montar o padrão de busca
-    const escapedQ = escapeLikePattern(trimmedQ);
-    const pattern = `%${escapedQ}%`;
+    const hasQuery = trimmedQ.length >= 2;
 
     // 1. Descobre hotéis ativos na master DB
-    const { rows: hotels } = await masterPool.query<HotelMatch>(
-      `
-      SELECT
-        hotel_id,
-        nome_hotel,
-        cidade,
-        uf,
-        schema_name
-      FROM anfitriao
-      WHERE ativo = TRUE
-        AND (
-          unaccent(nome_hotel) ILIKE unaccent($1)
-          OR unaccent(cidade) ILIKE unaccent($2)
-          OR unaccent(uf) ILIKE unaccent($3)
-        )
-      ORDER BY
-        CASE
-          WHEN unaccent(nome_hotel) ILIKE unaccent($1) THEN 0
-          WHEN unaccent(nome_hotel) ILIKE unaccent(concat(substring($1, 1, 1), '%')) THEN 1
-          ELSE 2
-        END,
-        nome_hotel ASC
-      LIMIT 20
-      `,
-      [pattern, pattern, pattern],
-    );
+    let hotels: HotelMatch[];
+    if (hasQuery) {
+      const escapedQ = escapeLikePattern(trimmedQ);
+      const pattern = `%${escapedQ}%`;
+      const { rows } = await masterPool.query<HotelMatch>(
+        `
+        SELECT
+          hotel_id,
+          nome_hotel,
+          cidade,
+          uf,
+          schema_name
+        FROM anfitriao
+        WHERE ativo = TRUE
+          AND (
+            unaccent(nome_hotel) ILIKE unaccent($1)
+            OR unaccent(cidade) ILIKE unaccent($2)
+            OR unaccent(uf) ILIKE unaccent($3)
+          )
+        ORDER BY
+          CASE
+            WHEN unaccent(nome_hotel) ILIKE unaccent($1) THEN 0
+            WHEN unaccent(nome_hotel) ILIKE unaccent(concat(substring($1, 1, 1), '%')) THEN 1
+            ELSE 2
+          END,
+          nome_hotel ASC
+        LIMIT 20
+        `,
+        [pattern, pattern, pattern],
+      );
+      hotels = rows;
+    } else {
+      // Sem query — retorna todos os hotéis ativos
+      const { rows } = await masterPool.query<HotelMatch>(
+        `
+        SELECT
+          hotel_id,
+          nome_hotel,
+          cidade,
+          uf,
+          schema_name
+        FROM anfitriao
+        WHERE ativo = TRUE
+        ORDER BY nome_hotel ASC
+        LIMIT 20
+        `,
+      );
+      hotels = rows;
+    }
 
-    // 2. Map hotéis para busca rápida por hotel_id
-    const hotelMap = new Map<string, HotelMatch>(
-      hotels.map(h => [h.hotel_id, h]),
-    );
-
-    // 3. Fan-out paralelo: busca quartos em cada tenant
+    // 2. Fan-out paralelo: busca quartos em cada tenant com filtros aplicados
     const results: SearchRoomResult[] = [];
+    const hasCheckin = typeof refinos?.checkin === 'string';
+    const hasCheckout = typeof refinos?.checkout === 'string';
+    const hasDateFilter = hasCheckin || hasCheckout;
+    const hasGuestsFilter = refinos?.hospedes && refinos!.hospedes! > 0;
 
     await Promise.all(
       hotels.map(async hotel => {
         try {
-          // Reusa SELECT_QUARTO_COM_ITENS com filtro de deleted_at
+          const params: unknown[] = [];
+          let whereClause = 'WHERE q.deleted_at IS NULL';
+
+          if (hasDateFilter) {
+            if (hasCheckin && hasCheckout) {
+              whereClause += `
+                AND NOT EXISTS (
+                  SELECT 1 FROM reserva r
+                  WHERE r.quarto_id = q.id
+                    AND r.status NOT IN ('CANCELADA', 'CANCELADO', 'REJEITADA', 'REJEITADO')
+                    AND r.data_checkin < $1
+                    AND r.data_checkout > $2
+                )
+              `;
+              params.push(refinos!.checkout, refinos!.checkin);
+            } else if (hasCheckin) {
+              whereClause += `
+                AND NOT EXISTS (
+                  SELECT 1 FROM reserva r
+                  WHERE r.quarto_id = q.id
+                    AND r.status NOT IN ('CANCELADA', 'CANCELADO', 'REJEITADA', 'REJEITADO')
+                    AND r.data_checkin <= $1
+                )
+              `;
+              params.push(refinos!.checkin);
+            } else if (hasCheckout) {
+              whereClause += `
+                AND NOT EXISTS (
+                  SELECT 1 FROM reserva r
+                  WHERE r.quarto_id = q.id
+                    AND r.status NOT IN ('CANCELADA', 'CANCELADO', 'REJEITADA', 'REJEITADO')
+                    AND r.data_checkout >= $1
+                )
+              `;
+              params.push(refinos!.checkout);
+            }
+          }
+
+          if (hasGuestsFilter) {
+            whereClause += ' AND cq.capacidade_pessoas >= $' + (params.length + 1);
+            params.push(refinos!.hospedes);
+          }
+
           const quartoQuery = `
             ${SELECT_QUARTO_COM_ITENS}
-            WHERE q.deleted_at IS NULL
+            ${whereClause}
             GROUP BY q.id, q.numero, cq.preco_base, q.valor_override, q.categoria_quarto_id, q.disponivel, q.descricao
           `;
 
@@ -115,11 +176,10 @@ export async function searchRooms(
               descricao: string | null;
               valor_diaria: string;
               itens: QuartoItem[];
-            }>(quartoQuery);
+            }>(quartoQuery, params);
             return rows;
           });
 
-          // Exenrich com dados do hotel
           for (const row of tenantResults) {
             results.push({
               quarto_id: row.id,
@@ -138,14 +198,18 @@ export async function searchRooms(
             `[searchRoom] Erro ao buscar quartos no tenant ${hotel.hotel_id} (${hotel.schema_name}):`,
             error,
           );
-          // Tenant com erro é omitido do resultado, não derruba a busca
         }
       }),
     );
 
     const elapsedMs = Date.now() - startTime;
+    const filterInfo = [
+      refinos?.checkin && refinos?.checkout ? `checkin=${refinos.checkin}` : null,
+      refinos?.checkin && refinos?.checkout ? `checkout=${refinos.checkout}` : null,
+      refinos?.hospedes ? `hospedes=${refinos.hospedes}` : null,
+    ].filter(Boolean).join(', ');
     console.log(
-      `[searchRoom] Busca concluída: tempo_total_ms=${elapsedMs}, hoteis_iterados=${hotels.length}`,
+      `[searchRoom] Busca concluída: tempo_total_ms=${elapsedMs}, hoteis_iterados=${hotels.length}, resultados=${results.length}${filterInfo ? `, filtros={${filterInfo}}` : ''}`,
     );
 
     return results;

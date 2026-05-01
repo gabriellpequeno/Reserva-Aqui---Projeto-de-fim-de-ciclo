@@ -43,7 +43,7 @@ class MyRoomsNotifier extends Notifier<MyRoomsState> {
       final reservas   = results[2] as List<ReservaHotelModel>;
 
       final cards = _buildCards(quartos, categorias, reservas);
-      final cardsComFoto = await _loadFotos(dio, hotelId, cards);
+      final cardsComFoto = await _loadFotos(dio, hotelId, cards, quartos);
       final disponibilidade = _calcularDisponibilidade(cardsComFoto, reservas);
 
       state = state.copyWith(
@@ -104,6 +104,18 @@ class MyRoomsNotifier extends Notifier<MyRoomsState> {
       } else {
         final ok = await _patchDisponivel(dio, quartoId, false);
         if (ok) sucesso++; else falha++;
+      }
+    }
+
+    // Se removeu permanentemente TODOS os quartos ativos e não há inativos,
+    // a categoria ficou vazia — tenta excluí-la para liberar o nome
+    if (permanente &&
+        idsParaDesativar.length == card.quartoIds.length &&
+        sucesso == idsParaDesativar.length) {
+      final temCardInativo =
+          state.cards.any((c) => c.categoriaId == categoriaId && !c.disponivel);
+      if (!temCardInativo) {
+        await _tryDeleteCategoria(dio, categoriaId);
       }
     }
 
@@ -168,6 +180,9 @@ class MyRoomsNotifier extends Notifier<MyRoomsState> {
     final card = state.cards.firstWhere(
         (c) => c.categoriaId == categoriaId && !c.disponivel);
 
+    final temCardAtivo =
+        state.cards.any((c) => c.categoriaId == categoriaId && c.disponivel);
+
     state = state.copyWith(deleteInProgress: true);
 
     final dio = ref.read(dioProvider);
@@ -178,9 +193,23 @@ class MyRoomsNotifier extends Notifier<MyRoomsState> {
       if (ok) sucesso++; else falha++;
     }
 
+    // Se não há card ativo e todos os inativos foram removidos,
+    // a categoria ficou vazia — tenta excluí-la para liberar o nome
+    if (!temCardAtivo && sucesso == card.quartoIds.length) {
+      await _tryDeleteCategoria(dio, categoriaId);
+    }
+
     await load();
     state = state.copyWith(deleteInProgress: false);
     return {'sucesso': sucesso, 'falha': falha};
+  }
+
+  Future<void> _tryDeleteCategoria(dynamic dio, int categoriaId) async {
+    try {
+      await dio.delete<void>('/hotel/categorias/$categoriaId');
+    } catch (e) {
+      debugPrint('[myRoomsNotifier] Categoria $categoriaId não excluída (pode ter unidades): $e');
+    }
   }
 
   // ── Manual reservation ────────────────────────────────────────────────────
@@ -392,31 +421,42 @@ class MyRoomsNotifier extends Notifier<MyRoomsState> {
     dynamic dio,
     String hotelId,
     List<RoomCategoryCardModel> cards,
+    List<QuartoModel> todosQuartos,
   ) async {
-    final baseUri = Uri.parse(dio.options.baseUrl as String);
-    final serverRoot =
-        '${baseUri.scheme}://${baseUri.host}:${baseUri.port}';
+    final apiBase = dio.options.baseUrl as String;
 
-    final futures =
-        cards.map((card) => _loadFotoCard(dio, serverRoot, hotelId, card));
+    // Agrupa todos os quartoIds por categoriaId (ativos + inativos)
+    final todosPorCategoria = <int, List<int>>{};
+    for (final q in todosQuartos) {
+      todosPorCategoria.putIfAbsent(q.categoriaQuartoId, () => []).add(q.id);
+    }
+
+    final futures = cards.map((card) => _loadFotoCard(
+          dio,
+          apiBase,
+          hotelId,
+          card,
+          todosPorCategoria[card.categoriaId] ?? card.quartoIds,
+        ));
     final cardsComFoto = await Future.wait(futures, eagerError: false);
     return cardsComFoto.cast<RoomCategoryCardModel>();
   }
 
   Future<RoomCategoryCardModel> _loadFotoCard(
     dynamic dio,
-    String serverRoot,
+    String apiBase,
     String hotelId,
     RoomCategoryCardModel card,
+    List<int> todosQuartoIds,
   ) async {
-    for (final quartoId in card.quartoIds) {
+    for (final quartoId in todosQuartoIds) {
       try {
-        final response = await dio.get<Map<String, dynamic>>(
-            '$serverRoot/api/uploads/hotels/$hotelId/rooms/$quartoId');
+        final listUrl = '$apiBase/uploads/hotels/$hotelId/rooms/$quartoId';
+        final response = await dio.get<Map<String, dynamic>>(listUrl);
         final fotos = (response.data?['fotos'] as List<dynamic>?) ?? [];
         if (fotos.isNotEmpty) {
-          final url =
-              '$serverRoot${(fotos.first as Map<String, dynamic>)['url'] as String}';
+          final fotoId = (fotos.first as Map<String, dynamic>)['id'];
+          final url = '$apiBase/uploads/hotels/$hotelId/rooms/$quartoId/$fotoId';
           return card.copyWith(fotoUrl: url);
         }
       } catch (_) {}

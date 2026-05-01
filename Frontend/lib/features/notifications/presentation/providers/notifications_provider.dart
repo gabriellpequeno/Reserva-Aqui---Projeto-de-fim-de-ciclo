@@ -1,43 +1,71 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/auth/auth_notifier.dart';
+import '../../../../core/auth/auth_state.dart';
+import '../../data/services/guest_notifications_storage.dart';
+import '../../data/services/notificacoes_host_service.dart';
 import '../../domain/models/app_notification.dart';
 
-class NotificationsNotifier extends Notifier<List<AppNotification>> {
+class NotificationsNotifier
+    extends AsyncNotifier<List<AppNotification>> {
   @override
-  List<AppNotification> build() {
-    // Mock data based on the prototype
-    return [
-      AppNotification(
-        id: '1',
-        title: 'Reserva Aprovada',
-        subtitle: 'Grand Hotel Budapest',
-        timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-      ),
-      AppNotification(
-        id: '2',
-        title: 'Nova Mensagem',
-        subtitle: 'Bo turista',
-        timestamp: DateTime.now().subtract(const Duration(hours: 3)),
-      ),
-      AppNotification(
-        id: '3',
-        title: 'Reserva cancelada',
-        subtitle: 'Copacabana Palace',
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-    ];
+  Future<List<AppNotification>> build() async {
+    final auth = await ref.watch(authProvider.future);
+    if (!auth.isAuthenticated) return [];
+
+    if (auth.role == AuthRole.host) {
+      return ref.read(notificacoesHostServiceProvider).fetchAll();
+    }
+    return ref.read(guestNotificationsStorageProvider).load();
   }
 
-  void markAsRead(String id) {
-    state = state.map((n) => n.id == id ? n.copyWith(isRead: true) : n).toList();
+  void addNotification(AppNotification notification) {
+    final current = state.asData?.value ?? [];
+    final updated = [notification, ...current];
+    state = AsyncData(updated);
+    _persistIfGuest(updated);
   }
 
-  void clearAll() {
-    state = [];
+  Future<void> markAsRead(String id) async {
+    final current = state.asData?.value ?? [];
+    final updated =
+        current.map((n) => n.id == id ? n.copyWith(isRead: true) : n).toList();
+    state = AsyncData(updated);
+
+    final auth = ref.read(authProvider).asData?.value;
+    if (auth?.role == AuthRole.host) {
+      await ref.read(notificacoesHostServiceProvider).markAsRead(id);
+    } else {
+      _persistIfGuest(updated);
+    }
   }
 
-  void removeNotification(String id) {
-    state = state.where((n) => n.id != id).toList();
+  Future<void> clearAll() async {
+    state = const AsyncData([]);
+
+    final auth = ref.read(authProvider).asData?.value;
+    if (auth?.role == AuthRole.host) {
+      await ref.read(notificacoesHostServiceProvider).markAllAsRead();
+    } else {
+      await ref.read(guestNotificationsStorageProvider).clear();
+    }
+  }
+
+  void _persistIfGuest(List<AppNotification> notifications) {
+    final auth = ref.read(authProvider).asData?.value;
+    if (auth?.role != AuthRole.host) {
+      ref.read(guestNotificationsStorageProvider).save(notifications);
+    }
   }
 }
 
-final notificationsProvider = NotifierProvider<NotificationsNotifier, List<AppNotification>>(NotificationsNotifier.new);
+final notificationsProvider =
+    AsyncNotifierProvider<NotificationsNotifier, List<AppNotification>>(
+  NotificationsNotifier.new,
+);
+
+final unreadNotificationsCountProvider = Provider<int>((ref) {
+  return ref.watch(notificationsProvider).maybeWhen(
+        data: (list) => list.where((n) => !n.isRead).length,
+        orElse: () => 0,
+      );
+});

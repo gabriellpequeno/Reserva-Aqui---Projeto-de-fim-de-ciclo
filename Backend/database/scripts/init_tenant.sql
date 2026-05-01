@@ -250,3 +250,23 @@ CREATE TABLE IF NOT EXISTS quarto_foto (
 
 CREATE INDEX IF NOT EXISTS idx_quarto_foto_quarto_id   ON quarto_foto (quarto_id);
 
+-- 14. Catálogo padrão de comodidades
+--    Inserido automaticamente na criação do schema para que o formulário
+--    de adição de quartos já tenha opções disponíveis.
+INSERT INTO catalogo (nome, categoria) VALUES
+  ('Wi-Fi',              'COMODIDADE'),
+  ('Ar-condicionado',    'COMODIDADE'),
+  ('TV a cabo',          'COMODIDADE'),
+  ('Frigobar',           'COMODIDADE'),
+  ('Cofre digital',      'COMODIDADE'),
+  ('Cama king-size',     'COMODO'),
+  ('Cama queen-size',    'COMODO'),
+  ('Cama de solteiro',   'COMODO'),
+  ('Banheiro privativo', 'COMODO'),
+  ('Varanda',            'COMODO'),
+  ('Piscina',            'LAZER'),
+  ('Academia',           'LAZER'),
+  ('Spa',                'LAZER'),
+  ('Restaurante',        'LAZER')
+ON CONFLICT (nome, categoria) DO NOTHING;
+

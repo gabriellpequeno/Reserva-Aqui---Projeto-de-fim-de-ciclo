@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/auth_state.dart';
@@ -12,46 +13,52 @@ class NotificationsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notifications = ref.watch(notificationsProvider);
-    final isLoggedIn = ref.watch(authProvider).asData?.value.isAuthenticated ?? false;
+    final notificationsAsync = ref.watch(notificationsProvider);
+    final isLoggedIn =
+        ref.watch(authProvider).asData?.value.isAuthenticated ?? false;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Header (Matching prototype)
           _buildHeader(context, ref),
-
-          // Content
           Expanded(
             child: !isLoggedIn
                 ? _buildLoginMessage(context)
-                : notifications.isEmpty
-                ? _buildEmptyState()
-                : Stack(
-                    children: [
-                      ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
-                        itemCount: notifications.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final notification = notifications[index];
-                          return _buildNotificationCard(
-                            context,
-                            ref,
-                            notification,
-                          );
-                        },
-                      ),
-                      // Bottom "Limpar" button
-                      Positioned(
-                        bottom: 30,
-                        left: 0,
-                        right: 0,
-                        child: Center(child: _buildClearButton(ref)),
-                      ),
-                    ],
+                : notificationsAsync.when(
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                    error: (_, __) => const Center(
+                      child: Text('Erro ao carregar notificações'),
+                    ),
+                    data: (notifications) => notifications.isEmpty
+                        ? _buildEmptyState()
+                        : Stack(
+                            children: [
+                              ListView.separated(
+                                padding: const EdgeInsets.fromLTRB(
+                                    24, 24, 24, 100),
+                                itemCount: notifications.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 12),
+                                itemBuilder: (context, index) {
+                                  return _buildNotificationCard(
+                                    context,
+                                    ref,
+                                    notifications[index],
+                                  );
+                                },
+                              ),
+                              Positioned(
+                                bottom: 30,
+                                left: 0,
+                                right: 0,
+                                child: Center(
+                                    child: _buildClearButton(ref)),
+                              ),
+                            ],
+                          ),
                   ),
           ),
         ],
@@ -73,15 +80,11 @@ class NotificationsPage extends ConsumerWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Back Button
           Positioned(
             left: 0,
             child: IconButton(
-              icon: const Icon(
-                Icons.chevron_left,
-                color: Colors.white,
-                size: 32,
-              ),
+              icon: const Icon(Icons.chevron_left,
+                  color: Colors.white, size: 32),
               onPressed: () {
                 if (context.canPop()) {
                   context.pop();
@@ -119,7 +122,11 @@ class NotificationsPage extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+        border: Border.all(
+          color: notification.isRead
+              ? AppColors.primary.withValues(alpha: 0.15)
+              : AppColors.primary.withValues(alpha: 0.4),
+        ),
       ),
       child: Row(
         children: [
@@ -129,18 +136,33 @@ class NotificationsPage extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    Text(
-                      notification.title,
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                    if (!notification.isRead)
+                      Container(
+                        width: 7,
+                        height: 7,
+                        margin: const EdgeInsets.only(right: 6),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    Flexible(
+                      child: Text(
+                        notification.title,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () {
-                        // TODO: Navigate to details
+                        ref
+                            .read(notificationsProvider.notifier)
+                            .markAsRead(notification.id);
+                        _navigateFromNotification(context, notification);
                       },
                       child: const Text(
                         'ver detalhes',
@@ -165,7 +187,6 @@ class NotificationsPage extends ConsumerWidget {
               ],
             ),
           ),
-          // Action circle (as in prototype)
           Container(
             width: 27,
             height: 27,
@@ -174,15 +195,43 @@ class NotificationsPage extends ConsumerWidget {
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.secondary),
             ),
-            child: const Icon(
-              Icons.arrow_forward_ios,
-              size: 12,
-              color: AppColors.secondary,
-            ),
+            child: const Icon(Icons.arrow_forward_ios,
+                size: 12, color: AppColors.secondary),
           ),
         ],
       ),
     );
+  }
+
+  void _navigateFromNotification(
+    BuildContext context,
+    AppNotification notification,
+  ) {
+    final tipo = notification.tipo;
+    final payload = notification.payload ?? {};
+    final codigoPublico = payload['codigo_publico'] as String?;
+    final checkoutUrl = payload['checkout_url'] as String?;
+
+    switch (tipo) {
+      case 'APROVACAO_RESERVA':
+      case 'PAGAMENTO_CONFIRMADO':
+        if (checkoutUrl != null) {
+          launchUrl(Uri.parse(checkoutUrl),
+              mode: LaunchMode.externalApplication);
+        } else if (codigoPublico != null) {
+          context.push('/tickets/details/$codigoPublico');
+        }
+      case 'RESERVA_CANCELADA':
+        if (codigoPublico != null) {
+          context.push('/tickets/details/$codigoPublico');
+        }
+      case 'NOVA_RESERVA':
+        context.push('/tickets');
+      case 'MENSAGEM_CHAT':
+        context.go('/chat');
+      default:
+        break;
+    }
   }
 
   Widget _buildClearButton(WidgetRef ref) {
@@ -225,11 +274,8 @@ class NotificationsPage extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.notifications_off_outlined,
-              size: 64,
-              color: AppColors.secondary,
-            ),
+            const Icon(Icons.notifications_off_outlined,
+                size: 64, color: AppColors.secondary),
             const SizedBox(height: 20),
             const Text(
               'Acesse suas notificações',
@@ -270,7 +316,8 @@ class NotificationsPage extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.notifications_none, size: 64, color: Color(0xFFE6E6E6)),
+          Icon(Icons.notifications_none,
+              size: 64, color: Color(0xFFE6E6E6)),
           SizedBox(height: 16),
           Text(
             'Sem novas notificações',

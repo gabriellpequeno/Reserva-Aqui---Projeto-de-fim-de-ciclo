@@ -222,15 +222,17 @@
 
 ## Fase 8 — Notificações In-App [PENDENTE]
 
-> Spec: `specs/notificacoes.spec.md`
+> Spec: `specs/notifications-system.spec.md`
+> Plan detalhado: `plans/notifications-system.plan.md`
 
-- [ ] Infraestrutura de notificações (WebSocket ou push)
-- [ ] Notificação: reserva confirmada pelo hotel
-- [ ] Notificação: reserva cancelada
-- [ ] Notificação: lembrete de check-in se aproximando
-- [ ] Notificação: nova mensagem no chat
-- [ ] Notificação: solicitação de avaliação após check-out
-- [ ] Tela de notificações no app
+- [ ] Setup Firebase (firebase_messaging, firebase_core, flutterfire configure, service worker web)
+- [ ] Criar `FcmTokenService` — registra/remove token por role via REST
+- [ ] Criar `NotificationService` — inicializa FCM, solicita permissão, escuta mensagens
+- [ ] Atualizar `app_notification.dart` — adicionar `tipo` e `payload`
+- [ ] Atualizar `auth_notifier.dart` — registrar/remover token FCM no login/logout
+- [ ] Atualizar `notifications_provider.dart` — estado real (host REST, hóspede SharedPreferences)
+- [ ] Atualizar `custom_bottom_nav.dart` — badge de não lidas
+- [ ] Atualizar `app_router.dart` — navegação por `tipo` + `payload`
 
 ---
 

@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../domain/models/admin_account_status.dart';
+import '../../data/services/admin_accounts_service.dart';
 import '../../domain/models/admin_hotel_model.dart';
 import '../../domain/models/admin_user_model.dart';
 import '../providers/admin_hotels_provider.dart';
@@ -134,18 +135,19 @@ class _AdminAccountManagementPageState
                   ),
                 ),
               ),
-              const Column(
+              Column(
                 children: [
-                  Text(
-                    'RESERVAQUI',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                  SvgPicture.asset(
+                    'lib/assets/icons/logo/logo.svg',
+                    height: 28,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.white,
+                      BlendMode.srcIn,
                     ),
+                    semanticsLabel: 'ReservaQui',
                   ),
-                  SizedBox(height: 4),
-                  Text(
+                  const SizedBox(height: 4),
+                  const Text(
                     'Gerenciamento de Contas',
                     style: TextStyle(
                       color: Colors.white,
@@ -258,25 +260,24 @@ class _AdminAccountManagementPageState
   }
 
   Future<void> _editUser(AdminUserModel user) async {
-    final next = await AdminEditAccountSheet.show(
+    final result = await AdminEditAccountSheet.showForUser(
       context: context,
-      title: 'Editar usuário',
-      subtitle: user.email,
-      currentStatus: user.status,
-      allowedStatuses: const [
-        AdminAccountStatus.ativo,
-        AdminAccountStatus.suspenso,
-      ],
+      user: user,
     );
-    if (next == null || next == user.status) return;
+    if (result == null || result.isEmpty) return;
+
+    final notifier = ref.read(adminUsersProvider.notifier);
     try {
-      await ref
-          .read(adminUsersProvider.notifier)
-          .updateStatus(user.id, next);
+      if (result.status != null) {
+        await notifier.updateStatus(user.id, result.status!);
+      }
+      if (result.dataPatch != null) {
+        await notifier.updateData(user.id, result.dataPatch!);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Usuário atualizado para "${next.name}".'),
+          content: const Text('Usuário atualizado.'),
           backgroundColor: Colors.green[700],
         ),
       );
@@ -284,11 +285,18 @@ class _AdminAccountManagementPageState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Não foi possível atualizar o status: $err'),
+          content: Text(_messageFor(err)),
           backgroundColor: Colors.red[700],
         ),
       );
     }
+  }
+
+  String _messageFor(Object err) {
+    if (err is AdminDuplicateEmailException) {
+      return 'Email já em uso por outra conta.';
+    }
+    return 'Não foi possível atualizar: $err';
   }
 
   // ── Hotels tab ────────────────────────────────────────────────────────────
@@ -339,25 +347,24 @@ class _AdminAccountManagementPageState
   }
 
   Future<void> _editHotel(AdminHotelModel hotel) async {
-    final next = await AdminEditAccountSheet.show(
+    final result = await AdminEditAccountSheet.showForHotel(
       context: context,
-      title: 'Editar hotel',
-      subtitle: hotel.emailResponsavel,
-      currentStatus: hotel.status,
-      allowedStatuses: const [
-        AdminAccountStatus.ativo,
-        AdminAccountStatus.inativo,
-      ],
+      hotel: hotel,
     );
-    if (next == null || next == hotel.status) return;
+    if (result == null || result.isEmpty) return;
+
+    final notifier = ref.read(adminHotelsProvider.notifier);
     try {
-      await ref
-          .read(adminHotelsProvider.notifier)
-          .updateStatus(hotel.id, next);
+      if (result.status != null) {
+        await notifier.updateStatus(hotel.id, result.status!);
+      }
+      if (result.dataPatch != null) {
+        await notifier.updateData(hotel.id, result.dataPatch!);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Hotel atualizado para "${next.name}".'),
+          content: const Text('Hotel atualizado.'),
           backgroundColor: Colors.green[700],
         ),
       );
@@ -365,7 +372,7 @@ class _AdminAccountManagementPageState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Não foi possível atualizar o status: $err'),
+          content: Text(_messageFor(err)),
           backgroundColor: Colors.red[700],
         ),
       );

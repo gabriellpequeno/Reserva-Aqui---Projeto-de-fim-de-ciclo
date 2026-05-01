@@ -39,12 +39,17 @@ class AdminUserModel {
     );
   }
 
-  AdminUserModel copyWith({AdminAccountStatus? status}) {
+  AdminUserModel copyWith({
+    String? nome,
+    String? email,
+    String? telefone,
+    AdminAccountStatus? status,
+  }) {
     return AdminUserModel(
       id: id,
-      nome: nome,
-      email: email,
-      telefone: telefone,
+      nome: nome ?? this.nome,
+      email: email ?? this.email,
+      telefone: telefone ?? this.telefone,
       fotoUrl: fotoUrl,
       status: status ?? this.status,
       criadoEm: criadoEm,

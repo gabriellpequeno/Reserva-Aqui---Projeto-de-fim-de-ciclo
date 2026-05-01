@@ -16,7 +16,7 @@ class AdminProfilePage extends ConsumerWidget {
     final asyncProfile = ref.watch(adminProfileProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: asyncProfile.when(
           loading: () => const Center(

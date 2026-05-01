@@ -1,45 +1,106 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/admin_account_status.dart';
+import '../../domain/models/admin_hotel_model.dart';
+import '../../domain/models/admin_user_model.dart';
 
-/// Bottom sheet para alternar o status de uma conta (usuário ou hotel).
+/// Resultado da edição feita no bottom sheet.
 ///
-/// Recebe o status atual, os status permitidos para aquele tipo de conta
-/// e um callback `onConfirm`. Retorna o novo status selecionado via `.pop()`
-/// ou `null` se cancelado.
-class AdminEditAccountSheet extends StatefulWidget {
-  final String title;
-  final String subtitle;
-  final AdminAccountStatus currentStatus;
-  final List<AdminAccountStatus> allowedStatuses;
+/// `status` vem preenchido quando o admin mudou o status da conta; `dataPatch`
+/// vem preenchido com as chaves (no formato esperado pelo backend) dos campos
+/// que foram alterados. Ambos podem coexistir num mesmo save.
+class AdminEditResult {
+  final AdminAccountStatus? status;
+  final Map<String, dynamic>? dataPatch;
 
-  const AdminEditAccountSheet({
-    super.key,
-    required this.title,
-    required this.subtitle,
-    required this.currentStatus,
+  const AdminEditResult({this.status, this.dataPatch});
+
+  bool get isEmpty => status == null && (dataPatch == null || dataPatch!.isEmpty);
+}
+
+/// Tipo de conta que o sheet está editando. Público porque integra a API
+/// interna do widget (via construtor nomeado), mas consumidores usam os
+/// factories `showForUser` / `showForHotel`.
+enum AdminAccountKind { user, hotel }
+
+/// Bottom sheet de edição de conta para o admin.
+///
+/// Permite alterar o status (radios) e os dados não-sensíveis do alvo,
+/// em um único form. Campos mudam conforme `kind`.
+///
+/// Uso:
+/// ```dart
+/// final result = await AdminEditAccountSheet.showForUser(context: ..., user: u);
+/// ```
+class AdminEditAccountSheet extends StatefulWidget {
+  final AdminAccountKind kind;
+  final AdminUserModel? user;
+  final AdminHotelModel? hotel;
+  final List<AdminAccountStatus> allowedStatuses;
+  final ScrollController scrollController;
+
+  const AdminEditAccountSheet._({
+    required this.kind,
+    this.user,
+    this.hotel,
     required this.allowedStatuses,
+    required this.scrollController,
   });
 
-  static Future<AdminAccountStatus?> show({
+  static Future<AdminEditResult?> showForUser({
     required BuildContext context,
-    required String title,
-    required String subtitle,
-    required AdminAccountStatus currentStatus,
-    required List<AdminAccountStatus> allowedStatuses,
+    required AdminUserModel user,
   }) {
-    return showModalBottomSheet<AdminAccountStatus>(
+    return _show(
+      context: context,
+      builder: (controller) => AdminEditAccountSheet._(
+        kind: AdminAccountKind.user,
+        user: user,
+        allowedStatuses: const [
+          AdminAccountStatus.ativo,
+          AdminAccountStatus.suspenso,
+        ],
+        scrollController: controller,
+      ),
+    );
+  }
+
+  static Future<AdminEditResult?> showForHotel({
+    required BuildContext context,
+    required AdminHotelModel hotel,
+  }) {
+    return _show(
+      context: context,
+      builder: (controller) => AdminEditAccountSheet._(
+        kind: AdminAccountKind.hotel,
+        hotel: hotel,
+        allowedStatuses: const [
+          AdminAccountStatus.ativo,
+          AdminAccountStatus.inativo,
+        ],
+        scrollController: controller,
+      ),
+    );
+  }
+
+  static Future<AdminEditResult?> _show({
+    required BuildContext context,
+    required AdminEditAccountSheet Function(ScrollController) builder,
+  }) {
+    return showModalBottomSheet<AdminEditResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => AdminEditAccountSheet(
-        title: title,
-        subtitle: subtitle,
-        currentStatus: currentStatus,
-        allowedStatuses: allowedStatuses,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.92,
+        expand: false,
+        builder: (_, scrollController) => builder(scrollController),
       ),
     );
   }
@@ -49,12 +110,147 @@ class AdminEditAccountSheet extends StatefulWidget {
 }
 
 class _AdminEditAccountSheetState extends State<AdminEditAccountSheet> {
-  late AdminAccountStatus _selected;
+  late AdminAccountStatus _status;
+  final _formKey = GlobalKey<FormState>();
+
+  // Usuário
+  TextEditingController? _userNome;
+  TextEditingController? _userEmail;
+  TextEditingController? _userTelefone;
+
+  // Hotel
+  TextEditingController? _hotelNome;
+  TextEditingController? _hotelEmail;
+  TextEditingController? _hotelTelefone;
+  TextEditingController? _hotelDescricao;
+  TextEditingController? _hotelCep;
+  TextEditingController? _hotelUf;
+  TextEditingController? _hotelCidade;
+  TextEditingController? _hotelBairro;
+  TextEditingController? _hotelRua;
+  TextEditingController? _hotelNumero;
+  TextEditingController? _hotelComplemento;
 
   @override
   void initState() {
     super.initState();
-    _selected = widget.currentStatus;
+    if (widget.kind == AdminAccountKind.user) {
+      final u = widget.user!;
+      _status = u.status;
+      _userNome     = TextEditingController(text: u.nome);
+      _userEmail    = TextEditingController(text: u.email);
+      _userTelefone = TextEditingController(text: u.telefone ?? '');
+    } else {
+      final h = widget.hotel!;
+      _status = h.status;
+      _hotelNome        = TextEditingController(text: h.nome);
+      _hotelEmail       = TextEditingController(text: h.emailResponsavel);
+      _hotelTelefone    = TextEditingController(text: h.telefone);
+      _hotelDescricao   = TextEditingController(text: h.descricao ?? '');
+      _hotelCep         = TextEditingController(text: h.cep);
+      _hotelUf          = TextEditingController(text: h.uf);
+      _hotelCidade      = TextEditingController(text: h.cidade);
+      _hotelBairro      = TextEditingController(text: h.bairro);
+      _hotelRua         = TextEditingController(text: h.rua);
+      _hotelNumero      = TextEditingController(text: h.numero);
+      _hotelComplemento = TextEditingController(text: h.complemento ?? '');
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in [
+      _userNome, _userEmail, _userTelefone,
+      _hotelNome, _hotelEmail, _hotelTelefone, _hotelDescricao,
+      _hotelCep, _hotelUf, _hotelCidade, _hotelBairro, _hotelRua,
+      _hotelNumero, _hotelComplemento,
+    ]) {
+      c?.dispose();
+    }
+    super.dispose();
+  }
+
+  // ── Validators ────────────────────────────────────────────────────────────
+
+  String? _validateRequired(String? v) {
+    if (v == null || v.trim().isEmpty) return 'Campo obrigatório';
+    return null;
+  }
+
+  String? _validateEmail(String? v) {
+    if (v == null || v.trim().isEmpty) return 'Campo obrigatório';
+    final ok = RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(v.trim());
+    return ok ? null : 'Email inválido';
+  }
+
+  String? _validatePhone(String? v) {
+    if (v == null || v.trim().isEmpty) return null; // telefone é opcional no user
+    final ok = RegExp(r'^\(\d{2}\) \d{4,5}-\d{4}$').hasMatch(v.trim());
+    return ok ? null : 'Formato esperado (XX) XXXXX-XXXX';
+  }
+
+  String? _validatePhoneRequired(String? v) {
+    if (v == null || v.trim().isEmpty) return 'Campo obrigatório';
+    return _validatePhone(v);
+  }
+
+  String? _validateCep(String? v) {
+    if (v == null || v.trim().isEmpty) return 'Campo obrigatório';
+    final digits = v.replaceAll(RegExp(r'\D'), '');
+    return digits.length == 8 ? null : 'CEP deve ter 8 dígitos';
+  }
+
+  String? _validateUf(String? v) {
+    if (v == null || v.trim().isEmpty) return 'Campo obrigatório';
+    return RegExp(r'^[A-Za-z]{2}$').hasMatch(v.trim())
+        ? null
+        : 'UF deve ter 2 letras';
+  }
+
+  // ── Submit ────────────────────────────────────────────────────────────────
+
+  void _onSave() {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final patch = <String, dynamic>{};
+    if (widget.kind == AdminAccountKind.user) {
+      final u = widget.user!;
+      _diff(patch, 'nome_completo',  _userNome!.text.trim(),      u.nome);
+      _diff(patch, 'email',          _userEmail!.text.trim(),     u.email);
+      _diff(patch, 'numero_celular', _userTelefone!.text.trim(),  u.telefone ?? '');
+    } else {
+      final h = widget.hotel!;
+      _diff(patch, 'nome_hotel',  _hotelNome!.text.trim(),       h.nome);
+      _diff(patch, 'email',       _hotelEmail!.text.trim(),      h.emailResponsavel);
+      _diff(patch, 'telefone',    _hotelTelefone!.text.trim(),   h.telefone);
+      _diff(patch, 'descricao',   _hotelDescricao!.text.trim(),  h.descricao ?? '');
+      _diff(patch, 'cep',         _hotelCep!.text.trim(),        h.cep);
+      _diff(patch, 'uf',          _hotelUf!.text.trim().toUpperCase(), h.uf);
+      _diff(patch, 'cidade',      _hotelCidade!.text.trim(),     h.cidade);
+      _diff(patch, 'bairro',      _hotelBairro!.text.trim(),     h.bairro);
+      _diff(patch, 'rua',         _hotelRua!.text.trim(),        h.rua);
+      _diff(patch, 'numero',      _hotelNumero!.text.trim(),     h.numero);
+      _diff(patch, 'complemento', _hotelComplemento!.text.trim(), h.complemento ?? '');
+    }
+
+    final initialStatus = widget.kind == AdminAccountKind.user
+        ? widget.user!.status
+        : widget.hotel!.status;
+    final statusChanged = _status != initialStatus;
+
+    final result = AdminEditResult(
+      status: statusChanged ? _status : null,
+      dataPatch: patch.isEmpty ? null : patch,
+    );
+    if (result.isEmpty) {
+      Navigator.of(context).pop();
+      return;
+    }
+    Navigator.of(context).pop(result);
+  }
+
+  void _diff(Map<String, dynamic> patch, String key, String current, String initial) {
+    if (current != initial) patch[key] = current;
   }
 
   String _labelFor(AdminAccountStatus s) {
@@ -68,26 +264,31 @@ class _AdminEditAccountSheetState extends State<AdminEditAccountSheet> {
     }
   }
 
+  // ── UI ────────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    final dirty = _selected != widget.currentStatus;
+    final scrollController = widget.scrollController;
+    final title = widget.kind == AdminAccountKind.user ? 'Editar usuário' : 'Editar hotel';
+    final subtitle = widget.kind == AdminAccountKind.user
+        ? widget.user!.email
+        : widget.hotel!.emailResponsavel;
 
     return Padding(
       padding: EdgeInsets.only(
         left: 24,
         right: 24,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        top: 12,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Center(
             child: Container(
               width: 40,
               height: 4,
-              margin: const EdgeInsets.only(bottom: 16),
+              margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
                 color: AppColors.strokeLight,
                 borderRadius: BorderRadius.circular(2),
@@ -95,7 +296,7 @@ class _AdminEditAccountSheetState extends State<AdminEditAccountSheet> {
             ),
           ),
           Text(
-            widget.title,
+            title,
             style: const TextStyle(
               color: AppColors.primary,
               fontSize: 18,
@@ -104,30 +305,42 @@ class _AdminEditAccountSheetState extends State<AdminEditAccountSheet> {
           ),
           const SizedBox(height: 4),
           Text(
-            widget.subtitle,
+            subtitle,
             style: const TextStyle(color: AppColors.greyText, fontSize: 13),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Status da conta',
-            style: TextStyle(
-              color: AppColors.primary,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ...widget.allowedStatuses.map(
-            (s) => RadioListTile<AdminAccountStatus>(
-              title: Text(_labelFor(s)),
-              value: s,
-              groupValue: _selected,
-              activeColor: AppColors.secondary,
-              contentPadding: EdgeInsets.zero,
-              onChanged: (v) => setState(() => _selected = v ?? _selected),
-            ),
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 16),
+          Expanded(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                controller: scrollController,
+                padding: EdgeInsets.zero,
+                children: [
+                  _sectionTitle('Status da conta'),
+                  ...widget.allowedStatuses.map(
+                    (s) => RadioListTile<AdminAccountStatus>(
+                      title: Text(_labelFor(s)),
+                      value: s,
+                      groupValue: _status,
+                      activeColor: AppColors.secondary,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      onChanged: (v) => setState(() => _status = v ?? _status),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _sectionTitle('Dados'),
+                  const SizedBox(height: 8),
+                  if (widget.kind == AdminAccountKind.user)
+                    ..._buildUserFields()
+                  else
+                    ..._buildHotelFields(),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ),
           Row(
             children: [
               Expanded(
@@ -152,12 +365,9 @@ class _AdminEditAccountSheetState extends State<AdminEditAccountSheet> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: dirty
-                      ? () => Navigator.of(context).pop(_selected)
-                      : null,
+                  onPressed: _onSave,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.secondary,
-                    disabledBackgroundColor: AppColors.strokeLight,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(11),
                     ),
@@ -177,6 +387,167 @@ class _AdminEditAccountSheetState extends State<AdminEditAccountSheet> {
           ),
         ],
       ),
+    );
+  }
+
+  List<Widget> _buildUserFields() {
+    return [
+      _field(
+        controller: _userNome!,
+        label: 'Nome completo',
+        validator: _validateRequired,
+      ),
+      _field(
+        controller: _userEmail!,
+        label: 'Email',
+        keyboardType: TextInputType.emailAddress,
+        validator: _validateEmail,
+      ),
+      _field(
+        controller: _userTelefone!,
+        label: 'Telefone',
+        keyboardType: TextInputType.phone,
+        inputFormatters: [_BrazilianPhoneFormatter()],
+        validator: _validatePhone,
+      ),
+    ];
+  }
+
+  List<Widget> _buildHotelFields() {
+    return [
+      _field(
+        controller: _hotelNome!,
+        label: 'Nome do hotel',
+        validator: _validateRequired,
+      ),
+      _field(
+        controller: _hotelEmail!,
+        label: 'Email do responsável',
+        keyboardType: TextInputType.emailAddress,
+        validator: _validateEmail,
+      ),
+      _field(
+        controller: _hotelTelefone!,
+        label: 'Telefone',
+        keyboardType: TextInputType.phone,
+        inputFormatters: [_BrazilianPhoneFormatter()],
+        validator: _validatePhoneRequired,
+      ),
+      _field(
+        controller: _hotelDescricao!,
+        label: 'Descrição',
+        maxLines: 3,
+      ),
+      _field(
+        controller: _hotelCep!,
+        label: 'CEP',
+        keyboardType: TextInputType.number,
+        validator: _validateCep,
+      ),
+      _field(
+        controller: _hotelUf!,
+        label: 'UF',
+        maxLength: 2,
+        textCapitalization: TextCapitalization.characters,
+        validator: _validateUf,
+      ),
+      _field(
+        controller: _hotelCidade!,
+        label: 'Cidade',
+        validator: _validateRequired,
+      ),
+      _field(
+        controller: _hotelBairro!,
+        label: 'Bairro',
+        validator: _validateRequired,
+      ),
+      _field(
+        controller: _hotelRua!,
+        label: 'Rua',
+        validator: _validateRequired,
+      ),
+      _field(
+        controller: _hotelNumero!,
+        label: 'Número',
+        validator: _validateRequired,
+      ),
+      _field(
+        controller: _hotelComplemento!,
+        label: 'Complemento (opcional)',
+      ),
+    ];
+  }
+
+  Widget _sectionTitle(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 4, top: 4),
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: AppColors.primary,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+
+  Widget _field({
+    required TextEditingController controller,
+    required String label,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    String? Function(String?)? validator,
+    int maxLines = 1,
+    int? maxLength,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        validator: validator,
+        maxLines: maxLines,
+        maxLength: maxLength,
+        textCapitalization: textCapitalization,
+        decoration: InputDecoration(
+          labelText: label,
+          counterText: '',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(11),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Formatador que aplica a máscara brasileira (XX) XXXX-XXXX / (XX) XXXXX-XXXX
+/// conforme o usuário digita. Reutilizado de `edit_user_profile_page.dart`.
+class _BrazilianPhoneFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final truncated = digits.length > 11 ? digits.substring(0, 11) : digits;
+    final buf = StringBuffer();
+    for (var i = 0; i < truncated.length; i++) {
+      if (i == 0) buf.write('(');
+      if (i == 2) buf.write(') ');
+      if (truncated.length == 11 && i == 7) buf.write('-');
+      if (truncated.length == 10 && i == 6) buf.write('-');
+      buf.write(truncated[i]);
+    }
+    final formatted = buf.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

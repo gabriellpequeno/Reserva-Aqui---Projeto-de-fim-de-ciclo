@@ -16,6 +16,8 @@ import {
   setUserStatus,
   listHotels,
   setHotelStatus,
+  updateUser,
+  updateHotel,
   AdminUserDTO,
   AdminHotelDTO,
 } from '../../services/admin.service';
@@ -29,6 +31,8 @@ const listUsersMock      = listUsers as jest.Mock;
 const setUserStatusMock  = setUserStatus as jest.Mock;
 const listHotelsMock     = listHotels as jest.Mock;
 const setHotelStatusMock = setHotelStatus as jest.Mock;
+const updateUserMock     = updateUser as jest.Mock;
+const updateHotelMock    = updateHotel as jest.Mock;
 
 function createApp() {
   const app = express();
@@ -58,6 +62,15 @@ const sampleHotel: AdminHotelDTO = {
   id:               'h-42',
   nome:             'Hotel Exemplo',
   emailResponsavel: 'contato@hotel.com',
+  telefone:         '(11) 3333-4444',
+  descricao:        'Um hotel',
+  cep:              '01310100',
+  uf:               'SP',
+  cidade:           'São Paulo',
+  bairro:           'Bela Vista',
+  rua:              'Av. Paulista',
+  numero:           '1000',
+  complemento:      null,
   capaUrl:          null,
   status:           'ativo',
   totalQuartos:     null,
@@ -117,14 +130,17 @@ describe('PATCH /api/admin/users/:id', () => {
       .send({ status: 'suspenso' });
     expect(res.status).toBe(403);
     expect(setUserStatusMock).not.toHaveBeenCalled();
+    expect(updateUserMock).not.toHaveBeenCalled();
   });
 
-  it('retorna 400 quando body não contém status (requireFields)', async () => {
+  it('retorna 400 quando body está vazio', async () => {
     const res = await request(app)
       .patch('/api/admin/users/u-42')
       .set('Authorization', `Bearer ${adminToken()}`)
       .send({});
     expect(res.status).toBe(400);
+    expect(setUserStatusMock).not.toHaveBeenCalled();
+    expect(updateUserMock).not.toHaveBeenCalled();
   });
 
   it('retorna 400 quando status é inválido', async () => {
@@ -147,6 +163,58 @@ describe('PATCH /api/admin/users/:id', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ user: suspended });
     expect(setUserStatusMock).toHaveBeenCalledWith('u-42', 'suspenso');
+    expect(updateUserMock).not.toHaveBeenCalled();
+  });
+
+  it('retorna 200 + { user } ao editar apenas dados', async () => {
+    const updated: AdminUserDTO = { ...sampleUser, nome: 'Novo Nome' };
+    updateUserMock.mockResolvedValueOnce(updated);
+    const res = await request(app)
+      .patch('/api/admin/users/u-42')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({ nome_completo: 'Novo Nome' });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ user: updated });
+    expect(updateUserMock).toHaveBeenCalledWith('u-42', { nome_completo: 'Novo Nome' });
+    expect(setUserStatusMock).not.toHaveBeenCalled();
+  });
+
+  it('retorna 409 quando email já está em uso (pg 23505)', async () => {
+    const pgErr = Object.assign(new Error('duplicate key'), { code: '23505' });
+    updateUserMock.mockRejectedValueOnce(pgErr);
+    const res = await request(app)
+      .patch('/api/admin/users/u-42')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({ email: 'existente@x.com' });
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/email/i);
+  });
+
+  it('retorna 400 quando email é inválido', async () => {
+    updateUserMock.mockRejectedValueOnce(new Error('Email inválido'));
+    const res = await request(app)
+      .patch('/api/admin/users/u-42')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({ email: 'sem-arroba' });
+    expect(res.status).toBe(400);
+  });
+
+  it('aplica status e dados juntos, nesta ordem', async () => {
+    const afterStatus: AdminUserDTO = { ...sampleUser, status: 'suspenso' };
+    const afterData:   AdminUserDTO = { ...afterStatus, nome: 'Outro' };
+    setUserStatusMock.mockResolvedValueOnce(afterStatus);
+    updateUserMock.mockResolvedValueOnce(afterData);
+
+    const res = await request(app)
+      .patch('/api/admin/users/u-42')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({ status: 'suspenso', nome_completo: 'Outro' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ user: afterData });
+    const statusOrder = setUserStatusMock.mock.invocationCallOrder[0];
+    const dataOrder   = updateUserMock.mock.invocationCallOrder[0];
+    expect(statusOrder).toBeLessThan(dataOrder);
   });
 
   it('retorna 404 quando service lança "não encontrado"', async () => {
@@ -195,6 +263,16 @@ describe('PATCH /api/admin/hotels/:id', () => {
     app = createApp();
   });
 
+  it('retorna 400 quando body está vazio', async () => {
+    const res = await request(app)
+      .patch('/api/admin/hotels/h-42')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({});
+    expect(res.status).toBe(400);
+    expect(setHotelStatusMock).not.toHaveBeenCalled();
+    expect(updateHotelMock).not.toHaveBeenCalled();
+  });
+
   it('retorna 400 quando status é inválido para hotel', async () => {
     const res = await request(app)
       .patch('/api/admin/hotels/h-42')
@@ -213,5 +291,27 @@ describe('PATCH /api/admin/hotels/:id', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ hotel: inactive });
     expect(setHotelStatusMock).toHaveBeenCalledWith('h-42', 'inativo');
+  });
+
+  it('retorna 200 + { hotel } ao editar dados de endereço', async () => {
+    const updated: AdminHotelDTO = { ...sampleHotel, descricao: 'Nova descrição' };
+    updateHotelMock.mockResolvedValueOnce(updated);
+    const res = await request(app)
+      .patch('/api/admin/hotels/h-42')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({ descricao: 'Nova descrição' });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ hotel: updated });
+    expect(updateHotelMock).toHaveBeenCalledWith('h-42', { descricao: 'Nova descrição' });
+  });
+
+  it('retorna 409 quando email de hotel já está em uso (pg 23505)', async () => {
+    const pgErr = Object.assign(new Error('duplicate key'), { code: '23505' });
+    updateHotelMock.mockRejectedValueOnce(pgErr);
+    const res = await request(app)
+      .patch('/api/admin/hotels/h-42')
+      .set('Authorization', `Bearer ${adminToken()}`)
+      .send({ email: 'existente@hotel.com' });
+    expect(res.status).toBe(409);
   });
 });

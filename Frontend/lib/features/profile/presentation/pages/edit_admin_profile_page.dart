@@ -109,7 +109,7 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
     });
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: asyncProfile.when(
           loading: () => const Center(

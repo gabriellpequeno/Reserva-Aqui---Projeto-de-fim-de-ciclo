@@ -24,9 +24,9 @@ export interface CreateReservaUsuarioInput {
   p_turisticos?: unknown;
 }
 
-/** Criação de reserva walk-in pelo hotel (balcão). */
+/** Criação de reserva walk-in pelo hotel (balcão ou bloqueio de agenda). */
 export interface CreateReservaWalkinInput {
-  // Identificação do hóspede — user registrado OU dados manuais
+  // Identificação do hóspede — opcional para bloqueios de agenda sem hóspede definido
   user_id?:          string;
   nome_hospede?:     string;
   cpf_hospede?:      string;
@@ -167,26 +167,27 @@ export class Reserva {
     return result;
   }
 
-  /** Valida criação de reserva walk-in pelo hotel (BALCAO). */
+  /** Valida criação de reserva walk-in pelo hotel (balcão ou bloqueio de agenda). */
   static validateWalkin(input: unknown): CreateReservaWalkinInput {
     const data = input as Record<string, unknown>;
 
-    const num_hospedes   = this.validateNumHospedes(data.num_hospedes);
-    const data_checkin   = this.validateDate(data.data_checkin, 'data_checkin');
-    const data_checkout  = this.validateDate(data.data_checkout, 'data_checkout');
-    const valor_total    = this.validateValorTotal(data.valor_total);
+    const num_hospedes  = this.validateNumHospedes(data.num_hospedes);
+    const data_checkin  = this.validateDate(data.data_checkin, 'data_checkin');
+    const data_checkout = this.validateDate(data.data_checkout, 'data_checkout');
+    const valor_total   = this.validateValorTotal(data.valor_total);
 
     if (data_checkout <= data_checkin)
       throw new Error('data_checkout deve ser posterior à data_checkin');
 
-    // Identificação do hóspede: user_id registrado OU nome + (cpf ou telefone)
-    const hasUserId     = data.user_id !== undefined && data.user_id !== null && data.user_id !== '';
-    const hasNome       = typeof data.nome_hospede === 'string' && data.nome_hospede.trim().length > 0;
-    const hasCpfOrFone  = (typeof data.cpf_hospede === 'string' && data.cpf_hospede.trim().length > 0)
-                       || (typeof data.telefone_contato === 'string' && data.telefone_contato.trim().length > 0);
+    // Identificação do hóspede é opcional — reservas de balcão podem bloquear agenda sem hóspede
+    const hasUserId    = data.user_id !== undefined && data.user_id !== null && data.user_id !== '';
+    const hasNome      = typeof data.nome_hospede === 'string' && data.nome_hospede.trim().length > 0;
+    const hasCpfOrFone = (typeof data.cpf_hospede === 'string' && data.cpf_hospede.trim().length > 0)
+                      || (typeof data.telefone_contato === 'string' && data.telefone_contato.trim().length > 0);
 
-    if (!hasUserId && !(hasNome && hasCpfOrFone))
-      throw new Error('Identifique o hóspede: informe user_id ou nome_hospede + (cpf_hospede ou telefone_contato)');
+    // Se informou nome, exige cpf ou telefone para consistência
+    if (hasNome && !hasCpfOrFone)
+      throw new Error('Ao informar nome do hóspede, forneça também cpf_hospede ou telefone_contato');
 
     // Quarto: id físico OU texto livre
     if (data.quarto_id === undefined && !data.tipo_quarto)
@@ -197,20 +198,20 @@ export class Reserva {
 
     const result: CreateReservaWalkinInput = { num_hospedes, data_checkin, data_checkout };
 
-    if (data.valor_total !== undefined)    result.valor_total      = valor_total;
-    if (hasUserId)                        result.user_id          = this.validateUserId(data.user_id);
-    if (hasNome)                          result.nome_hospede     = (data.nome_hospede as string).trim();
+    if (data.valor_total !== undefined) result.valor_total = valor_total;
+    if (hasUserId) result.user_id = this.validateUserId(data.user_id);
+    if (hasNome)   result.nome_hospede = (data.nome_hospede as string).trim();
     if (typeof data.cpf_hospede === 'string' && data.cpf_hospede.trim())
-                                          result.cpf_hospede      = data.cpf_hospede.trim();
+      result.cpf_hospede = data.cpf_hospede.trim();
     if (typeof data.telefone_contato === 'string' && data.telefone_contato.trim())
-                                          result.telefone_contato = data.telefone_contato.trim();
-    if (data.quarto_id  !== undefined)    result.quarto_id        = this.validateQuartoId(data.quarto_id);
+      result.telefone_contato = data.telefone_contato.trim();
+    if (data.quarto_id !== undefined) result.quarto_id = this.validateQuartoId(data.quarto_id);
     if (data.tipo_quarto !== undefined) {
       if (typeof data.tipo_quarto !== 'string' || !data.tipo_quarto.trim())
         throw new Error('tipo_quarto inválido');
       result.tipo_quarto = data.tipo_quarto.trim();
     }
-    if (data.observacoes !== undefined)   result.observacoes      = this.validateObservacoes(data.observacoes);
+    if (data.observacoes !== undefined) result.observacoes = this.validateObservacoes(data.observacoes);
     if (typeof data.sessao_chat_id === 'string') result.sessao_chat_id = data.sessao_chat_id;
 
     return result;

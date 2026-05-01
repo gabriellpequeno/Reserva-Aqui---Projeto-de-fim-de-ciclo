@@ -137,9 +137,10 @@ CREATE TABLE IF NOT EXISTS reserva (
     CONSTRAINT chk_status       CHECK (status IN ('SOLICITADA', 'AGUARDANDO_PAGAMENTO', 'APROVADA', 'CANCELADA', 'CONCLUIDA')),
     CONSTRAINT chk_canal        CHECK (canal_origem IN ('APP', 'WHATSAPP', 'BALCAO')),
 
-    -- Garante identificação mínima do hóspede
+    -- Identificação do hóspede opcional para walk-ins de balcão (bloqueio de agenda sem hóspede definido)
     CONSTRAINT chk_hospede_identificado CHECK (
-        user_id IS NOT NULL
+        canal_origem = 'BALCAO'
+        OR user_id IS NOT NULL
         OR (nome_hospede IS NOT NULL AND (cpf_hospede IS NOT NULL OR telefone_contato IS NOT NULL))
     ),
 
@@ -248,4 +249,24 @@ CREATE TABLE IF NOT EXISTS quarto_foto (
 );
 
 CREATE INDEX IF NOT EXISTS idx_quarto_foto_quarto_id   ON quarto_foto (quarto_id);
+
+-- 14. Catálogo padrão de comodidades
+--    Inserido automaticamente na criação do schema para que o formulário
+--    de adição de quartos já tenha opções disponíveis.
+INSERT INTO catalogo (nome, categoria) VALUES
+  ('Wi-Fi',              'COMODIDADE'),
+  ('Ar-condicionado',    'COMODIDADE'),
+  ('TV a cabo',          'COMODIDADE'),
+  ('Frigobar',           'COMODIDADE'),
+  ('Cofre digital',      'COMODIDADE'),
+  ('Cama king-size',     'COMODO'),
+  ('Cama queen-size',    'COMODO'),
+  ('Cama de solteiro',   'COMODO'),
+  ('Banheiro privativo', 'COMODO'),
+  ('Varanda',            'COMODO'),
+  ('Piscina',            'LAZER'),
+  ('Academia',           'LAZER'),
+  ('Spa',                'LAZER'),
+  ('Restaurante',        'LAZER')
+ON CONFLICT (nome, categoria) DO NOTHING;
 

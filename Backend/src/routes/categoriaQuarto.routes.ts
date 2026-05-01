@@ -31,7 +31,7 @@ router.get('/:hotel_id/categorias/:id', getCategoriaController);
 router.post(
   '/categorias',
   hotelGuard,
-  requireFields('nome', 'preco_base', 'capacidade_pessoas'),
+  requireFields('nome', 'valor_diaria', 'capacidade_pessoas'),
   createCategoriaController,
 );
 

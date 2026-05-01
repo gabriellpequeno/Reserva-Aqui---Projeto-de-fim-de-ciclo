@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../favorites/presentation/providers/favorites_provider.dart';
 import '../../domain/models/hotel_details.dart';
 import '../notifiers/hotel_details_notifier.dart';
 import '../notifiers/hotel_details_state.dart';
@@ -31,9 +33,52 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
     });
   }
 
+  void _handleFavoriteTap(BuildContext context) {
+    final isAuth =
+        ref.read(authProvider).asData?.value.isAuthenticated ?? false;
+    if (!isAuth) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Funcionalidade Exclusiva'),
+          content: const Text(
+              'Faça login para favoritar hotéis e acompanhar suas escolhas.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Fechar'),
+            ),
+            ElevatedButton(
+              onPressed: () => context.go('/auth/login'),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondary),
+              child: const Text('Fazer Login'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final isFav = ref
+            .read(favoritesProvider)
+            .value
+            ?.any((h) => h.hotelId == widget.hotelId) ??
+        false;
+
+    if (isFav) {
+      ref.read(favoritesProvider.notifier).removeFavorite(widget.hotelId);
+    } else {
+      ref.read(favoritesProvider.notifier).addFavorite(widget.hotelId);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(hotelDetailsNotifierProvider);
+    final isFavorited = ref.watch(favoritesProvider).value
+            ?.any((h) => h.hotelId == widget.hotelId) ??
+        false;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -62,7 +107,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                 )
               : CustomScrollView(
                   slivers: [
-                    _buildSliverAppBar(context, state),
+                    _buildSliverAppBar(context, state, isFavorited),
                     SliverToBoxAdapter(
                       child: Center(
                         child: ConstrainedBox(
@@ -256,7 +301,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context, HotelDetailsState state) {
+  Widget _buildSliverAppBar(BuildContext context, HotelDetailsState state, bool isFavorited) {
     final imageUrl = state.coverUrls.isNotEmpty ? state.coverUrls[0] : null;
 
     return SliverAppBar(
@@ -314,8 +359,12 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: const Icon(Icons.notifications_none, size: 20),
-              onPressed: () => context.go('/notifications'),
+              icon: Icon(
+                isFavorited ? Icons.favorite : Icons.favorite_border,
+                size: 20,
+                color: isFavorited ? Colors.red : Colors.white,
+              ),
+              onPressed: () => _handleFavoriteTap(context),
             ),
           ),
         ),

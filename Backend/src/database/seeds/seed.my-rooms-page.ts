@@ -80,11 +80,13 @@ function addDays(d: Date, n: number): Date {
 
 const TODAY = new Date();
 
-const C1_A_IN  = fmtDate(addDays(TODAY,  3));
-const C1_A_OUT = fmtDate(addDays(TODAY,  8));
-const C1_B_IN  = fmtDate(addDays(TODAY,  5));
-const C1_B_OUT = fmtDate(addDays(TODAY, 10));
+// Cenário 1 — Suíte Master (3 unidades) — dias lotados em HOJE+5, +6, +7
+const C1_A_IN  = fmtDate(addDays(TODAY,  3));  // 501+502 checkin
+const C1_A_OUT = fmtDate(addDays(TODAY,  8));  // 501+502 checkout (exclusivo)
+const C1_B_IN  = fmtDate(addDays(TODAY,  5));  // 503 checkin
+const C1_B_OUT = fmtDate(addDays(TODAY, 10));  // 503 checkout
 
+// Cenário 2 — Quarto Duplo Premium (2 unidades) — 601 ocupado, 602 livre para reserva manual
 const C2_IN  = fmtDate(addDays(TODAY, 1));
 const C2_OUT = fmtDate(addDays(TODAY, 4));
 
@@ -92,9 +94,11 @@ export async function seedMyRoomsPage(): Promise<void> {
   console.log('--- Seed: my-rooms-page ---\n');
 
   try {
+    // ── 1. Criar hotel ──────────────────────────────────────────────────────
     const hotel = await registerAnfitriao(HOTEL as any);
     console.log(`  ✅ Hotel criado: ${hotel.nome_hotel} | schema: ${hotel.schema_name}`);
 
+    // ── 2. Configuração operacional ─────────────────────────────────────────
     await updateConfiguracaoHotel(hotel.hotel_id, {
       horario_checkin:       '14:00',
       horario_checkout:      '12:00',
@@ -104,6 +108,7 @@ export async function seedMyRoomsPage(): Promise<void> {
       idiomas_atendimento:   'Português',
     });
 
+    // ── 3. Catálogo de comodidades ──────────────────────────────────────────
     const catalogoIds: Record<string, number> = {};
     for (const item of CATALOGO_ITENS) {
       const criado = await createCatalogo(hotel.hotel_id, { nome: item.nome, categoria: item.categoria });
@@ -111,6 +116,9 @@ export async function seedMyRoomsPage(): Promise<void> {
     }
     console.log(`  ✅ Catálogo: ${CATALOGO_ITENS.length} itens`);
 
+    // ── 4. Categorias + Quartos ─────────────────────────────────────────────
+
+    // [C1] Suíte Master — 3 unidades
     const catSuite = await createCategoriaQuarto(hotel.hotel_id, {
       nome: 'Suíte Master',
       capacidade_pessoas: 2,
@@ -124,6 +132,7 @@ export async function seedMyRoomsPage(): Promise<void> {
     await createQuarto(hotel.hotel_id, { categoria_quarto_id: catSuite.id, numero: '503', valor_diaria: 560, descricao: 'Suíte master com varanda e banheira.' });
     console.log(`  ✅ Categoria "Suíte Master" | 3 quartos (501, 502, 503)`);
 
+    // [C2] Quarto Duplo Premium — 2 unidades
     const catDuplo = await createCategoriaQuarto(hotel.hotel_id, {
       nome: 'Quarto Duplo Premium',
       capacidade_pessoas: 2,
@@ -136,6 +145,7 @@ export async function seedMyRoomsPage(): Promise<void> {
     await createQuarto(hotel.hotel_id, { categoria_quarto_id: catDuplo.id, numero: '602', valor_diaria: 340, descricao: 'Quarto duplo com varanda privativa.' });
     console.log(`  ✅ Categoria "Quarto Duplo Premium" | 2 quartos (601, 602)`);
 
+    // [C3] Quarto Single Business — 1 unidade (para delete total)
     const catSingle = await createCategoriaQuarto(hotel.hotel_id, {
       nome: 'Quarto Single Business',
       capacidade_pessoas: 1,
@@ -147,6 +157,7 @@ export async function seedMyRoomsPage(): Promise<void> {
     await createQuarto(hotel.hotel_id, { categoria_quarto_id: catSingle.id, numero: '701', valor_diaria: 180, descricao: 'Quarto individual compacto para viagens a trabalho.' });
     console.log(`  ✅ Categoria "Quarto Single Business" | 1 quarto (701)`);
 
+    // [C4] Suíte Família — 4 unidades (para delete parcial)
     const catFamilia = await createCategoriaQuarto(hotel.hotel_id, {
       nome: 'Suíte Família',
       capacidade_pessoas: 4,
@@ -161,7 +172,10 @@ export async function seedMyRoomsPage(): Promise<void> {
     await createQuarto(hotel.hotel_id, { categoria_quarto_id: catFamilia.id, numero: '804', valor_diaria: 450, descricao: 'Suíte família premium com banheira.' });
     console.log(`  ✅ Categoria "Suíte Família" | 4 quartos (801–804)`);
 
+    // ── 5. Reservas para cenários 1 e 2 ────────────────────────────────────
     await withTenant(hotel.schema_name, async (client) => {
+
+      // Obtém ou cria usuário de seed para vincular às reservas
       let seedUserId: string;
       const { rows: userRows } = await masterPool.query<{ user_id: string }>(
         `INSERT INTO usuario (nome_completo, email, senha, cpf, numero_celular, data_nascimento)
@@ -172,6 +186,7 @@ export async function seedMyRoomsPage(): Promise<void> {
       );
       seedUserId = userRows[0].user_id;
 
+      // Registra como hóspede no tenant antes de criar reservas (FK obrigatória)
       await client.query(
         `INSERT INTO hospede (user_id) VALUES ($1) ON CONFLICT DO NOTHING`,
         [seedUserId],
@@ -182,7 +197,12 @@ export async function seedMyRoomsPage(): Promise<void> {
       );
       const byNumero = Object.fromEntries(quartoRows.map((r) => [r.numero, r.id]));
 
-      const insertReserva = async (quartoId: number, checkin: string, checkout: string, valor: number) => {
+      const insertReserva = async (
+        quartoId: number,
+        checkin: string,
+        checkout: string,
+        valor: number,
+      ) => {
         await client.query(
           `INSERT INTO reserva
              (quarto_id, user_id, num_hospedes, data_checkin, data_checkout,
@@ -192,11 +212,13 @@ export async function seedMyRoomsPage(): Promise<void> {
         );
       };
 
+      // Cenário 1 — Suíte Master: 501+502 de C1_A, 503 de C1_B → lotação em HOJE+5..+7
       if (byNumero['501']) await insertReserva(byNumero['501'], C1_A_IN, C1_A_OUT, 580 * 5);
       if (byNumero['502']) await insertReserva(byNumero['502'], C1_A_IN, C1_A_OUT, 600 * 5);
       if (byNumero['503']) await insertReserva(byNumero['503'], C1_B_IN, C1_B_OUT, 560 * 5);
       console.log(`  ✅ Reservas C1 (Suíte Master): 501+502 de ${C1_A_IN}→${C1_A_OUT} | 503 de ${C1_B_IN}→${C1_B_OUT}`);
 
+      // Cenário 2 — Duplo Premium: 601 ocupado; 602 livre para reserva manual
       if (byNumero['601']) await insertReserva(byNumero['601'], C2_IN, C2_OUT, 320 * 3);
       console.log(`  ✅ Reserva C2 (Duplo Premium): 601 de ${C2_IN}→${C2_OUT} (602 livre para reserva manual)`);
     });
@@ -205,11 +227,43 @@ export async function seedMyRoomsPage(): Promise<void> {
 ╔══════════════════════════════════════════════════════════════════╗
 ║          SEED my-rooms-page concluído com sucesso                ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  Login: myrooms@teste.com  |  Senha: Seed@2026                  ║
+║  Login: myrooms@teste.com                                        ║
+║  Senha: Seed@2026                                                ║
+╠══════════════════════════════════════════════════════════════════╣
+║  CENÁRIOS DE TESTE                                               ║
+║                                                                  ║
+║  [C1] Suíte Master — 3 unidades                                  ║
+║    • Abrir reserva manual → HOJE+5, +6, +7 = BLOQUEADOS          ║
+║    • HOJE+3, +4 = parcial (2/3); a partir de HOJE+8 = 1/3       ║
+║                                                                  ║
+║  [C2] Quarto Duplo Premium — 2 unidades                          ║
+║    • 601 APROVADA ${C2_IN} → ${C2_OUT}              ║
+║    • Fazer reserva manual 602 no mesmo período                   ║
+║      → dias HOJE+1, +2, +3 ficam BLOQUEADOS (2/2)               ║
+║                                                                  ║
+║  [C3] Quarto Single Business — 1 unidade                         ║
+║    • Deletar quantidade = 1 → categoria some da listagem         ║
+║                                                                  ║
+║  [C4] Suíte Família — 4 unidades                                 ║
+║    • Deletar quantidade = 2 → card fica com 2 unidades           ║
+║                                                                  ║
+║  [C5] Busca por nome:                                            ║
+║    • "master"  → Suíte Master                                    ║
+║    • "duplo"   → Quarto Duplo Premium                            ║
+║    • "single"  → Quarto Single Business                          ║
+║    • "família" → Suíte Família                                   ║
+║                                                                  ║
+║  [C5] Filtro por categoria: clicar cada chip                     ║
+║    → apenas aquela categoria é exibida                           ║
 ╚══════════════════════════════════════════════════════════════════╝
 `);
+
   } catch (err: any) {
-    if (err.message?.includes('duplicate key') || err.message?.includes('unique constraint') || err.message?.includes('ja existe')) {
+    if (
+      err.message?.includes('duplicate key') ||
+      err.message?.includes('unique constraint') ||
+      err.message?.includes('ja existe')
+    ) {
       console.log(`  ⚠️  Hotel "Hotel Teste MyRooms" já existe (rode db:reset para recriar)`);
     } else {
       throw err;
@@ -217,8 +271,15 @@ export async function seedMyRoomsPage(): Promise<void> {
   }
 }
 
+// Auto-execução quando rodado diretamente
 if (require.main === module) {
   seedMyRoomsPage()
-    .catch((err) => { console.error('[seed/my-rooms-page] Erro fatal:', err); process.exit(1); })
-    .finally(async () => { await masterPool.end(); process.exit(0); });
+    .catch((err) => {
+      console.error('[seed/my-rooms-page] Erro fatal:', err);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await masterPool.end();
+      process.exit(0);
+    });
 }

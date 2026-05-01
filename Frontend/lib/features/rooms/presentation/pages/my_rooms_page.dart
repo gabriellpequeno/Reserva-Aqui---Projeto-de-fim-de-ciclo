@@ -184,18 +184,26 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
   Widget _chip(String label, bool selected, VoidCallback onTap) {
     return Semantics(
       label: '$label${selected ? ', selecionado' : ''}',
-      child: FilterChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => onTap(),
-        selectedColor: AppColors.secondary.withValues(alpha: 0.2),
-        checkmarkColor: AppColors.secondary,
-        visualDensity: VisualDensity.compact,
-        labelPadding: const EdgeInsets.only(left: 2, right: 6),
-        labelStyle: TextStyle(
-          color: selected ? AppColors.secondary : AppColors.greyText,
-          fontWeight:
-              selected ? FontWeight.w600 : FontWeight.normal,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected ? AppColors.primary : const Color(0xFFCCCCCC),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? Colors.white : AppColors.greyText,
+              fontSize: 13,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            ),
+          ),
         ),
       ),
     );
@@ -285,21 +293,6 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                 textAlign: TextAlign.center,
                 style:
                     TextStyle(color: AppColors.greyText, fontSize: 14)),
-            const SizedBox(height: 24),
-            Semantics(
-              label: 'Adicionar primeiro quarto',
-              child: ElevatedButton.icon(
-                onPressed: () => context.push('/add_room'),
-                icon: const Icon(Icons.add),
-                label: const Text('Adicionar quarto'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(11)),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -646,20 +639,24 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
           child: Semantics(
             label: 'Adicionar novo tipo de quarto',
             child: ElevatedButton(
-              onPressed:
-                  state.loading ? null : () => context.push('/add_room'),
+              onPressed: state.loading
+                  ? null
+                  : () async {
+                      await context.push('/add_room');
+                      if (mounted) {
+                        ref.read(myRoomsNotifierProvider.notifier).load();
+                      }
+                    },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF19D75),
+                backgroundColor: AppColors.secondary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(11),
-                  side:
-                      const BorderSide(color: AppColors.secondary),
                 ),
                 elevation: 2,
               ),
               child: const Text('Adicionar',
                   style: TextStyle(
-                      color: AppColors.primary,
+                      color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w700)),
             ),

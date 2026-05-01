@@ -14,6 +14,8 @@
     "db:seed:hotels": "ts-node --transpile-only src/database/seeds/seed.hotels.ts",
     "db:seed:recommended": "ts-node --transpile-only src/database/seeds/seed.recommendedRooms.ts",
     "db:seed:my-rooms-page": "ts-node --transpile-only src/database/seeds/seed.my-rooms-page.ts",
+    "db:seed:catalogo": "ts-node --transpile-only src/database/seeds/seed.catalogo-default.ts",
+    "db:migrate:cleanup-categorias": "ts-node --transpile-only src/database/seeds/migrate.cleanup-empty-categorias.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

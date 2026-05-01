@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-enum AuthRole { guest, host }
+enum AuthRole { guest, host, admin }
 
 @immutable
 class AuthState {

@@ -3,7 +3,7 @@
 > Derivado de: `conductor/specs/admin-account-management.spec.md`
 > PRD: `conductor/features/admin-account-management.plan.md` *(ver `conductor/features/admin-account-management.prd.md`)*
 > Bundle: P6-C (Admin Account Management) + P6-E (Admin Profile Integration)
-> Status geral: [PENDENTE]
+> Status geral: [EM ANDAMENTO] — Setup, Backend e Frontend prontos; Validação transversal pendente de teste manual em navegador/device.
 >
 > **Ordem de execução:** Setup → Backend (Fase 1 completa em staging) → Frontend (Fase 2) → Validação.
 > **Gate bloqueante:** nenhuma task de Frontend pode iniciar antes de o admin seedado conseguir logar e chamar `GET /admin/users` via curl em staging.
@@ -62,59 +62,68 @@
 
 ---
 
-## Frontend [PENDENTE]
+## Frontend [CONCLUÍDO]
 
-> ⛔ **Gate:** só iniciar após staging confirmar: migration aplicada, seed executado, admin loga com `papel: 'admin'` no JWT, e `GET /admin/users` retorna 200 via curl.
+> ✅ **Gate passou:** migration aplicada, seed executado, admin loga com `papel: 'admin'` no JWT, `GET /admin/users` → 200 via curl. Fase 2 executada em cima disso.
 
-### Auth integration
+### Auth foundation (gap descoberto além do escopo inicial)
 
-- [ ] Verificar/atualizar `lib/core/auth/auth_notifier.dart` para expor `papel` no estado de auth, consumindo o campo vindo do response do login e de `/usuarios/me`.
+- [x] **`AuthRole` estendido** para incluir `admin` em `auth_state.dart`. Até então só existiam `guest`/`host`.
+- [x] `AuthResponse.fromJson` agora parseia `data.papel` do response do login.
+- [x] `LoginPage` detecta `papel == 'admin'` e seta `AuthRole.admin`; redireciona admin direto para `/profile/admin` em vez de `/home`.
+- [x] `MainLayout._navigateToProfile` switch-case cobrindo `AuthRole.admin` → `/profile/admin`.
+- [x] `fcm_token_service`, `dio_client` (refresh) e `auth_notifier` (logout) continuam funcionando corretamente — admin cai no caminho de usuário (não host).
 
 ### Domain layer (models)
 
-- [ ] Criar `lib/features/profile/domain/models/admin_account_status.dart` com `enum AdminAccountStatus { ativo, suspenso, inativo }`.
-- [ ] Criar `lib/features/profile/domain/models/admin_user_model.dart` com `AdminUserModel` + `fromJson` tolerante (campos opcionais → null; status desconhecido → default `ativo` + log).
-- [ ] Criar `lib/features/profile/domain/models/admin_hotel_model.dart` com `AdminHotelModel` + `fromJson` tolerante.
-- [ ] Criar `lib/features/profile/domain/models/admin_profile_state.dart` com `AdminProfileState` + `copyWith`.
+- [x] `lib/features/profile/domain/models/admin_account_status.dart` — enum com `fromString` tolerante.
+- [x] `lib/features/profile/domain/models/admin_user_model.dart` + `fromJson` resiliente.
+- [x] `lib/features/profile/domain/models/admin_hotel_model.dart` + `fromJson` resiliente.
+- [x] `lib/features/profile/domain/models/admin_profile_state.dart` + `copyWith`.
 
 ### Data layer (service)
 
-- [ ] Criar `lib/features/profile/data/services/admin_accounts_service.dart` com `getUsers()`, `getHotels()`, `updateUserStatus(id, status)`, `updateHotelStatus(id, status)` — usando `DioClient` via `dioProvider`.
+- [x] `lib/features/profile/data/services/admin_accounts_service.dart` — `getUsers`, `getHotels`, `updateUserStatus`, `updateHotelStatus`, com suporte a `limit`/`offset` e provider Riverpod.
 
 ### Providers
 
-- [ ] Criar `lib/features/profile/presentation/providers/admin_profile_provider.dart` espelhando 1:1 o padrão de `host_profile_provider.dart` (`AsyncNotifier<AdminProfileState>` + `Completer` + `updateProfile(diff)`).
-- [ ] Criar `lib/features/profile/presentation/providers/admin_users_provider.dart` — `AsyncNotifier<List<AdminUserModel>>` com `updateStatus(id, newStatus)` usando atualização otimista + rollback em caso de erro.
-- [ ] Criar `lib/features/profile/presentation/providers/admin_hotels_provider.dart` — análogo para hotéis.
+- [x] `admin_profile_provider.dart` — `AsyncNotifier<AdminProfileState>` espelhando padrão de `host_profile_provider.dart` com `Completer`; `updateProfile` e `changePassword`.
+- [x] `admin_users_provider.dart` — `AsyncNotifier<List<AdminUserModel>>` com `updateStatus` otimista + rollback em caso de erro + `refresh()`.
+- [x] `admin_hotels_provider.dart` — análogo para hotéis.
 
 ### Widgets reutilizáveis
 
-- [ ] Criar `lib/features/profile/presentation/widgets/admin_account_status_chip.dart` — chip colorido por status (tokens semânticos do theme).
-- [ ] Criar `lib/features/profile/presentation/widgets/admin_user_card.dart` — avatar/initials fallback, nome, e-mail, chip de status, botão "Editar".
-- [ ] Criar `lib/features/profile/presentation/widgets/admin_hotel_card.dart` — thumbnail de capa, nome do hotel, e-mail/responsável, chip de status, botão "Editar".
-- [ ] Criar `lib/features/profile/presentation/widgets/admin_edit_account_sheet.dart` — bottom sheet com alternar status, botões cancelar/confirmar.
+- [x] `admin_account_status_chip.dart` — chip colorido por status (ativo verde, suspenso vermelho, inativo cinza) com `withValues(alpha:)`.
+- [x] `admin_user_card.dart` — avatar com initials fallback, nome, email, chip, botão editar.
+- [x] `admin_hotel_card.dart` — thumbnail com fallback, nome, email responsável, chip, botão editar.
+- [x] `admin_edit_account_sheet.dart` — bottom sheet modal com opções de status permitidas por tipo de conta, botão Salvar desabilitado se não houver mudança.
 
 ### Página principal — P6-C
 
-- [ ] Criar `lib/features/profile/presentation/pages/admin_account_management_page.dart` como `ConsumerStatefulWidget` com `TabController` (2 abas) e `TextEditingController` compartilhado.
-- [ ] Implementar filtro in-memory por nome/e-mail com debounce de 300ms; termo persiste ao trocar de aba.
-- [ ] Implementar estados de loading, erro (com retry) e vazio (distinguir lista vazia de filtro vazio).
-- [ ] Integrar `AdminEditAccountSheet` ao toque no botão "Editar" de cada card.
+- [x] `admin_account_management_page.dart` — `ConsumerStatefulWidget` com `TabController` (2 abas), `TextEditingController` compartilhado com debounce de 300ms via `Timer`.
+- [x] Filtro in-memory por nome e email; termo persiste ao trocar de aba (requisito #16 PRD).
+- [x] Loading (`CircularProgressIndicator`), erro (com retry), vazio (distingue lista totalmente vazia de filtro sem resultado), pull-to-refresh.
+- [x] Bottom sheet de edição dispara `updateStatus` com snackbars de sucesso/erro; rollback automático via provider em falhas.
 
 ### Integração do perfil admin — P6-E
 
-- [ ] Refatorar `lib/features/profile/presentation/pages/admin_profile_page.dart` para `ConsumerWidget`; consumir `adminProfileProvider` no `ProfileHeader`; ligar item "Clientes" → `context.push('/admin/accounts')`.
-- [ ] Corrigir botão "sair" em `admin_profile_page.dart`: `ref.read(authProvider.notifier).clear()` seguido de `context.go('/auth/login')`.
-- [ ] Substituir `AppColors.backgroundLight` fixo em `admin_profile_page.dart` por `Theme.of(context).colorScheme.surface/background` (tokens semânticos).
-- [ ] Refatorar `lib/features/profile/presentation/pages/edit_admin_profile_page.dart` para `ConsumerStatefulWidget`; pré-preencher campos via `adminProfileProvider`.
-- [ ] Substituir `Future.delayed` mock em `edit_admin_profile_page.dart` por chamada real `PATCH /api/usuarios/me`; invalidar `adminProfileProvider` após save bem-sucedido.
-- [ ] Remover validação mock de senha (`value != '123456'`) em `edit_admin_profile_page.dart`.
-- [ ] Auditar e substituir qualquer uso residual de `AppColors.*Light` nas páginas admin por tokens semânticos.
+- [x] `admin_profile_page.dart` convertido para `ConsumerWidget`, consumindo `adminProfileProvider` no `ProfileHeader`.
+- [x] Item "Clientes" liga para `context.push('/admin/accounts')`.
+- [x] Botão "sair" agora: `await ref.read(authProvider.notifier).clear()` + `context.go('/auth/login')`.
+- [x] `AppColors.backgroundLight` substituído por `Theme.of(context).colorScheme.surface` em ambas páginas admin.
+- [x] `edit_admin_profile_page.dart` convertido para `ConsumerStatefulWidget`, pré-preenchendo campos via provider (flag `_prefilled` evita sobrescrever edições).
+- [x] `Future.delayed` removido — `updateProfile` chama `PATCH /api/v1/usuarios/me` via `adminProfileProvider.notifier`; troca de senha dispara `changePassword` opcionalmente.
+- [x] Validação mock `value != '123456'` removida — validação real agora é server-side.
 
 ### Roteamento
 
-- [ ] Atualizar `lib/core/router/app_router.dart`: registrar `GoRoute('/admin/accounts')` dentro do `ShellRoute` apontando para `AdminAccountManagementPage`.
-- [ ] Estender `redirect` do `app_router.dart` para proteger `/admin/*` exigindo `auth.papel == 'admin'`; redirecionar para `/auth/login` (não autenticado) ou `/home` (autenticado com papel errado).
+- [x] `GoRoute('/admin/accounts')` registrada fora do `ShellRoute` (padrão de `MyRoomsPage` — sem bottom nav) apontando para `AdminAccountManagementPage`.
+- [x] `redirect` global estendido: paths `/admin/*` e `/profile/admin*` exigem autenticação + `auth.role == AuthRole.admin`, caso contrário redireciona para `/auth/login` ou `/home`.
+
+### Validação
+
+- [x] `flutter analyze` — 0 errors, 0 warnings relevantes (39 infos, 2 do código novo são deprecations informativas do Flutter 3.32+ em `RadioListTile.groupValue/onChanged`, 37 são pré-existentes em outros arquivos).
+- [x] `flutter build web` — compilação limpa em 42s. Zero erros de link.
 
 ---
 

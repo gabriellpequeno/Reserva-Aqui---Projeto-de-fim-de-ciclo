@@ -74,13 +74,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         }
       }
 
-      final role = _role == 'host' ? AuthRole.host : AuthRole.guest;
+      final AuthRole role;
+      if (_role == 'host') {
+        role = AuthRole.host;
+      } else if (response.papel == 'admin') {
+        role = AuthRole.admin;
+      } else {
+        role = AuthRole.guest;
+      }
+
       await ref
           .read(authProvider.notifier)
           .setAuth(response.accessToken, response.refreshToken, role);
 
       if (mounted) {
-        context.go('/home');
+        context.go(role == AuthRole.admin ? '/profile/admin' : '/home');
       }
     } catch (e, stack) {
       if (!mounted) return;

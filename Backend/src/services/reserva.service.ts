@@ -279,7 +279,7 @@ async function _createReservaUsuario(
     await _upsertHistoricoGlobal(
       userId, input.hotel_id, nome_hotel, reserva.id,
       tipoQuarto, input.data_checkin, input.data_checkout,
-      String(input.valor_total), 'SOLICITADA',
+      String(valorTotal), 'SOLICITADA',
     );
 
     // Notificações — fire-and-forget (falhas não interrompem o fluxo)

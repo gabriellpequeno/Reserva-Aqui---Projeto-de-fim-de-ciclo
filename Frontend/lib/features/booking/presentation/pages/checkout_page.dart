@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../notifiers/checkout_notifier.dart';
+import '../../../tickets/presentation/notifiers/tickets_notifier.dart';
 
 class CheckoutPage extends ConsumerStatefulWidget {
   final String hotelId;
@@ -44,6 +45,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     ref.listen(checkoutNotifierProvider, (prev, next) {
       if (!next.reservaCreated) return;
       if (prev?.reservaCreated == true) return;
+      ref.read(ticketsNotifierProvider.notifier).reload();
       context.go('/tickets');
     });
 

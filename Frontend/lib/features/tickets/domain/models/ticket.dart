@@ -21,13 +21,13 @@ class TicketStatusTheme {
       case TicketStatus.aguardo:
         return const TicketStatusTheme(
           cardBackground: Color(0xFFFDDBB4),
-          badgeColor: AppColors.secondary, // #EC6725
+          badgeColor: AppColors.secondary,
           label: 'Em Breve',
         );
       case TicketStatus.aprovado:
         return const TicketStatusTheme(
           cardBackground: Color(0xFFB8D4F0),
-          badgeColor: AppColors.primary, // #182541
+          badgeColor: AppColors.primary,
           label: 'Em Andamento',
         );
       case TicketStatus.hospedado:
@@ -55,6 +55,8 @@ class TicketStatusTheme {
 // ─── Model ─────────────────────────────────────────────────────────────────
 class Ticket {
   final String id;
+  final String hotelId;
+  final int? quartoId;
   final String hotelName;
   final String roomType;
   final String address;
@@ -64,7 +66,7 @@ class Ticket {
   final String checkOutTime;
   final int guestCount;
   final TicketStatus status;
-  final String imageUrl;
+  final String? imageUrl;
   final double subtotal;
   final double discounts;
   final double taxes;
@@ -72,6 +74,8 @@ class Ticket {
 
   const Ticket({
     required this.id,
+    required this.hotelId,
+    this.quartoId,
     required this.hotelName,
     required this.roomType,
     required this.address,
@@ -81,12 +85,80 @@ class Ticket {
     required this.checkOutTime,
     required this.guestCount,
     required this.status,
-    required this.imageUrl,
+    this.imageUrl,
     required this.subtotal,
     required this.discounts,
     required this.taxes,
     required this.total,
   });
+
+  factory Ticket.fromJson(Map<String, dynamic> json) {
+    final checkin = DateTime.tryParse(json['data_checkin']?.toString() ?? '') ?? DateTime.now();
+    final checkout = DateTime.tryParse(json['data_checkout']?.toString() ?? '') ?? DateTime.now();
+    final total = _parseDouble(json['valor_total']);
+
+    return Ticket(
+      id: json['reserva_tenant_id']?.toString() ?? '',
+      hotelId: json['hotel_id']?.toString() ?? '',
+      quartoId: null,
+      hotelName: json['nome_hotel']?.toString() ?? '',
+      roomType: json['tipo_quarto']?.toString() ?? '',
+      address: '—',
+      checkIn: checkin,
+      checkOut: checkout,
+      checkInTime: '—',
+      checkOutTime: '—',
+      guestCount: 1,
+      status: _mapStatus(json['status']?.toString() ?? '', checkin),
+      imageUrl: null,
+      subtotal: total,
+      discounts: 0.0,
+      taxes: 0.0,
+      total: total,
+    );
+  }
+
+  Ticket copyWith({String? imageUrl}) => Ticket(
+        id: id,
+        hotelId: hotelId,
+        quartoId: quartoId,
+        hotelName: hotelName,
+        roomType: roomType,
+        address: address,
+        checkIn: checkIn,
+        checkOut: checkOut,
+        checkInTime: checkInTime,
+        checkOutTime: checkOutTime,
+        guestCount: guestCount,
+        status: status,
+        imageUrl: imageUrl ?? this.imageUrl,
+        subtotal: subtotal,
+        discounts: discounts,
+        taxes: taxes,
+        total: total,
+      );
+
+  static TicketStatus _mapStatus(String status, DateTime checkin) {
+    if (status == 'SOLICITADA' || status == 'AGUARDANDO_PAGAMENTO') {
+      return TicketStatus.aguardo;
+    }
+    if (status == 'APROVADA') {
+      return DateTime.now().isAfter(checkin)
+          ? TicketStatus.hospedado
+          : TicketStatus.aprovado;
+    }
+    if (status == 'CONCLUIDA') return TicketStatus.finalizado;
+    if (status == 'CANCELADA') return TicketStatus.cancelado;
+    return TicketStatus.aguardo;
+  }
+
+  static double _parseDouble(dynamic v) {
+    if (v == null) return 0.0;
+    if (v is double) return v;
+    if (v is int) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? 0.0;
+    return 0.0;
+  }
 
   String get formattedCheckIn =>
       '${checkIn.day.toString().padLeft(2, '0')}/${checkIn.month.toString().padLeft(2, '0')}';
@@ -114,92 +186,3 @@ class Ticket {
     return '${checkOut.day.toString().padLeft(2, '0')}/${checkOut.month.toString().padLeft(2, '0')}/${checkOut.year}, $day';
   }
 }
-
-// ─── Mocks ─────────────────────────────────────────────────────────────────
-final List<Ticket> mockTickets = [
-  Ticket(
-    id: '000000001',
-    hotelName: 'Grand Hotel Budapest',
-    roomType: 'Standard',
-    address: 'Rua dos Bobos, nº 0',
-    checkIn: DateTime(2026, 9, 10),
-    checkOut: DateTime(2026, 9, 15),
-    checkInTime: '13:00',
-    checkOutTime: '19:00',
-    guestCount: 3,
-    status: TicketStatus.aguardo,
-    imageUrl: 'lib/assets/images/home_page.jpeg',
-    subtotal: 190.98,
-    discounts: 20.00,
-    taxes: 19.00,
-    total: 189.98,
-  ),
-  Ticket(
-    id: '000000002',
-    hotelName: 'Grand Hotel Budapest',
-    roomType: 'Standard',
-    address: 'Rua dos Bobos, nº 0',
-    checkIn: DateTime(2026, 9, 10),
-    checkOut: DateTime(2026, 9, 15),
-    checkInTime: '13:00',
-    checkOutTime: '19:00',
-    guestCount: 3,
-    status: TicketStatus.aprovado,
-    imageUrl: 'lib/assets/images/home_page.jpeg',
-    subtotal: 190.98,
-    discounts: 20.00,
-    taxes: 19.00,
-    total: 189.98,
-  ),
-  Ticket(
-    id: '000000003',
-    hotelName: 'Grand Hotel Budapest',
-    roomType: 'Standard',
-    address: 'Rua dos Bobos, nº 0',
-    checkIn: DateTime(2026, 9, 10),
-    checkOut: DateTime(2026, 9, 15),
-    checkInTime: '13:00',
-    checkOutTime: '19:00',
-    guestCount: 3,
-    status: TicketStatus.hospedado,
-    imageUrl: 'lib/assets/images/home_page.jpeg',
-    subtotal: 190.98,
-    discounts: 20.00,
-    taxes: 19.00,
-    total: 189.98,
-  ),
-  Ticket(
-    id: '000000004',
-    hotelName: 'Grand Hotel Budapest',
-    roomType: 'Standard',
-    address: 'Rua dos Bobos, nº 0',
-    checkIn: DateTime(2026, 9, 10),
-    checkOut: DateTime(2026, 9, 15),
-    checkInTime: '13:00',
-    checkOutTime: '19:00',
-    guestCount: 3,
-    status: TicketStatus.cancelado,
-    imageUrl: 'lib/assets/images/home_page.jpeg',
-    subtotal: 190.98,
-    discounts: 20.00,
-    taxes: 19.00,
-    total: 189.98,
-  ),
-  Ticket(
-    id: '000000005',
-    hotelName: 'Grand Hotel Budapest',
-    roomType: 'Standard',
-    address: 'Rua dos Bobos, nº 0',
-    checkIn: DateTime(2026, 9, 10),
-    checkOut: DateTime(2026, 9, 15),
-    checkInTime: '13:00',
-    checkOutTime: '19:00',
-    guestCount: 3,
-    status: TicketStatus.finalizado,
-    imageUrl: 'lib/assets/images/home_page.jpeg',
-    subtotal: 190.98,
-    discounts: 20.00,
-    taxes: 19.00,
-    total: 189.98,
-  ),
-];

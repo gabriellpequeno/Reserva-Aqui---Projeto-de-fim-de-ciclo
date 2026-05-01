@@ -61,15 +61,24 @@ class TicketCard extends StatelessWidget {
                 ),
 
                 // ── Lado direito: imagem ───────────────────────────────
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(16),
-                    bottomRight: Radius.circular(16),
-                  ),
-                  child: Image.asset(
-                    ticket.imageUrl,
-                    width: 99,
-                    fit: BoxFit.cover,
+                SizedBox(
+                  width: 99,
+                  height: 120,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
+                    child: ticket.imageUrl != null
+                        ? Image.network(
+                            ticket.imageUrl!,
+                            width: 99,
+                            height: 120,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                _buildImagePlaceholder(theme),
+                          )
+                        : _buildImagePlaceholder(theme),
                   ),
                 ),
               ],
@@ -103,6 +112,14 @@ class TicketCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildImagePlaceholder(TicketStatusTheme theme) {
+    return Container(
+      width: 99,
+      color: theme.cardBackground.withValues(alpha: 0.6),
+      child: Icon(Icons.hotel, size: 36, color: theme.badgeColor.withValues(alpha: 0.4)),
     );
   }
 }

@@ -96,6 +96,9 @@ class Ticket {
     final checkin = DateTime.tryParse(json['data_checkin']?.toString() ?? '') ?? DateTime.now();
     final checkout = DateTime.tryParse(json['data_checkout']?.toString() ?? '') ?? DateTime.now();
     final total = _parseDouble(json['valor_total']);
+    final numHospedes = json['num_hospedes'] is int
+        ? json['num_hospedes'] as int
+        : int.tryParse(json['num_hospedes']?.toString() ?? '') ?? 1;
 
     return Ticket(
       id: json['reserva_tenant_id']?.toString() ?? '',
@@ -108,7 +111,7 @@ class Ticket {
       checkOut: checkout,
       checkInTime: '—',
       checkOutTime: '—',
-      guestCount: 1,
+      guestCount: numHospedes,
       status: _mapStatus(json['status']?.toString() ?? '', checkin),
       imageUrl: null,
       subtotal: total,

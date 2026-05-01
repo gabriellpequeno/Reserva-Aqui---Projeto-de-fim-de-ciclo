@@ -26,6 +26,7 @@ export interface HistoricoReservaSafe {
   tipo_quarto:      string;
   data_checkin:     string;
   data_checkout:    string;
+  num_hospedes:     number;
   valor_total:      string;
   status:           ReservaStatus;
   criado_em:        string;
@@ -148,6 +149,16 @@ async function _getHotelInfo(hotelId: string): Promise<HotelInfo> {
   return rows[0];
 }
 
+/**
+ * Normaliza data_checkin/data_checkout para 'YYYY-MM-DD'. O node-pg retorna
+ * colunas DATE como `Date`, e `String(dateObj)` produz "Fri May 01 2026 ..."
+ * que o Postgres não aceita em colunas DATE no upsert de historico.
+ */
+function toISODate(value: Date | string): string {
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return value.slice(0, 10);
+}
+
 /** Garante que o usuário está registrado como hóspede neste hotel (cria se necessário). */
 async function _ensureHospede(client: import('pg').PoolClient, userId: string): Promise<void> {
   await client.query(
@@ -181,19 +192,21 @@ async function _upsertHistoricoGlobal(
   dataCheckout:    string,
   valorTotal:      string,
   status:          ReservaStatus,
+  numHospedes:     number,
 ): Promise<void> {
   await masterPool.query(
     `INSERT INTO historico_reserva_global
        (user_id, hotel_id, reserva_tenant_id, nome_hotel, tipo_quarto,
-        data_checkin, data_checkout, valor_total, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        data_checkin, data_checkout, num_hospedes, valor_total, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      ON CONFLICT (hotel_id, reserva_tenant_id)
      DO UPDATE SET
        status        = EXCLUDED.status,
        tipo_quarto   = EXCLUDED.tipo_quarto,
+       num_hospedes  = EXCLUDED.num_hospedes,
        atualizado_em = NOW()`,
     [userId, hotelId, reservaTenantId, nomeHotel, tipoQuarto,
-     dataCheckin, dataCheckout, valorTotal, status],
+     dataCheckin, dataCheckout, numHospedes, valorTotal, status],
   );
 }
 
@@ -279,7 +292,7 @@ async function _createReservaUsuario(
     await _upsertHistoricoGlobal(
       userId, input.hotel_id, nome_hotel, reserva.id,
       tipoQuarto, input.data_checkin, input.data_checkout,
-      String(valorTotal), 'SOLICITADA',
+      String(valorTotal), 'SOLICITADA', input.num_hospedes,
     );
 
     // Notificações — fire-and-forget (falhas não interrompem o fluxo)
@@ -362,7 +375,7 @@ async function _createReservaWalkin(
       await _upsertHistoricoGlobal(
         input.user_id, hotelId, nome_hotel, reserva.id,
         tipoQuarto, input.data_checkin, input.data_checkout,
-        String(input.valor_total), 'APROVADA',
+        String(input.valor_total), 'APROVADA', input.num_hospedes,
       );
     }
 
@@ -465,6 +478,7 @@ async function _listReservasUsuario(userId: string): Promise<HistoricoReservaSaf
        h.tipo_quarto,
        h.data_checkin,
        h.data_checkout,
+       h.num_hospedes,
        h.valor_total,
        h.status,
        h.criado_em,
@@ -521,10 +535,11 @@ async function _updateStatus(
       await _upsertHistoricoGlobal(
         atualizada.user_id, hotelId, nome_hotel, atualizada.id,
         tipoQuarto,
-        String(atualizada.data_checkin),
-        String(atualizada.data_checkout),
+        toISODate(atualizada.data_checkin),
+        toISODate(atualizada.data_checkout),
         atualizada.valor_total,
         input.status,
+        atualizada.num_hospedes,
       );
     }
 
@@ -541,7 +556,7 @@ async function _updateStatus(
         ),
         insertNotificacao(hotelId, {
           titulo:   'Reserva aprovada',
-          mensagem: `Reserva #${atualizada.id} aprovada para ${String(atualizada.data_checkin)}.`,
+          mensagem: `Reserva #${atualizada.id} aprovada para ${toISODate(atualizada.data_checkin)}.`,
           tipo:     'APROVACAO_RESERVA',
           payload:  { reserva_id: atualizada.id, codigo_publico: atualizada.codigo_publico },
         }),
@@ -652,10 +667,11 @@ async function _registrarCheckout(hotelId: string, reservaId: number): Promise<R
       await _upsertHistoricoGlobal(
         atualizada.user_id, hotelId, nome_hotel, atualizada.id,
         tipoQuarto,
-        String(atualizada.data_checkin),
-        String(atualizada.data_checkout),
+        toISODate(atualizada.data_checkin),
+        toISODate(atualizada.data_checkout),
         atualizada.valor_total,
         'CONCLUIDA',
+        atualizada.num_hospedes,
       );
     }
 
@@ -712,10 +728,11 @@ async function _cancelarReservaUsuario(userId: string, codigoPublico: string): P
     await _upsertHistoricoGlobal(
       userId, hotel_id, nome_hotel, reserva.id,
       tipoQuarto,
-      String(reserva.data_checkin),
-      String(reserva.data_checkout),
+      toISODate(reserva.data_checkin),
+      toISODate(reserva.data_checkout),
       reserva.valor_total,
       'CANCELADA',
+      reserva.num_hospedes,
     );
 
     // Notificações — fire-and-forget

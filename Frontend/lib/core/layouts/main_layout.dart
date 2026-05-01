@@ -20,6 +20,7 @@ class MainLayout extends ConsumerWidget {
     if (location.startsWith('/admin') ||
         location.startsWith('/host') ||
         location.startsWith('/profile') ||
+        location.startsWith('/tickets') ||
         location.startsWith('/auth')) return 4;
     return 0;
   }

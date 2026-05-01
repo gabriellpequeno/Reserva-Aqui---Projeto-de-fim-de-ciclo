@@ -289,7 +289,8 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
+      // bottom 120: libera o último card da CustomBottomNavBar (99.5px + folga).
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 120),
       itemCount: tickets.length,
       separatorBuilder: (_, __) => const SizedBox(height: 16),
       itemBuilder: (_, i) => TicketCard(ticket: tickets[i]),

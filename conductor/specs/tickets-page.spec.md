@@ -65,7 +65,7 @@ Ticket {
 | Backend | TicketStatus | Regra |
 |---------|-------------|-------|
 | `SOLICITADA` | `aguardo` | — |
-| `AGUARDANDO_PAGAMENTO` | `aguardo` | — |
+| `AGUARDANDO_PAGAMENTO` | `aguardando` | — |
 | `APROVADA` (hoje < checkin) | `aprovado` | — |
 | `APROVADA` (hoje >= checkin) | `hospedado` | inferido no cliente |
 | `CONCLUIDA` | `finalizado` | — |

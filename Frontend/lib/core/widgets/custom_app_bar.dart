@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import '../theme/app_colors.dart';
 import '../auth/auth_notifier.dart';
 import '../auth/auth_state.dart';
 
@@ -17,6 +16,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final String location = GoRouterState.of(context).uri.path;
     final bool isHome = location == '/' || location == '/home';
     final bool isProfile = location.startsWith('/profile');
+    final colorScheme = Theme.of(context).colorScheme;
 
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -27,9 +27,9 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ? Padding(
               padding: const EdgeInsets.only(top: 30.0, left: 8.0),
               child: IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.chevron_left,
-                  color: AppColors.primary,
+                  color: colorScheme.onSurface,
                   size: 32,
                 ),
                 onPressed: () {

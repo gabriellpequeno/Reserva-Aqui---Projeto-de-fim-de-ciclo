@@ -18,7 +18,6 @@ class NotificationsPage extends ConsumerWidget {
         ref.watch(authProvider).asData?.value.isAuthenticated ?? false;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Column(
         children: [
           _buildHeader(context, ref),
@@ -33,7 +32,7 @@ class NotificationsPage extends ConsumerWidget {
                       child: Text('Erro ao carregar notificações'),
                     ),
                     data: (notifications) => notifications.isEmpty
-                        ? _buildEmptyState()
+                        ? _buildEmptyState(context)
                         : Stack(
                             children: [
                               ListView.separated(
@@ -55,7 +54,7 @@ class NotificationsPage extends ConsumerWidget {
                                 left: 0,
                                 right: 0,
                                 child: Center(
-                                    child: _buildClearButton(ref)),
+                                    child: _buildClearButton(context, ref)),
                               ),
                             ],
                           ),
@@ -117,15 +116,16 @@ class NotificationsPage extends ConsumerWidget {
     WidgetRef ref,
     AppNotification notification,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(11),
         border: Border.all(
           color: notification.isRead
-              ? AppColors.primary.withValues(alpha: 0.15)
-              : AppColors.primary.withValues(alpha: 0.4),
+              ? colorScheme.outline
+              : colorScheme.primary.withValues(alpha: 0.4),
         ),
       ),
       child: Row(
@@ -149,8 +149,8 @@ class NotificationsPage extends ConsumerWidget {
                     Flexible(
                       child: Text(
                         notification.title,
-                        style: const TextStyle(
-                          color: AppColors.primary,
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
@@ -178,8 +178,8 @@ class NotificationsPage extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   notification.subtitle,
-                  style: const TextStyle(
-                    color: Color(0xFFA3A3A3),
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -234,7 +234,8 @@ class NotificationsPage extends ConsumerWidget {
     }
   }
 
-  Widget _buildClearButton(WidgetRef ref) {
+  Widget _buildClearButton(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: () => ref.read(notificationsProvider.notifier).clearAll(),
       child: Container(
@@ -244,10 +245,10 @@ class NotificationsPage extends ConsumerWidget {
           borderRadius: BorderRadius.circular(11),
           border: Border.all(color: AppColors.secondary),
         ),
-        child: const Text(
+        child: Text(
           'limpar',
           style: TextStyle(
-            color: AppColors.primary,
+            color: colorScheme.onSurface,
             fontSize: 14,
             fontWeight: FontWeight.w700,
           ),
@@ -257,12 +258,13 @@ class NotificationsPage extends ConsumerWidget {
   }
 
   Widget _buildLoginMessage(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Container(
         margin: const EdgeInsets.all(24),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -277,19 +279,19 @@ class NotificationsPage extends ConsumerWidget {
             const Icon(Icons.notifications_off_outlined,
                 size: 64, color: AppColors.secondary),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Acesse suas notificações',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
-                color: AppColors.primary,
+                color: colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'Faça login para receber atualizações sobre suas reservas e mensagens.',
-              style: TextStyle(color: AppColors.greyText),
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -311,18 +313,19 @@ class NotificationsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
-    return const Center(
+  Widget _buildEmptyState(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.notifications_none,
-              size: 64, color: Color(0xFFE6E6E6)),
-          SizedBox(height: 16),
+              size: 64, color: colorScheme.outline),
+          const SizedBox(height: 16),
           Text(
             'Sem novas notificações',
             style: TextStyle(
-              color: AppColors.greyText,
+              color: colorScheme.onSurfaceVariant,
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),

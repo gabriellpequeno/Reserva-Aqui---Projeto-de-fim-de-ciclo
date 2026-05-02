@@ -39,16 +39,17 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       }
     });
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () => ref.read(searchProvider.notifier).hideAllPickers(),
       child: Scaffold(
-        backgroundColor: Colors.white,
         body: Column(
           children: [
             _buildSearchHeader(context, searchState),
             Container(
               height: 1,
-              color: Colors.black.withValues(alpha: 0.1),
+              color: colorScheme.outline,
               margin: const EdgeInsets.symmetric(horizontal: 24),
             ),
             Expanded(

@@ -400,7 +400,13 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         height: 38,
         child: ElevatedButton(
           onPressed: () {
-            // TODO: navegar para /booking/payment/:roomId na próxima etapa
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Reserva registrada com sucesso.'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            context.go('/tickets');
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,

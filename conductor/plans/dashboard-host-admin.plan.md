@@ -1,0 +1,193 @@
+# Plan — dashboard-host-admin
+
+> Derivado de: `conductor/specs/dashboard-host-admin.spec.md`
+> PRD: `conductor/features/dashboard-host-admin.prd.md`
+> Task-origem: `conductor/task/P6-D-dashboard-host-admin.md`
+> Ticket Linear: **RES-64**
+> Status geral: [PENDENTE]
+>
+> **Ordem de execução:** Setup (item zero + módulo backend) → Backend (Fase 1 completa em staging) → Frontend (Fase 2) → Validação.
+> **Gate bloqueante:** nenhuma task de Frontend pode iniciar antes de curl em staging retornar 200 em `GET /host/dashboard` (com token de hotel) e `GET /admin/dashboard` (com token de admin) com payloads válidos.
+>
+> **Dependências externas (já concluídas):**
+> - `admin-account-management` — fornece `adminGuard`, `papel` no JWT e `authProvider.papel`. ✓
+
+---
+
+## Setup & Infraestrutura [PENDENTE]
+
+### Item zero — validação bloqueante do double-write
+
+- [ ] Verificar manualmente que `Backend/src/controllers/reserva.controller.ts` faz double-write em `historico_reserva_global` ao criar reserva (INSERT) e ao mudar status (UPDATE). Teste: criar reserva no tenant → confirmar linha espelhada no master; mudar `status` no tenant → confirmar `status` e `atualizado_em` atualizados no master.
+- [ ] Se o double-write não existir ou estiver parcial: implementar o fix em `reserva.controller.ts` dentro desta feature (item zero bloqueante). Sem isso, o Admin Dashboard retorna números errados.
+- [ ] Criar script `Backend/src/scripts/backfill_historico_reserva_global.ts` idempotente (`INSERT ... ON CONFLICT (hotel_id, reserva_tenant_id) DO NOTHING`) iterando por todos os `anfitriao.schema_name`.
+- [ ] Executar backfill em staging e validar que `SELECT COUNT(*) FROM historico_reserva_global` bate com a soma de `SELECT COUNT(*) FROM <schema>.reserva` de todos os tenants.
+
+### Setup do módulo backend
+
+- [ ] Criar a pasta `Backend/src/modules/dashboard/`.
+- [ ] Criar `Backend/src/modules/dashboard/dashboard.types.ts` com os tipos `Period`, `ReservaStatus`, `ReservaStatusCount`, `NextCheckin`, `TopHotel`, `HostDashboardMetrics`, `AdminDashboardMetrics`, `NovosCadastros`, `HostDashboardResponse`, `AdminDashboardResponse`.
+- [ ] Criar `Backend/src/modules/dashboard/period.utils.ts` com `resolvePeriod(p: Period): { start: Date; end: Date }` cobrindo os 4 presets (`today`, `last7`, `current_month`, `last30`) em timezone do servidor. Whitelist exportada como `ALL_PERIODS`.
+
+### Índices opcionais (condicional)
+
+- [ ] (Opcional) Se o benchmark da primeira versão mostrar lentidão nas queries do Admin: criar migration `Backend/database/scripts/migrations/NNN_add_historico_dashboard_indexes.sql` com `idx_historico_criado_em`, `idx_historico_hotel_status`, `idx_historico_data_checkin_checkout`. Deixar desmarcado até medir — não obrigatório.
+
+---
+
+## Backend [PENDENTE]
+
+### Service layer
+
+- [ ] Implementar `Backend/src/modules/dashboard/dashboard.service.ts` — função `getHostMetrics(hotelId: string, period: Period): Promise<HostDashboardResponse>`. Resolve `schema_name` via `SELECT schema_name FROM anfitriao WHERE hotel_id = $1`. Valida o schema com regex `/^[a-z0-9_]+$/` antes de interpolar. Executa as 6 queries em paralelo via `Promise.all`: reservasHoje, (ocupados/total), receitaPeriodo, (avg/count avaliação), próximos check-ins (limit 5), reservas por status. Monta o payload e retorna.
+- [ ] Implementar no mesmo arquivo — função `getAdminMetrics(period: Period): Promise<AdminDashboardResponse>` rodando 7 queries exclusivamente no master via `historico_reserva_global`, `usuario`, `anfitriao`, paralelizadas com `Promise.all`. `novosCadastros` sempre últimos 7 dias (fixo, independente do `period`).
+- [ ] Centralizar `resolveTenantSchema(hotelId)` como helper privado no service (extrair para `tenant.utils.ts` só se for reutilizado).
+- [ ] Blindar queries: `period` sempre passa por `resolvePeriod()` (whitelist enum); datas via placeholders `$1`, `$2`; `schema_name` validado antes de concatenar.
+- [ ] Tratar division-by-zero em `ocupacaoPercentual` (retornar 0 se `total === 0`); retornar `avaliacaoMedia: null` se `totalAvaliacoes === 0`.
+
+### Controllers
+
+- [ ] Criar `Backend/src/controllers/dashboard.controller.ts` — `getHostDashboardController(req: HotelRequest, res)`: parseia `?period` (default `'today'`), valida contra `ALL_PERIODS` (fora → 400), chama `getHostMetrics(req.hotelId!, period)`, retorna `200 + payload`.
+- [ ] No mesmo arquivo — `getAdminDashboardController(req: AuthRequest, res)`: parseia `?period`, valida, chama `getAdminMetrics(period)`, retorna `200 + payload`.
+- [ ] `try/catch` em ambos com `500` em erro desconhecido + log estruturado. Nunca vazar mensagem do Postgres.
+
+### Routes
+
+- [ ] Criar `Backend/src/routes/dashboard.routes.ts`: `router.get('/host/dashboard', hotelGuard, getHostDashboardController)` e `router.get('/admin/dashboard', adminGuard, getAdminDashboardController)`.
+- [ ] Registrar em `Backend/src/app.ts` como `app.use(\`${API_PREFIX}\`, dashboardRoutes)` → endpoints finais `/api/v1/host/dashboard` e `/api/v1/admin/dashboard` (seguindo o padrão de `admin.routes.ts`).
+
+### Testes de integração
+
+- [ ] Criar `Backend/src/routes/__tests__/dashboard.routes.test.ts` cobrindo:
+  - `GET /host/dashboard` sem token → 401
+  - `GET /host/dashboard` com token de admin → 403 (hotelGuard rejeita token sem `hotel_id`)
+  - `GET /host/dashboard` com token de hotel válido → 200 + shape do payload
+  - `GET /host/dashboard?period=invalid` → 400
+  - `GET /host/dashboard?period=last30` → 200 + `period: 'last30'` no response
+  - `GET /admin/dashboard` sem token → 401
+  - `GET /admin/dashboard` com token de usuário comum → 403
+  - `GET /admin/dashboard` com token de hotel → 403 (adminGuard rejeita)
+  - `GET /admin/dashboard` com token de admin → 200 + shape do payload
+  - `GET /admin/dashboard?period=current_month` → 200
+- [ ] Rodar suíte completa e confirmar zero regressão (`Tests: X passed, 0 novas falhas`).
+
+### Validação manual em staging (gate Fase 1 → Fase 2)
+
+- [ ] `curl -H "Authorization: Bearer <hotel-token>" /api/v1/host/dashboard?period=today` → 200 + payload válido.
+- [ ] `curl -H "Authorization: Bearer <admin-token>" /api/v1/admin/dashboard?period=today` → 200 + payload válido.
+- [ ] Conferir `reservasPorStatus` retorna os 5 status canônicos quando há reservas de cada tipo.
+- [ ] Conferir `ocupacaoPercentual = 0` para hotel sem quartos (sem division-by-zero).
+- [ ] Conferir `avaliacaoMedia = null` quando `totalAvaliacoes = 0`.
+- [ ] Conferir que trocar `period` altera `receitaPeriodo` e `reservasPorStatus` coerentemente.
+
+---
+
+## Frontend [PENDENTE]
+
+> ⚠️ **Gate:** todas as tasks abaixo dependem da seção Backend estar `[CONCLUÍDO]` e dos dois endpoints respondendo 200 via curl em staging.
+
+### Domain layer (models)
+
+- [ ] Criar pasta `Frontend/lib/features/profile/domain/models/dashboard/`.
+- [ ] Criar `dashboard_period.dart` com `enum DashboardPeriod { today, last7, currentMonth, last30 }` + `toQueryValue()` + `toLabel()`.
+- [ ] Criar `reserva_status.dart` com `enum ReservaStatus { solicitada, aguardandoPagamento, aprovada, cancelada, concluida }` + `fromString(String)` tolerante (default `solicitada` + `debugPrint` em valor desconhecido) + `toLabel()` → `'Pendente' | 'Aguardando pagamento' | 'Confirmada' | 'Cancelada' | 'Finalizada'`.
+- [ ] Criar `reserva_status_count.dart` com `fromJson` resiliente.
+- [ ] Criar `next_checkin_model.dart` com `fromJson` que loga e descarta item em caso de parse error na data.
+- [ ] Criar `top_hotel_model.dart`.
+- [ ] Criar `host_dashboard_state.dart` (inclui `HostDashboardMetrics`) + `copyWith`.
+- [ ] Criar `admin_dashboard_state.dart` (inclui `AdminDashboardMetrics` e `NovosCadastros`) + `copyWith`.
+
+### Data layer (service)
+
+- [ ] Criar `Frontend/lib/features/profile/data/services/dashboard_service.dart` — wrapper `DioClient` com `getHostDashboard(DashboardPeriod)` e `getAdminDashboard(DashboardPeriod)`; passa `period.toQueryValue()` em `?period=`. Provider Riverpod `dashboardServiceProvider` expondo instância.
+- [ ] Conversão segura de `DECIMAL` vindo do pg como string: `double.parse(json['receitaPeriodo'].toString())`.
+
+### Providers (Riverpod)
+
+- [ ] Criar `Frontend/lib/features/profile/presentation/providers/host_dashboard_provider.dart` — `AsyncNotifier<HostDashboardState>` espelhando padrão de `host_profile_provider.dart`. Estado inicial de período = `DashboardPeriod.today`. Métodos: `setPeriod(DashboardPeriod)` e `refresh()`.
+- [ ] Criar `Frontend/lib/features/profile/presentation/providers/admin_dashboard_provider.dart` — análogo, consumindo `getAdminDashboard`.
+- [ ] Evitar race condition em troca rápida de período: debounce curto (150ms) em `setPeriod` ou invalidate explícito antes de novo fetch.
+
+### Widgets reutilizáveis
+
+- [ ] Criar `Frontend/lib/features/profile/presentation/widgets/dashboard_header.dart` — replica `_buildHeader` de `my_rooms_page.dart` (container `AppColors.primary`, `BorderRadius.only(bottomLeft: 27, bottomRight: 27)`, padding `top: 60, h: 24, bottom: 24`). Params: `title: String`, `onBack: VoidCallback`, `onRefresh: VoidCallback`. Zero lógica condicional interna.
+- [ ] Criar `Frontend/lib/features/profile/presentation/widgets/metric_card.dart` — visual do `AdminUserCard` simplificado: branco, `borderRadius: 11`, `border: Color(0x3F182541)`, padding 12. Ícone (default `AppColors.secondary`), título `AppColors.greyText size 12`, valor `AppColors.primary size 20 weight 700`. Envolvido em `Semantics(label: "$title: $value")`.
+- [ ] Criar `Frontend/lib/features/profile/presentation/widgets/period_selector.dart` — row horizontal de chips fixos (4 opções). Chip selecionado: `AppColors.secondary` + texto branco. Demais: branco + borda cinza + texto `AppColors.primary`. Dispara `onChanged(DashboardPeriod)`.
+- [ ] Criar `Frontend/lib/features/profile/presentation/widgets/next_checkin_tile.dart` — card compacto (Host only): nome do hóspede (bold), quarto + data (subtítulo cinza).
+- [ ] Criar `Frontend/lib/features/profile/presentation/widgets/top_hotel_tile.dart` — card compacto (Admin only): nome do hotel (bold), "N reservas ativas" (subtítulo), número da posição (1, 2, 3) à esquerda em círculo `AppColors.secondary`.
+- [ ] Criar `Frontend/lib/features/profile/presentation/widgets/reserva_status_breakdown.dart` — mini-barras ou chips com cor por status. Label via `ReservaStatus.toLabel()` + count.
+- [ ] Criar `Frontend/lib/features/profile/presentation/widgets/novos_cadastros_row.dart` — row com 2 cards pequenos (Usuários + count; Hotéis + count) — Admin only.
+
+### Pages
+
+- [ ] Criar `Frontend/lib/features/profile/presentation/pages/host_dashboard_page.dart` — `ConsumerWidget` consumindo `hostDashboardProvider`. Layout: `Scaffold` branco → `Column(DashboardHeader + PeriodSelector + Expanded(body))`. Body usa `.when(loading, error, data)`: loading = `CircularProgressIndicator(color: AppColors.secondary)`, error = `Icons.error_outline` + mensagem + `PrimaryButton('Tentar novamente')` (padrão `host_profile_page.dart`), data = `RefreshIndicator(color: AppColors.secondary) + SingleChildScrollView + Column` com `LayoutBuilder + GridView` dos 4 `MetricCard`, seção "Próximos check-ins" (empty state se vazio), seção "Reservas por status". Breakpoints: `<600` → 1 col, `600-900` → 2, `900-1200` → 3, `>1200` → 4.
+- [ ] Criar `Frontend/lib/features/profile/presentation/pages/admin_dashboard_page.dart` — análogo, consumindo `adminDashboardProvider`. Métricas: totalUsuarios, totalHoteis, reservasHoje, receitaPeriodo. Seções: "Top hotéis" (TopHotelTile), "Reservas por status", "Novos cadastros (últimos 7 dias)".
+- [ ] Centralizar helpers de formatação numa `lib/features/profile/presentation/utils/dashboard_formatters.dart` ou no topo das pages: `formatCurrency(double)`, `formatPercent(double)`, `formatInt(int)`.
+
+### Roteamento
+
+- [ ] Atualizar `Frontend/lib/core/router/app_router.dart`: trocar stub `/host/dashboard` por `HostDashboardPage()`; trocar stub `/admin/dashboard` por `AdminDashboardPage()`. Confirmar padrão de registro (fora de `ShellRoute`, como `/admin/accounts` e `/host/rooms`).
+- [ ] Estender `redirect` global: `/admin/dashboard` exige `auth.role == AuthRole.admin` (reaproveita regra de `admin-account-management`). `/host/dashboard` exige `auth.role == AuthRole.host`.
+- [ ] Confirmar via grep que `AuthRole.host` já é populado no login de anfitrião (pelo fluxo de `host-signup-page` / `LoginPage`). Se não, registrar dívida técnica e proteger via fallback `auth.isAuthenticated`.
+
+### Entry points (não criar — apenas verificar)
+
+- [ ] Confirmar que `admin_profile_page.dart` (linha 46-47) já tem `ProfileMenuItem('Dashboard', Icons.dashboard_outlined, onTap: () => context.go('/admin/dashboard'))`. Se já tem, zero mudança.
+- [ ] Confirmar que `host_profile_page.dart` tem entry equivalente para `/host/dashboard`; se não tiver, adicionar `ProfileMenuItem` na seção "Atividade".
+
+### Validação de compilação
+
+- [ ] `flutter analyze` — 0 errors, 0 warnings no código novo.
+- [ ] `flutter build web` — compilação limpa.
+
+---
+
+## Validação [PENDENTE]
+
+### Host Dashboard
+
+- [ ] Host logado em `HostProfilePage` toca "Dashboard" → navega para `/host/dashboard`.
+- [ ] Página carrega exibindo os 4 `MetricCard` (Reservas hoje, Ocupação, Receita, Avaliação média) + "Próximos check-ins" + "Reservas por status".
+- [ ] Trocar `PeriodSelector` para "Últimos 30 dias" dispara refetch e métricas são atualizadas.
+- [ ] Botão de refresh do header dispara refetch.
+- [ ] Pull-to-refresh dispara refetch.
+- [ ] Backend offline → estado de erro com `PrimaryButton('Tentar novamente')`; toque dispara novo fetch.
+- [ ] Hotel sem reservas no período → cards mostram 0; "Próximos check-ins" mostra empty state (não erro).
+- [ ] Hotel sem avaliações → card "Avaliação média" mostra "—" ou "Sem avaliações".
+- [ ] Hotel sem quartos → `ocupacaoPercentual = 0%` sem quebrar.
+- [ ] Labels dos status batem com `ReservaStatus.toLabel()` (Pendente, Aguardando pagamento, Confirmada, Cancelada, Finalizada).
+- [ ] Usuário não-host tentando `/host/dashboard` via deep link → redirect para `/home` ou `/auth/login`.
+
+### Admin Dashboard
+
+- [ ] Admin logado em `AdminProfilePage` toca "Dashboard" → navega para `/admin/dashboard`.
+- [ ] Página carrega exibindo os 4 `MetricCard` globais + Top 3 hotéis + Reservas por status + Novos cadastros.
+- [ ] Trocar período atualiza métricas dependentes de período; "Novos cadastros" permanece fixo em últimos 7 dias.
+- [ ] Plataforma sem reservas no período → cards com 0; Top hotéis com empty state.
+- [ ] "Novos cadastros" mostra contagens de usuários e hotéis dos últimos 7 dias (independente do `period`).
+- [ ] Usuário não-admin tentando `/admin/dashboard` via deep link → redirect.
+
+### Validação transversal
+
+- [ ] Grid responsivo: mobile (<600) 1 col, tablet (600-900) 2 cols, desktop (900-1200) 3 cols, ultrawide (>1200) 4 cols — sem overflow.
+- [ ] Header segue exatamente o visual de `my_rooms_page.dart` / `admin_account_management_page.dart` (primary, radius 27 bottom, padding top 60, botões circulares translúcidos).
+- [ ] Cards seguem visual de `AdminUserCard` (branco, radius 11, border `Color(0x3F182541)`).
+- [ ] `Semantics` nos cards: leitor de tela lê "Reservas hoje: 12" ao focar.
+- [ ] Números formatados: separador de milhar (`1.234`), moeda com `R$` + 2 casas.
+- [ ] Logout no meio do dashboard → redirect para `/auth/login` (reação ao `authProvider`).
+
+### Code review de padrão visual
+
+- [ ] Nenhum `Colors.blue`, `Colors.grey.shade500` ou cor inline — todas via `AppColors`.
+- [ ] Nenhuma string "mock", "fake" ou "example" hardcoded.
+- [ ] Dark Mode fora de escopo: não forçar `Theme.of(context).colorScheme.*` (deixar para P6-A).
+
+---
+
+## Regra de Atualização de Status
+
+- Todas `[ ]` → `[PENDENTE]`
+- Algumas `[x]`, algumas `[ ]` → `[EM ANDAMENTO]`
+- Todas `[x]` → `[CONCLUÍDO]`
+
+Quando todas as seções estiverem `[CONCLUÍDO]`, atualizar o **Status geral** para `[CONCLUÍDO]` e sincronizar com `conductor/plan.md` (localizar bloco da feature ou criar nova fase ao final com status `[CONCLUÍDO]`).

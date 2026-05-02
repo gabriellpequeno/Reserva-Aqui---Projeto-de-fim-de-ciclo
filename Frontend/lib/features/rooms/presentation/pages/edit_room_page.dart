@@ -68,8 +68,8 @@ class _EditRoomPageState extends State<EditRoomPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -172,17 +172,17 @@ class _EditRoomPageState extends State<EditRoomPage> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.bgSecondary,
+                          color: colorScheme.surfaceContainer,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.strokeLight),
+                          border: Border.all(color: colorScheme.outline),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Status do Quarto',
                               style: TextStyle(
-                                color: AppColors.primary,
+                                color: colorScheme.onSurface,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -192,7 +192,7 @@ class _EditRoomPageState extends State<EditRoomPage> {
                               onChanged: (value) {
                                 setState(() => _isActive = value);
                               },
-                              activeColor: AppColors.secondary,
+                              activeThumbColor: AppColors.secondary,
                             ),
                           ],
                         ),
@@ -210,15 +210,15 @@ class _EditRoomPageState extends State<EditRoomPage> {
                         child: OutlinedButton(
                           onPressed: () => context.pop(),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.primary),
+                            side: BorderSide(color: colorScheme.primary),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Cancelar',
                             style: TextStyle(
-                              color: AppColors.primary,
+                              color: colorScheme.primary,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
@@ -312,20 +312,21 @@ class _EditRoomPageState extends State<EditRoomPage> {
   }
 
   Widget _buildPhotosSection() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.bgSecondary,
+        color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.strokeLight),
+        border: Border.all(color: colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Fotos do Quarto',
             style: TextStyle(
-              color: AppColors.primary,
+              color: colorScheme.onSurface,
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
@@ -350,10 +351,10 @@ class _EditRoomPageState extends State<EditRoomPage> {
                     child: Container(
                       width: 120,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.strokeLight,
+                          color: Theme.of(context).colorScheme.outline,
                           width: 2,
                         ),
                       ),
@@ -401,33 +402,35 @@ class _EditRoomPageState extends State<EditRoomPage> {
     String? hint,
     String? Function(String?)? validator,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
       minLines: maxLines == 1 ? 1 : maxLines,
       validator: validator,
-      style: const TextStyle(
-        color: AppColors.primary,
+      style: TextStyle(
+        color: colorScheme.onSurface,
         fontSize: 16,
       ),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         prefixIcon: Icon(icon, color: AppColors.secondary),
-        labelStyle: const TextStyle(
-          color: AppColors.greyText,
+        labelStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant,
           fontSize: 14,
         ),
+        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         filled: true,
-        fillColor: AppColors.bgSecondary,
+        fillColor: colorScheme.surfaceContainer,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.strokeLight),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.strokeLight),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -435,7 +438,7 @@ class _EditRoomPageState extends State<EditRoomPage> {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red),
+          borderSide: BorderSide(color: colorScheme.error),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,

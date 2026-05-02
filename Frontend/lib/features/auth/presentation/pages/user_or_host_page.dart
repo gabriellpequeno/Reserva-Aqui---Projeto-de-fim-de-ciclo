@@ -8,8 +8,8 @@ class UserOrHostPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -18,12 +18,12 @@ class UserOrHostPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 100),
-              const Align(
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Cadastre-se',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: colorScheme.onSurface,
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                   ),
@@ -37,32 +37,32 @@ class UserOrHostPage extends StatelessWidget {
               const SizedBox(height: 24),
               Row(
                 children: [
-                  Expanded(child: Divider(color: AppColors.strokeLight)),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  Expanded(child: Divider(color: colorScheme.outline)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
                       'Ou',
-                      style: TextStyle(color: AppColors.greyText, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
                     ),
                   ),
-                  Expanded(child: Divider(color: AppColors.strokeLight)),
+                  Expanded(child: Divider(color: colorScheme.outline)),
                 ],
               ),
               const SizedBox(height: 24),
               PrimaryButton(
                 text: 'Sou Anfitrião',
-                color: AppColors.primary,
-                textColor: Colors.white,
+                color: colorScheme.primary,
+                textColor: colorScheme.onPrimary,
                 onPressed: () => context.push('/auth/signup/host'),
               ),
               const SizedBox(height: 48),
               TextButton(
                 onPressed: () => context.pop(),
                 child: RichText(
-                  text: const TextSpan(
+                  text: TextSpan(
                     text: 'Já tem conta? ',
-                    style: TextStyle(color: AppColors.primary, fontSize: 16),
-                    children: [
+                    style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
+                    children: const [
                       TextSpan(
                         text: 'acesse agora',
                         style: TextStyle(

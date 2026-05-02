@@ -121,7 +121,6 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -286,17 +285,17 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF666666),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
-          style: const TextStyle(
-              color: Color(0xFF182541), fontSize: 14, fontWeight: FontWeight.w500),
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w500),
           decoration: _inputDecoration(hint),
           validator: validator,
         ),
@@ -308,12 +307,12 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Valor da Diária (R\$)',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF666666),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
@@ -324,8 +323,8 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
           ],
-          style: const TextStyle(
-              color: Color(0xFF182541), fontSize: 14, fontWeight: FontWeight.w500),
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w500),
           decoration: _inputDecoration('Ex: 249,90'),
           validator: (value) {
             final v = double.tryParse(
@@ -344,12 +343,12 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Comodidades',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF666666),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
@@ -419,22 +418,24 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
                       }
                     });
                   },
-                  selectedColor: const Color(0xFF182541),
-                  checkmarkColor: Colors.white,
+                  selectedColor: Theme.of(context).colorScheme.primary,
+                  checkmarkColor: Theme.of(context).colorScheme.onPrimary,
                   labelStyle: TextStyle(
                     fontSize: 12,
-                    color: selected ? Colors.white : const Color(0xFF444444),
+                    color: selected
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.onSurface,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                     side: BorderSide(
                       color: selected
-                          ? const Color(0xFF182541)
-                          : Colors.grey[300]!,
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.outline,
                     ),
                   ),
-                  backgroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
                   showCheckmark: true,
                 );
               }).toList(),
@@ -449,12 +450,12 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Descrição',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF666666),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
@@ -462,8 +463,8 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
           controller: _descriptionController,
           maxLines: 4,
           maxLength: 100,
-          style: const TextStyle(
-              color: Color(0xFF182541), fontSize: 14, fontWeight: FontWeight.w500),
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w500),
           decoration: _inputDecoration('Texto com até 100 caracteres'),
           validator: (value) {
             if (value?.trim().isEmpty ?? true) {
@@ -486,17 +487,17 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF666666),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F6F8),
-            border: Border.all(color: const Color(0xFFCCCCCC)),
+            color: Theme.of(context).colorScheme.surfaceContainer,
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -508,10 +509,10 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
               ),
               Text(
                 value.toString(),
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF182541)),
+                    color: Theme.of(context).colorScheme.onSurface),
               ),
               IconButton(
                 icon: const Icon(Icons.add, size: 20),
@@ -566,10 +567,10 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
           const SizedBox(height: 16),
           Text(
             'Fotos Selecionadas (${_selectedImages.length})',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF666666),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 12),
@@ -658,31 +659,32 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
   }
 
   InputDecoration _inputDecoration(String hint) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 14),
+      hintStyle: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFFCCCCCC)),
+        borderSide: BorderSide(color: colorScheme.outline),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFFCCCCCC)),
+        borderSide: BorderSide(color: colorScheme.outline),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFF182541), width: 2),
+        borderSide: BorderSide(color: colorScheme.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        borderSide: BorderSide(color: colorScheme.error, width: 1.5),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Colors.red, width: 2),
+        borderSide: BorderSide(color: colorScheme.error, width: 2),
       ),
       filled: true,
-      fillColor: const Color(0xFFF5F6F8),
+      fillColor: colorScheme.surfaceContainer,
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
     );

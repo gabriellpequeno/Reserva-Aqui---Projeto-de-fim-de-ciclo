@@ -9,69 +9,66 @@ class ChatPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Custom Chat Header
           _buildHeader(context),
-          
-          // Chat Messages
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(16.0),
-              children: const [
+              children: [
                 Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: Text(
                       'Nov 30, 2023, 9:41 AM',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
                     ),
                   ),
                 ),
-                ChatBubble(
+                const ChatBubble(
                   message: 'This is the main chat template',
                   isMe: true,
                 ),
-                ChatBubble(
+                const ChatBubble(
                   message: 'Oh?',
                   isMe: false,
                   isLastInGroup: false,
                 ),
-                ChatBubble(
+                const ChatBubble(
                   message: 'Cool',
                   isMe: false,
                   isFirstInGroup: false,
                   isLastInGroup: false,
                 ),
-                ChatBubble(
+                const ChatBubble(
                   message: 'How does it work?',
                   isMe: false,
                   isFirstInGroup: false,
                 ),
-                ChatBubble(
+                const ChatBubble(
                   message: 'You just edit any text to type in the conversation you want to show, and delete any bubbles you don’t want to use',
                   isMe: true,
                   isLastInGroup: false,
                 ),
-                ChatBubble(
+                const ChatBubble(
                   message: 'Boom!',
                   isMe: true,
                   isFirstInGroup: false,
                 ),
-                ChatBubble(
+                const ChatBubble(
                   message: 'Hmmm',
                   isMe: false,
                   isLastInGroup: false,
                 ),
-                ChatBubble(
+                const ChatBubble(
                   message: 'I think I get it',
                   isMe: false,
                   isFirstInGroup: false,
                   isLastInGroup: false,
                 ),
-                ChatBubble(
+                const ChatBubble(
                   message: 'Will head to the Help Center if I have more questions tho',
                   isMe: false,
                   isFirstInGroup: false,
@@ -79,9 +76,7 @@ class ChatPage extends StatelessWidget {
               ],
             ),
           ),
-          
-          // Chat Input
-          _buildInput(),
+          _buildInput(context),
         ],
       ),
     );
@@ -104,36 +99,30 @@ class ChatPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Logo and Circular Buttons Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Back Button (Circular)
               GestureDetector(
                 onTap: () => context.go('/home'),
                 child: Container(
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.chevron_left, color: Colors.white, size: 32),
                 ),
               ),
-              
-              // Logo
               SvgPicture.asset(
                 'lib/assets/icons/logo/logoDark.svg',
                 height: 32,
               ),
-              
-              // Notification/Bell Button (Circular)
               Container(
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.notifications_none, color: Colors.white, size: 28),
@@ -141,15 +130,14 @@ class ChatPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          // User Info Row
           Row(
             children: [
-              const SizedBox(width: 48), // Align with the content above if needed
+              const SizedBox(width: 48),
               Container(
                 width: 44,
                 height: 44,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFA3A3A3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.3),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.person, color: Colors.white),
@@ -169,7 +157,7 @@ class ChatPage extends StatelessWidget {
                   Text(
                     'Ativo 11m atrás',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 12,
                     ),
                   ),
@@ -182,12 +170,13 @@ class ChatPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInput() {
+  Widget _buildInput(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+        color: colorScheme.surface,
+        border: Border(top: BorderSide(color: colorScheme.outline)),
       ),
       child: SafeArea(
         top: false,
@@ -197,14 +186,19 @@ class ChatPage extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: colorScheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: colorScheme.outline),
                 ),
-                child: const TextField(
+                child: TextField(
+                  style: TextStyle(color: colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Mensagem...',
+                    hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
                   ),
                 ),
               ),

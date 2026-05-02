@@ -20,9 +20,6 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _notificationsEnabled = true;
 
-  final Color _labelColor = const Color(0xFF8B93A0);
-  final Color _borderColor = const Color(0xFFDCDFE5);
-
   @override
   void initState() {
     super.initState();
@@ -46,9 +43,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeProvider);
     final isDark = themeMode == ThemeMode.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
@@ -56,11 +53,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 60),
-              const Text(
+              Text(
                 'Configurações',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w800,
                   fontSize: 22,
                 ),
@@ -72,29 +69,31 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: _labelColor,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 8),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _borderColor),
+                  border: Border.all(color: colorScheme.outline),
                 ),
                 child: Column(
                   children: [
                     _buildSwitchTile(
+                      context: context,
                       icon: Icons.notifications_none,
                       title: 'Notificações',
                       value: _notificationsEnabled,
                       onChanged: _setNotifications,
                     ),
-                    Divider(color: _borderColor, height: 1, indent: 16, endIndent: 16),
+                    Divider(color: colorScheme.outline, height: 1, indent: 16, endIndent: 16),
                     _buildSwitchTile(
-                      icon: Icons.light_mode_outlined,
-                      title: 'Modo Claro',
-                      subtitle: 'Preferência De Tema',
+                      context: context,
+                      icon: Icons.dark_mode_outlined,
+                      title: 'Modo Escuro',
+                      subtitle: 'Preferência de tema',
                       value: isDark,
                       onChanged: (val) => ref.read(themeProvider.notifier).setDark(val),
                     ),
@@ -109,19 +108,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: _labelColor,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 8),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _borderColor),
+                  border: Border.all(color: colorScheme.outline),
                 ),
                 child: Column(
                   children: [
                     _buildActionTile(
+                      context: context,
                       icon: Icons.list_alt,
                       title: 'Termos De Uso',
                       onTap: () => Navigator.push(
@@ -129,8 +129,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         MaterialPageRoute(builder: (_) => const TermsPage()),
                       ),
                     ),
-                    Divider(color: _borderColor, height: 1, indent: 16, endIndent: 16),
+                    Divider(color: colorScheme.outline, height: 1, indent: 16, endIndent: 16),
                     _buildActionTile(
+                      context: context,
                       icon: Icons.privacy_tip_outlined,
                       title: 'Privacidade',
                       onTap: () => Navigator.push(
@@ -138,8 +139,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         MaterialPageRoute(builder: (_) => const PrivacyPage()),
                       ),
                     ),
-                    Divider(color: _borderColor, height: 1, indent: 16, endIndent: 16),
+                    Divider(color: colorScheme.outline, height: 1, indent: 16, endIndent: 16),
                     _buildActionTile(
+                      context: context,
                       icon: Icons.info_outline,
                       title: 'Sobre O App',
                       onTap: () => Navigator.push(
@@ -159,17 +161,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Widget _buildSwitchTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     String? subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Row(
         children: [
-          Icon(icon, color: _labelColor, size: 24),
+          Icon(icon, color: colorScheme.onSurfaceVariant, size: 24),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -179,7 +183,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   title,
                   style: TextStyle(
                     fontSize: 16,
-                    color: _labelColor,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -188,7 +192,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     subtitle,
                     style: TextStyle(
                       fontSize: 13,
-                      color: _labelColor.withAlpha(178),
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
               ],
@@ -198,7 +202,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             value: value,
             onChanged: onChanged,
             activeTrackColor: AppColors.secondary,
-            inactiveTrackColor: _borderColor,
+            inactiveTrackColor: colorScheme.surfaceContainerHigh,
           ),
         ],
       ),
@@ -206,10 +210,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Widget _buildActionTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required VoidCallback onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -217,14 +223,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
         child: Row(
           children: [
-            Icon(icon, color: _labelColor, size: 24),
+            Icon(icon, color: colorScheme.onSurfaceVariant, size: 24),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 title,
                 style: TextStyle(
                   fontSize: 16,
-                  color: _labelColor,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),

@@ -705,10 +705,11 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
   }
 
   void _abrirReativar(RoomCategoryCardModel card) {
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog<bool?>(
       context: context,
       builder: (_) => Dialog(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
@@ -728,14 +729,14 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
               const SizedBox(height: 4),
               Text(card.nomeCategoria,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      color: AppColors.greyText, fontSize: 13)),
+                  style: TextStyle(
+                      color: colorScheme.onSurfaceVariant, fontSize: 13)),
               const SizedBox(height: 12),
               Text(
                 'As ${card.totalUnidades} unidade${card.totalUnidades != 1 ? 's' : ''} voltarão a aceitar reservas.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: AppColors.greyText, fontSize: 14, height: 1.4),
+                style: TextStyle(
+                    color: colorScheme.onSurfaceVariant, fontSize: 14, height: 1.4),
               ),
               const SizedBox(height: 24),
               Row(
@@ -744,15 +745,15 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(false),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.primary),
+                        side: BorderSide(color: colorScheme.primary),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(11)),
                         padding:
                             const EdgeInsets.symmetric(vertical: 13),
                       ),
-                      child: const Text('Cancelar',
+                      child: Text('Cancelar',
                           style: TextStyle(
-                              color: AppColors.primary,
+                              color: colorScheme.primary,
                               fontWeight: FontWeight.w600)),
                     ),
                   ),
@@ -761,7 +762,7 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                     child: ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green[700],
+                        backgroundColor: Colors.green[600],
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(11)),
                         padding:
@@ -793,13 +794,13 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
   void _abrirRemoverInativo(RoomCategoryCardModel card) {
     final notifier = ref.read(myRoomsNotifierProvider.notifier);
     final bloqueio = notifier.verificarBloqueioExclusao(card.categoriaId);
+    final colorScheme = Theme.of(context).colorScheme;
 
     if (bloqueio != null) {
-      // Exclusão bloqueada — mostra aviso sem opção de confirmar
       showDialog<void>(
         context: context,
         builder: (_) => Dialog(
-          backgroundColor: Colors.white,
+          backgroundColor: colorScheme.surface,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16)),
           child: Padding(
@@ -807,19 +808,19 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.event_busy, color: Colors.orange[700], size: 44),
+                Icon(Icons.event_busy, color: Colors.orange[400], size: 44),
                 const SizedBox(height: 12),
                 Text('Exclusão bloqueada',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                        color: Colors.orange[700],
+                        color: Colors.orange[400],
                         fontSize: 20,
                         fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
                 Text(bloqueio,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        color: AppColors.greyText,
+                    style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
                         fontSize: 14,
                         height: 1.5)),
                 const SizedBox(height: 24),
@@ -828,7 +829,8 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(11)),
                       padding:
@@ -837,7 +839,6 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                     ),
                     child: const Text('Entendido',
                         style: TextStyle(
-                            color: Colors.white,
                             fontWeight: FontWeight.w700)),
                   ),
                 ),
@@ -849,11 +850,10 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
       return;
     }
 
-    // Exclusão permitida — confirmar
     showDialog<bool?>(
       context: context,
       builder: (_) => Dialog(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
@@ -861,7 +861,7 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.delete_forever, color: Colors.red[600], size: 44),
+              Icon(Icons.delete_forever, color: Colors.red[400], size: 44),
               const SizedBox(height: 12),
               const Text('Remover definitivamente',
                   textAlign: TextAlign.center,
@@ -872,14 +872,14 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
               const SizedBox(height: 4),
               Text(card.nomeCategoria,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      color: AppColors.greyText, fontSize: 13)),
+                  style: TextStyle(
+                      color: colorScheme.onSurfaceVariant, fontSize: 13)),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Esta ação excluirá as unidades permanentemente e não pode ser desfeita.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    color: AppColors.greyText, fontSize: 14, height: 1.4),
+                    color: colorScheme.onSurfaceVariant, fontSize: 14, height: 1.4),
               ),
               const SizedBox(height: 24),
               Row(
@@ -888,15 +888,15 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(false),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.primary),
+                        side: BorderSide(color: colorScheme.primary),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(11)),
                         padding:
                             const EdgeInsets.symmetric(vertical: 13),
                       ),
-                      child: const Text('Cancelar',
+                      child: Text('Cancelar',
                           style: TextStyle(
-                              color: AppColors.primary,
+                              color: colorScheme.primary,
                               fontWeight: FontWeight.w600)),
                     ),
                   ),

@@ -279,9 +279,9 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(hostProfileProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: profileAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -297,7 +297,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
                   Text(
                     'Erro ao carregar perfil:\n$err',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.primary),
+                    style: TextStyle(color: colorScheme.onSurface),
                   ),
                   const SizedBox(height: 24),
                   TextButton(
@@ -322,6 +322,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
   }
 
   Widget _buildForm() {
+    final colorScheme = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Form(
@@ -330,10 +331,10 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Editar Perfil de Host',
               style: TextStyle(
-                color: AppColors.primary,
+                color: colorScheme.onSurface,
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
               ),
@@ -587,15 +588,15 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
               child: OutlinedButton(
                 onPressed: _isSubmitting ? null : () => context.pop(),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.primary),
+                  side: BorderSide(color: colorScheme.primary),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Cancelar',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: colorScheme.primary,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -621,6 +622,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
     List<dynamic>? inputFormatters,
     String? Function(String?)? validator,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -629,8 +631,8 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
       maxLength: maxLength,
       inputFormatters: inputFormatters?.cast(),
       validator: validator,
-      style: const TextStyle(
-        color: AppColors.primary,
+      style: TextStyle(
+        color: colorScheme.onSurface,
         fontSize: 16,
       ),
       decoration: InputDecoration(
@@ -644,19 +646,20 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
                 padding: const EdgeInsets.all(12),
                 child: suffix,
               ),
-        labelStyle: const TextStyle(
-          color: AppColors.greyText,
+        labelStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant,
           fontSize: 14,
         ),
+        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         filled: true,
-        fillColor: AppColors.bgSecondary,
+        fillColor: colorScheme.surfaceContainer,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.strokeLight),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.strokeLight),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -664,7 +667,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red),
+          borderSide: BorderSide(color: colorScheme.error),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -683,12 +686,13 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
     String? hint,
     String? Function(String?)? validator,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return TextFormField(
       controller: controller,
       obscureText: obscure,
       validator: validator,
-      style: const TextStyle(
-        color: AppColors.primary,
+      style: TextStyle(
+        color: colorScheme.onSurface,
         fontSize: 16,
       ),
       decoration: InputDecoration(
@@ -702,19 +706,20 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
             color: AppColors.secondary,
           ),
         ),
-        labelStyle: const TextStyle(
-          color: AppColors.greyText,
+        labelStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant,
           fontSize: 14,
         ),
+        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         filled: true,
-        fillColor: AppColors.bgSecondary,
+        fillColor: colorScheme.surfaceContainer,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.strokeLight),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.strokeLight),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -722,7 +727,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red),
+          borderSide: BorderSide(color: colorScheme.error),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,

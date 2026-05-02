@@ -501,12 +501,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   // ── Resultado: card de hotel ──────────────────────────────────────────────
 
   Widget _buildHotelCard(BuildContext context, FavoriteRoom hotel) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F0F0),
+        color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+        border: Border.all(color: colorScheme.outline),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -537,8 +538,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 children: [
                   Text(
                     hotel.hotelName,
-                    style: const TextStyle(
-                      color: AppColors.primary,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       height: 1.2,
@@ -548,8 +549,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     const SizedBox(height: 4),
                     Text(
                       hotel.destination,
-                      style: const TextStyle(
-                        color: AppColors.greyText,
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
                         fontSize: 12,
                       ),
                     ),
@@ -568,8 +569,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     onPressed: () => context
                         .push('/room_details/${hotel.hotelId}/${hotel.id}'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
                       minimumSize: const Size(double.infinity, 40),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(11),
@@ -594,21 +595,23 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   }
 
   Widget _amenityTag(IconData icon) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFE5E5E5),
+        color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(
         icon,
         size: 16,
-        color: AppColors.primary.withValues(alpha: 0.6),
+        color: colorScheme.onSurface.withValues(alpha: 0.6),
       ),
     );
   }
 
   Widget _buildInitialState() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -616,12 +619,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           Icon(
             Icons.search,
             size: 64,
-            color: AppColors.primary.withValues(alpha: 0.1),
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Encontre o lugar perfeito',
-            style: TextStyle(color: AppColors.greyText, fontSize: 16),
+            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16),
           ),
         ],
       ),

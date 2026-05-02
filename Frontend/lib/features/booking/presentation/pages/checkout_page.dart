@@ -3,55 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../notifiers/checkout_notifier.dart';
+import '../../../tickets/presentation/notifiers/tickets_notifier.dart';
 
-// ─── Mock de dados ─────────────────────────────────────────────────────────
-class _BookingMock {
-  final String locationName;
-  final String checkInTime;
-  final String checkOutTime;
-  final String ticketId;
-  final String status;
-  final int guestCount;
-  final String roomType;
-  final double subtotal;
-  final double discounts;
-  final double taxes;
-  final double total;
-
-  const _BookingMock({
-    required this.locationName,
-    required this.checkInTime,
-    required this.checkOutTime,
-    required this.ticketId,
-    required this.status,
-    required this.guestCount,
-    required this.roomType,
-    required this.subtotal,
-    required this.discounts,
-    required this.taxes,
-    required this.total,
-  });
-}
-
-const _mockBooking = _BookingMock(
-  locationName: 'Rua dos Bobos, nº 0',
-  checkInTime: '13:00',
-  checkOutTime: '19:00',
-  ticketId: '000000000',
-  status: 'Em Breve',
-  guestCount: 3,
-  roomType: 'Standard',
-  subtotal: 190.98,
-  discounts: 20.00,
-  taxes: 19.00,
-  total: 189.98,
-);
-
-// ─── Página ────────────────────────────────────────────────────────────────
 class CheckoutPage extends ConsumerStatefulWidget {
-  final String roomId;
+  final String hotelId;
+  final int categoriaId;
+  final int quartoId;
 
-  const CheckoutPage({super.key, required this.roomId});
+  const CheckoutPage({
+    super.key,
+    required this.hotelId,
+    required this.categoriaId,
+    required this.quartoId,
+  });
 
   @override
   ConsumerState<CheckoutPage> createState() => _CheckoutPageState();
@@ -60,66 +25,117 @@ class CheckoutPage extends ConsumerStatefulWidget {
 class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   DateTime? _checkInDate;
   DateTime? _checkOutDate;
+  int _numHospedes = 1;
 
-  Future<void> _pickDate({required bool isCheckIn}) async {
-    final now = DateTime.now();
-    final initial = isCheckIn
-        ? (_checkInDate ?? now)
-        : (_checkOutDate ?? (_checkInDate ?? now).add(const Duration(days: 1)));
-
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365)),
-    );
-
-    if (picked == null) return;
-
-    setState(() {
-      if (isCheckIn) {
-        _checkInDate = picked;
-        // Se checkout já selecionado e for antes do novo checkin, limpa
-        if (_checkOutDate != null && !_checkOutDate!.isAfter(picked)) {
-          _checkOutDate = null;
-        }
-      } else {
-        _checkOutDate = picked;
-      }
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref
+          .read(checkoutNotifierProvider.notifier)
+          .loadData(widget.hotelId, widget.categoriaId, widget.quartoId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final state = ref.watch(checkoutNotifierProvider);
+
+    // Navegar para /tickets após reserva criada com sucesso
+    ref.listen(checkoutNotifierProvider, (prev, next) {
+      if (!next.reservaCreated) return;
+      if (prev?.reservaCreated == true) return;
+      ref.read(ticketsNotifierProvider.notifier).reload();
+      context.go('/tickets');
+    });
+
     return Scaffold(
-      backgroundColor: colorScheme.surfaceContainerHigh,
+      backgroundColor: const Color(0xFFD9D9D9),
       body: Column(
         children: [
           _buildHeader(context),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
-              child: Column(
-                children: [
-                  _buildMainCard(context),
-                  const SizedBox(height: 16),
-                  _buildFinancialCard(),
-                ],
-              ),
-            ),
+            child: state.isLoadingData
+                ? const Center(child: CircularProgressIndicator())
+                : state.errorMessage != null && state.categoria == null
+                    ? _buildErrorState(state.errorMessage!)
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
+                        child: Column(
+                          children: [
+                            if (state.errorMessage != null)
+                              _buildErrorBanner(state.errorMessage!),
+                            _buildMainCard(context, state),
+                            const SizedBox(height: 16),
+                            _buildFinancialCard(state),
+                            if (state.politicas != null) ...[
+                              const SizedBox(height: 16),
+                              _buildPoliciesCard(state),
+                            ],
+                          ],
+                        ),
+                      ),
           ),
         ],
       ),
     );
   }
 
-  String _formatDate(DateTime? date, String placeholder) {
-    if (date == null) return placeholder;
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  // ── Error state (carregamento inicial) ────────────────────────────────────
+
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 12),
+            Text(message, textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey[600])),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => ref
+                  .read(checkoutNotifierProvider.notifier)
+                  .loadData(widget.hotelId, widget.categoriaId, widget.quartoId),
+              child: const Text('Tentar Novamente'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  // ── Header ───────────────────────────────────────────────────────────────
+  Widget _buildErrorBanner(String message) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFDE8E8),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFEF2828).withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: Color(0xFFEF2828), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(message,
+                style: const TextStyle(color: Color(0xFFEF2828), fontSize: 13)),
+          ),
+          GestureDetector(
+            onTap: () => ref.read(checkoutNotifierProvider.notifier).clearError(),
+            child: const Icon(Icons.close, color: Color(0xFFEF2828), size: 18),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Header ────────────────────────────────────────────────────────────────
+
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -172,10 +188,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     );
   }
 
-  Widget _buildHeaderButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildHeaderButton({required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -195,55 +208,48 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   // ── Card principal ────────────────────────────────────────────────────────
-  Widget _buildMainCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+
+  Widget _buildMainCard(BuildContext context, CheckoutState state) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDateSection(),
+          _buildDateSection(state),
           _buildInfoRow(
-            leftLabel: 'Chegada',
-            leftValue: _mockBooking.checkInTime,
-            rightLabel: 'Saída',
-            rightValue: _mockBooking.checkOutTime,
+            leftLabel: 'Check-in',
+            leftValue: state.politicas?.horarioCheckin ?? '—',
+            rightLabel: 'Check-out',
+            rightValue: state.politicas?.horarioCheckout ?? '—',
           ),
+          _buildGuestRow(),
           _buildInfoRow(
-            leftLabel: 'Ticket ID',
-            leftValue: _mockBooking.ticketId,
-            rightLabel: 'Status',
-            rightValue: _mockBooking.status,
-            rightValueColor: AppColors.secondary,
-          ),
-          _buildInfoRow(
-            leftLabel: 'Hóspedes',
-            leftValue: '${_mockBooking.guestCount} adultos',
-            rightLabel: 'Quarto',
-            rightValue: _mockBooking.roomType,
+            leftLabel: 'Quarto',
+            leftValue: state.categoria?.nome ?? '—',
+            rightLabel: 'Capacidade',
+            rightValue: '${state.categoria?.capacidadePessoas ?? '—'} pessoa(s)',
             isLast: true,
           ),
-          _buildFinalizeButton(context),
+          _buildFinalizeButton(context, state),
         ],
       ),
     );
   }
 
-  Widget _buildDateSection() {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildDateSection(CheckoutState state) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _mockBooking.locationName,
-            style: TextStyle(
-              color: colorScheme.onSurface,
+            state.categoria?.nome ?? 'Carregando...',
+            style: const TextStyle(
+              color: AppColors.primary,
               fontSize: 12,
               fontFamily: 'Stack Sans Text',
               fontWeight: FontWeight.w700,
@@ -252,13 +258,13 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           ),
           const SizedBox(height: 12),
           _buildDateField(
-            label: _formatDate(_checkInDate, 'Check-In Date'),
+            label: _formatDate(_checkInDate, 'Check-In'),
             hasValue: _checkInDate != null,
             onTap: () => _pickDate(isCheckIn: true),
           ),
           const SizedBox(height: 8),
           _buildDateField(
-            label: _formatDate(_checkOutDate, 'Check-Out Date'),
+            label: _formatDate(_checkOutDate, 'Check-Out'),
             hasValue: _checkOutDate != null,
             onTap: () => _pickDate(isCheckIn: false),
           ),
@@ -267,48 +273,75 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     );
   }
 
-  Widget _buildDateField({
-    required String label,
-    required bool hasValue,
-    required VoidCallback onTap,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildGuestRow() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(width: 0.5, color: Color(0xFFE6E6E6))),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Hóspedes',
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: 12,
+              fontFamily: 'Stack Sans Text',
+              fontWeight: FontWeight.w700,
+              height: 1.67,
+            ),
+          ),
+          Row(
+            children: [
+              _buildGuestButton(
+                icon: Icons.remove,
+                onTap: () {
+                  if (_numHospedes > 1) setState(() => _numHospedes--);
+                },
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  '$_numHospedes',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 14,
+                    fontFamily: 'Stack Sans Text',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              _buildGuestButton(
+                icon: Icons.add,
+                onTap: () {
+                  final max = ref
+                          .read(checkoutNotifierProvider)
+                          .categoria
+                          ?.capacidadePessoas ??
+                      99;
+                  if (_numHospedes < max) setState(() => _numHospedes++);
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuestButton({required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 220,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: ShapeDecoration(
-          color: colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            side: BorderSide(
-              width: 1,
-              color: hasValue
-                  ? colorScheme.onSurface.withValues(alpha: 0.5)
-                  : colorScheme.outline,
-            ),
-            borderRadius: BorderRadius.circular(11),
-          ),
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(6),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.calendar_today, color: AppColors.secondary, size: 16),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: hasValue ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                  fontSize: 12,
-                  fontFamily: 'Stack Sans Text',
-                  fontWeight: hasValue ? FontWeight.w600 : FontWeight.w400,
-                ),
-              ),
-            ),
-            Icon(Icons.keyboard_arrow_down, color: colorScheme.onSurface, size: 18),
-          ],
-        ),
+        child: Icon(icon, size: 16, color: AppColors.primary),
       ),
     );
   }
@@ -321,15 +354,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     Color? rightValueColor,
     bool isLast = false,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(width: 0.5, color: colorScheme.outline),
+          top: const BorderSide(width: 0.5, color: Color(0xFFE6E6E6)),
           bottom: isLast
-              ? BorderSide(width: 0.5, color: colorScheme.outline)
+              ? const BorderSide(width: 0.5, color: Color(0xFFE6E6E6))
               : BorderSide.none,
         ),
       ),
@@ -340,51 +372,39 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                leftLabel,
-                style: TextStyle(
-                  color: colorScheme.onSurface,
-                  fontSize: 12,
-                  fontFamily: 'Stack Sans Text',
-                  fontWeight: FontWeight.w700,
-                  height: 1.67,
-                ),
-              ),
-              Text(
-                leftValue,
-                style: TextStyle(
-                  color: colorScheme.onSurface,
-                  fontSize: 12,
-                  fontFamily: 'Stack Sans Text',
-                  fontWeight: FontWeight.w300,
-                  height: 1.67,
-                ),
-              ),
+              Text(leftLabel,
+                  style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 12,
+                      fontFamily: 'Stack Sans Text',
+                      fontWeight: FontWeight.w700,
+                      height: 1.67)),
+              Text(leftValue,
+                  style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 12,
+                      fontFamily: 'Stack Sans Text',
+                      fontWeight: FontWeight.w300,
+                      height: 1.67)),
             ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                rightLabel,
-                style: TextStyle(
-                  color: colorScheme.onSurface,
-                  fontSize: 12,
-                  fontFamily: 'Stack Sans Text',
-                  fontWeight: FontWeight.w700,
-                  height: 1.67,
-                ),
-              ),
-              Text(
-                rightValue,
-                style: TextStyle(
-                  color: rightValueColor ?? colorScheme.onSurface,
-                  fontSize: 12,
-                  fontFamily: 'Stack Sans Text',
-                  fontWeight: FontWeight.w300,
-                  height: 1.67,
-                ),
-              ),
+              Text(rightLabel,
+                  style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 12,
+                      fontFamily: 'Stack Sans Text',
+                      fontWeight: FontWeight.w700,
+                      height: 1.67)),
+              Text(rightValue,
+                  style: TextStyle(
+                      color: rightValueColor ?? AppColors.primary,
+                      fontSize: 12,
+                      fontFamily: 'Stack Sans Text',
+                      fontWeight: FontWeight.w300,
+                      height: 1.67)),
             ],
           ),
         ],
@@ -392,75 +412,81 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     );
   }
 
-  Widget _buildFinalizeButton(BuildContext context) {
+  Widget _buildFinalizeButton(BuildContext context, CheckoutState state) {
+    final canConfirm =
+        _checkInDate != null && _checkOutDate != null && !state.isConfirming;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(15, 10, 15, 10),
       child: SizedBox(
         width: double.infinity,
         height: 38,
         child: ElevatedButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Reserva registrada com sucesso.'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            context.go('/tickets');
-          },
+          onPressed: canConfirm ? () => _onConfirm() : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
+            disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(11),
             ),
           ),
-          child: const Text(
-            'Finalizar Reserva',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontFamily: 'Stack Sans Headline',
-              fontWeight: FontWeight.w700,
-              height: 1.71,
-            ),
-          ),
+          child: state.isConfirming
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Text(
+                  'Finalizar Reserva',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontFamily: 'Stack Sans Headline',
+                    fontWeight: FontWeight.w700,
+                    height: 1.71,
+                  ),
+                ),
         ),
       ),
     );
   }
 
   // ── Card financeiro ───────────────────────────────────────────────────────
-  Widget _buildFinancialCard() {
-    final colorScheme = Theme.of(context).colorScheme;
+
+  Widget _buildFinancialCard(CheckoutState state) {
+    final preco = state.valorDiaria ?? state.categoria?.preco ?? 0.0;
+    final dias = (_checkInDate != null && _checkOutDate != null)
+        ? _checkOutDate!.difference(_checkInDate!).inDays
+        : 0;
+    final subtotal = preco * dias;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         children: [
           _buildFinancialRow(
-            'Subtotal',
-            'R\$${_mockBooking.subtotal.toStringAsFixed(2)}',
+            'Diária',
+            'R\$${preco.toStringAsFixed(2)}',
           ),
           const SizedBox(height: 10),
           _buildFinancialRow(
-            'Descontos',
-            '-R\$${_mockBooking.discounts.toStringAsFixed(2)}',
-          ),
-          const SizedBox(height: 10),
-          _buildFinancialRow(
-            'Taxas',
-            'R\$${_mockBooking.taxes.toStringAsFixed(2)}',
+            'Noites',
+            '$dias',
           ),
           const SizedBox(height: 10),
           _buildFinancialRow(
             'Total',
-            'R\$${_mockBooking.total.toStringAsFixed(2)}',
+            'R\$${subtotal.toStringAsFixed(2)}',
             isTotal: true,
           ),
         ],
@@ -469,32 +495,179 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   Widget _buildFinancialRow(String label, String value, {bool isTotal = false}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final color = isTotal ? AppColors.secondary : colorScheme.onSurface;
+    final color = isTotal ? AppColors.secondary : AppColors.primary;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontSize: 12,
-            fontFamily: 'Stack Sans Text',
-            fontWeight: FontWeight.w700,
-            height: 1.40,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            color: color,
-            fontSize: 12,
-            fontFamily: 'Stack Sans Text',
-            fontWeight: isTotal ? FontWeight.w700 : FontWeight.w400,
-            height: 1.40,
-          ),
-        ),
+        Text(label,
+            style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontFamily: 'Stack Sans Text',
+                fontWeight: FontWeight.w700,
+                height: 1.40)),
+        Text(value,
+            style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontFamily: 'Stack Sans Text',
+                fontWeight: isTotal ? FontWeight.w700 : FontWeight.w400,
+                height: 1.40)),
       ],
+    );
+  }
+
+  // ── Card de políticas ─────────────────────────────────────────────────────
+
+  Widget _buildPoliciesCard(CheckoutState state) {
+    final p = state.politicas!;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Políticas do Hotel',
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: 13,
+              fontFamily: 'Stack Sans Headline',
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (p.politicaCancelamento != null)
+            _buildPolicyItem(Icons.cancel_outlined, p.politicaCancelamento!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPolicyItem(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text,
+                style: const TextStyle(
+                    color: AppColors.primary, fontSize: 12, height: 1.5)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  Future<void> _pickDate({required bool isCheckIn}) async {
+    final now = DateTime.now();
+    final initial = isCheckIn
+        ? (_checkInDate ?? now)
+        : (_checkOutDate ??
+            (_checkInDate ?? now).add(const Duration(days: 1)));
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.primary,
+            onPrimary: Colors.white,
+            secondary: AppColors.secondary,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+
+    if (picked == null) return;
+    setState(() {
+      if (isCheckIn) {
+        _checkInDate = picked;
+        if (_checkOutDate != null && !_checkOutDate!.isAfter(picked)) {
+          _checkOutDate = null;
+        }
+      } else {
+        _checkOutDate = picked;
+      }
+    });
+  }
+
+  void _onConfirm() {
+    ref.read(checkoutNotifierProvider.notifier).confirm(
+          hotelId: widget.hotelId,
+          categoriaId: widget.categoriaId,
+          quartoId: widget.quartoId,
+          checkin: _checkInDate!,
+          checkout: _checkOutDate!,
+          numHospedes: _numHospedes,
+        );
+  }
+
+  String _formatDate(DateTime? date, String placeholder) {
+    if (date == null) return placeholder;
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  Widget _buildDateField({
+    required String label,
+    required bool hasValue,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 220,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: ShapeDecoration(
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            side: BorderSide(
+              width: 1,
+              color: hasValue
+                  ? AppColors.primary.withValues(alpha: 0.5)
+                  : const Color(0x3F182541),
+            ),
+            borderRadius: BorderRadius.circular(11),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.calendar_today,
+                color: AppColors.secondary, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: hasValue
+                      ? AppColors.primary
+                      : const Color(0x7F182541),
+                  fontSize: 12,
+                  fontFamily: 'Stack Sans Text',
+                  fontWeight:
+                      hasValue ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+            ),
+            const Icon(Icons.keyboard_arrow_down,
+                color: AppColors.primary, size: 18),
+          ],
+        ),
+      ),
     );
   }
 }

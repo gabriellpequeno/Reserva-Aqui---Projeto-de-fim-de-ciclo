@@ -407,7 +407,7 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                         if (card.valorBase != null) ...[
                           const SizedBox(height: 4),
                           _infoRow(Icons.attach_money,
-                              'R\$ ${card.valorBase!.toStringAsFixed(2)}/noite'),
+                              'R\$ ${card.valorBase!.toStringAsFixed(2)}/dia'),
                         ],
                         if (card.descricao != null) ...[
                           const SizedBox(height: 4),

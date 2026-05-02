@@ -79,7 +79,16 @@ const SELECT_CATEGORIA_COM_ITENS = `
   SELECT
     cq.id,
     cq.nome,
-    cq.preco_base AS valor_diaria,
+    COALESCE(
+      (SELECT q.valor_override
+       FROM quarto q
+       WHERE q.categoria_quarto_id = cq.id
+         AND q.deleted_at IS NULL
+         AND q.disponivel = TRUE
+       ORDER BY q.id
+       LIMIT 1),
+      cq.preco_base
+    ) AS valor_diaria,
     cq.capacidade_pessoas,
     (
       SELECT MIN(q.id)

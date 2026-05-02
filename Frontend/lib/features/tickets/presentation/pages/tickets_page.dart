@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/ticket.dart';
+import '../notifiers/tickets_notifier.dart';
 import '../widgets/ticket_card.dart';
 
 class TicketsPage extends ConsumerStatefulWidget {
@@ -24,8 +25,8 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
     super.dispose();
   }
 
-  List<Ticket> get _filtered {
-    return mockTickets.where((t) {
+  List<Ticket> _filtered(List<Ticket> tickets) {
+    return tickets.where((t) {
       final matchesFilter =
           _activeFilter == null || t.status == _activeFilter;
 
@@ -42,14 +43,54 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final ticketsAsync = ref.watch(ticketsNotifierProvider);
+
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Column(
         children: [
           _buildHeader(context),
           _buildSearchBar(),
           _buildFilterTabs(),
-          Expanded(child: _buildList()),
+          Expanded(
+            child: ticketsAsync.when(
+              skipLoadingOnReload: true,
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => _buildErrorState(e.toString()),
+              data: (tickets) => RefreshIndicator(
+                onRefresh: () =>
+                    ref.read(ticketsNotifierProvider.notifier).reload(),
+                child: _buildList(_filtered(tickets)),
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () =>
+                  ref.read(ticketsNotifierProvider.notifier).reload(),
+              child: const Text('Tentar Novamente'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -129,15 +170,14 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
 
   // ── Barra de busca ────────────────────────────────────────────────────────
   Widget _buildSearchBar() {
-    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: colorScheme.surface,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colorScheme.outline),
+          border: Border.all(color: const Color(0xFFE6E6E6)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -152,26 +192,23 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
               child: TextField(
                 controller: _searchController,
                 onChanged: (v) => setState(() => _searchQuery = v),
-                style: TextStyle(
-                  color: colorScheme.onSurface,
+                style: const TextStyle(
+                  color: AppColors.primary,
                   fontSize: 14,
                   fontFamily: 'Stack Sans Text',
                 ),
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Buscar reserva...',
                   hintStyle: TextStyle(
-                    color: colorScheme.onSurfaceVariant,
+                    color: Color(0xFF828282),
                     fontSize: 14,
                     fontFamily: 'Stack Sans Text',
                   ),
                   border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  filled: false,
                 ),
               ),
             ),
-            const Icon(Icons.search, color: AppColors.secondary, size: 22),
+            Icon(Icons.search, color: AppColors.secondary, size: 22),
           ],
         ),
       ),
@@ -217,7 +254,7 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
                   style: TextStyle(
                     color: isActive
                         ? AppColors.secondary
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                        : const Color(0xFF828282),
                     fontSize: 13,
                     fontFamily: 'Stack Sans Text',
                     fontWeight: FontWeight.w600,
@@ -232,24 +269,28 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
   }
 
   // ── Lista de tickets ──────────────────────────────────────────────────────
-  Widget _buildList() {
-    final tickets = _filtered;
-
+  Widget _buildList(List<Ticket> tickets) {
     if (tickets.isEmpty) {
-      return Center(
-        child: Text(
-          'Nenhuma reserva encontrada',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 14,
-            fontFamily: 'Stack Sans Text',
+      return ListView(
+        children: const [
+          SizedBox(height: 80),
+          Center(
+            child: Text(
+              'Nenhuma reserva encontrada',
+              style: TextStyle(
+                color: Color(0xFF828282),
+                fontSize: 14,
+                fontFamily: 'Stack Sans Text',
+              ),
+            ),
           ),
-        ),
+        ],
       );
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
+      // bottom 120: libera o último card da CustomBottomNavBar (99.5px + folga).
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 120),
       itemCount: tickets.length,
       separatorBuilder: (_, __) => const SizedBox(height: 16),
       itemBuilder: (_, i) => TicketCard(ticket: tickets[i]),

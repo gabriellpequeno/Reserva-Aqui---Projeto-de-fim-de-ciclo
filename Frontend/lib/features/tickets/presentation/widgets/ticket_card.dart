@@ -15,64 +15,106 @@ class TicketCard extends StatelessWidget {
     return Column(
       children: [
         // ── Card com ClipPath ──────────────────────────────────────────
-        ClipPath(
-          clipper: const _TicketClipper(),
-          child: Container(
-            color: theme.cardBackground,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ── Lado esquerdo: informações ─────────────────────────
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          ticket.hotelName,
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 16,
-                            fontFamily: 'Stack Sans Headline',
-                            fontWeight: FontWeight.w700,
+        // IntrinsicHeight obrigatório: sem altura definida, o Row com
+        // CrossAxisAlignment.stretch colapsa pra 0 quando embrulhado num
+        // ClipPath no Flutter Web, deixando o card invisível.
+        IntrinsicHeight(
+          child: ClipPath(
+            clipper: const _TicketClipper(),
+            child: Container(
+              color: theme.cardBackground,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Lado esquerdo: informações ─────────────────────
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontFamily: 'Stack Sans Headline',
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: ticket.hotelName,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (ticket.roomType.isNotEmpty)
+                                  TextSpan(
+                                    text: ' — ${ticket.roomType}',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        _StatusBadge(
-                          label: theme.label,
-                          color: theme.badgeColor,
-                        ),
-                        const SizedBox(height: 6),
-                        _InfoRow(
-                          icon: Icons.calendar_today,
-                          text: ticket.dateRange,
-                          color: theme.badgeColor,
-                        ),
-                        const SizedBox(height: 4),
-                        _InfoRow(
-                          icon: Icons.location_on_outlined,
-                          text: ticket.address,
-                          color: theme.badgeColor,
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          _StatusBadge(
+                            label: theme.label,
+                            color: theme.badgeColor,
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _InfoRow(
+                                  icon: Icons.calendar_today,
+                                  text: ticket.dateRange,
+                                  color: theme.badgeColor,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              _InfoInlineCompact(
+                                icon: Icons.person_outline,
+                                text: '${ticket.guestCount}',
+                                color: theme.badgeColor,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          _InfoRow(
+                            icon: Icons.location_on_outlined,
+                            text: ticket.address,
+                            color: theme.badgeColor,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                // ── Lado direito: imagem ───────────────────────────────
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(16),
-                    bottomRight: Radius.circular(16),
-                  ),
-                  child: Image.asset(
-                    ticket.imageUrl,
+                  // ── Lado direito: imagem ─────────────────────────
+                  SizedBox(
                     width: 99,
-                    fit: BoxFit.cover,
+                    height: 120,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(16),
+                        bottomRight: Radius.circular(16),
+                      ),
+                      child: ticket.imageUrl != null
+                          ? Image.network(
+                              ticket.imageUrl!,
+                              width: 99,
+                              height: 120,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  _buildImagePlaceholder(theme),
+                            )
+                          : _buildImagePlaceholder(theme),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -103,6 +145,14 @@ class TicketCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildImagePlaceholder(TicketStatusTheme theme) {
+    return Container(
+      width: 99,
+      color: theme.cardBackground.withValues(alpha: 0.6),
+      child: Icon(Icons.hotel, size: 36, color: theme.badgeColor.withValues(alpha: 0.4)),
     );
   }
 }
@@ -139,6 +189,35 @@ class _StatusBadge extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Info compacto sem Flexible — seguro em Row aninhado ──────────────────
+class _InfoInlineCompact extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final Color color;
+
+  const _InfoInlineCompact({required this.icon, required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: const TextStyle(
+            color: AppColors.primary,
+            fontSize: 12,
+            fontFamily: 'Stack Sans Text',
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ],
     );
   }
 }

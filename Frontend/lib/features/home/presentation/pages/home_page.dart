@@ -89,12 +89,16 @@ class _HomePageState extends ConsumerState<HomePage> {
     final size = MediaQuery.of(context).size;
     final bool isWeb = size.width > 900;
 
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final String bgImage = isDark
+        ? "lib/assets/images/home_dark.png"
+        : "lib/assets/images/home_page.jpeg";
+
     return Stack(
       children: [
-        // Background Header Image 
         Positioned.fill(
           child: Image.asset(
-            "lib/assets/images/home_page.jpeg",
+            bgImage,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) => Container(
               color: Colors.black,
@@ -135,11 +139,13 @@ class _HomePageState extends ConsumerState<HomePage> {
           child: IgnorePointer(
             child: Column(
               children: [
-                const Text(
+                Text(
                   'SE VOCÊ QUER CONFORTO',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : AppColors.primary,
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                     letterSpacing: 4.34,

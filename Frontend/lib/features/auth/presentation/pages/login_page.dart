@@ -115,8 +115,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -128,8 +128,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const SizedBox(height: 120),
                 Text(
                   _role == 'host' ? 'Acesso Anfitrião' : 'Acesse agora',
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                     height: 1.2,

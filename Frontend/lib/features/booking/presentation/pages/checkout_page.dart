@@ -72,18 +72,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       initialDate: initial,
       firstDate: now,
       lastDate: now.add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              secondary: AppColors.secondary,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked == null) return;

@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/auth_state.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/phone_mask_formatter.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../data/models/register_host_request.dart';
@@ -141,8 +140,8 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -152,10 +151,10 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 120),
-                const Text(
+                Text(
                   'cadastre seu hotel',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: colorScheme.onSurface,
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                     height: 1.2,
@@ -238,33 +237,40 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                     const SizedBox(width: 8),
                     Expanded(
                       flex: 1,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.strokeLight),
-                        ),
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedUf,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            hintText: 'UF',
-                            hintStyle: TextStyle(color: AppColors.greyText, fontSize: 16),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            border: InputBorder.none,
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedUf,
+                        isExpanded: true,
+                        dropdownColor: colorScheme.surfaceContainer,
+                        decoration: InputDecoration(
+                          hintText: 'UF',
+                          hintStyle: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainer,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: colorScheme.outline),
                           ),
-                          style: const TextStyle(color: AppColors.primary, fontSize: 16),
-                          items: const [
-                            'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA',
-                            'MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN',
-                            'RO','RR','RS','SC','SE','SP','TO',
-                          ].map((uf) => DropdownMenuItem(value: uf, child: Text(uf))).toList(),
-                          onChanged: (uf) => setState(() {
-                            _selectedUf = uf;
-                            _ufController.text = uf ?? '';
-                          }),
-                          validator: (_) => _selectedUf == null ? 'UF' : null,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: colorScheme.outline),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+                          ),
                         ),
+                        style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
+                        items: const [
+                          'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA',
+                          'MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN',
+                          'RO','RR','RS','SC','SE','SP','TO',
+                        ].map((uf) => DropdownMenuItem(value: uf, child: Text(uf))).toList(),
+                        onChanged: (uf) => setState(() {
+                          _selectedUf = uf;
+                          _ufController.text = uf ?? '';
+                        }),
+                        validator: (_) => _selectedUf == null ? 'UF' : null,
                       ),
                     ),
                   ],

@@ -43,6 +43,8 @@ export interface HostDashboardMetrics {
   receitaPeriodo:     number;
   avaliacaoMedia:     number | null; // null se totalAvaliacoes = 0
   totalAvaliacoes:    number;
+  taxaCancelamento:   number;       // 0-100; 0 se não há reservas no período
+  estadiaMediaDias:   number | null; // null se não há reservas concluídas no período
 }
 
 export interface HostDashboardResponse {
@@ -53,10 +55,18 @@ export interface HostDashboardResponse {
 }
 
 export interface AdminDashboardMetrics {
-  totalUsuarios:  number;
-  totalHoteis:    number;
-  reservasHoje:   number;
-  receitaPeriodo: number;
+  totalUsuarios:     number;
+  totalHoteis:       number;
+  reservasHoje:      number;
+  receitaPeriodo:    number;
+  receitaMediaHotel: number; // receitaPeriodo / totalHoteis (0 se sem hotéis)
+}
+
+export interface MelhorAvaliado {
+  hotelId:        string;
+  nomeHotel:      string;
+  avaliacaoMedia: number;   // 1-5
+  totalAvaliacoes: number;
 }
 
 export interface NovosCadastros {
@@ -70,4 +80,5 @@ export interface AdminDashboardResponse {
   topHoteis:         TopHotel[];          // limit 3, desc por reservasAtivas
   reservasPorStatus: ReservaStatusCount[];
   novosCadastros:    NovosCadastros;
+  melhorAvaliado:    MelhorAvaliado | null; // null se nenhum hotel tem avaliação
 }

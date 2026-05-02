@@ -62,6 +62,8 @@ const sampleHostPayload: HostDashboardResponse = {
     receitaPeriodo:     1250.75,
     avaliacaoMedia:     4.2,
     totalAvaliacoes:    18,
+    taxaCancelamento:   12.5,
+    estadiaMediaDias:   2.3,
   },
   proximosCheckins:  [],
   reservasPorStatus: [{ status: 'APROVADA', count: 5 }],
@@ -70,14 +72,16 @@ const sampleHostPayload: HostDashboardResponse = {
 const sampleAdminPayload: AdminDashboardResponse = {
   period: 'today',
   metrics: {
-    totalUsuarios:  120,
-    totalHoteis:    8,
-    reservasHoje:   25,
-    receitaPeriodo: 9999.0,
+    totalUsuarios:     120,
+    totalHoteis:       8,
+    reservasHoje:      25,
+    receitaPeriodo:    9999.0,
+    receitaMediaHotel: 1249.875,
   },
   topHoteis:         [{ hotelId: 'h1', nomeHotel: 'Hotel A', reservasAtivas: 7 }],
   reservasPorStatus: [{ status: 'CONCLUIDA', count: 12 }],
   novosCadastros:    { usuarios: 4, hoteis: 1 },
+  melhorAvaliado:    { hotelId: 'h1', nomeHotel: 'Hotel A', avaliacaoMedia: 4.8, totalAvaliacoes: 15 },
 };
 
 describe('GET /api/host/dashboard', () => {

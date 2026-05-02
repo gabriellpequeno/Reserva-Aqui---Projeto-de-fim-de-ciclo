@@ -7,6 +7,7 @@ import {
   ReservaStatusCount,
   NextCheckin,
   TopHotel,
+  MelhorAvaliado,
   HostDashboardResponse,
   AdminDashboardResponse,
 } from './dashboard.types';
@@ -58,6 +59,8 @@ export async function getHostMetrics(
       avaliacaoRes,
       checkinsRes,
       statusRes,
+      cancelamentoRes,
+      estadiaRes,
     ] = await Promise.all([
       client.query<{ count: string }>(
         `SELECT COUNT(*)::text AS count FROM reserva WHERE data_checkin = CURRENT_DATE`,
@@ -107,6 +110,21 @@ export async function getHostMetrics(
          GROUP BY status`,
         [start, end],
       ),
+      client.query<{ canceladas: string; total: string }>(
+        `SELECT
+           COUNT(*) FILTER (WHERE status = 'CANCELADA')::text AS canceladas,
+           COUNT(*)::text                                      AS total
+         FROM reserva
+         WHERE criado_em >= $1 AND criado_em < $2`,
+        [start, end],
+      ),
+      client.query<{ media: string | null; total: string }>(
+        `SELECT AVG(data_checkout - data_checkin)::text AS media, COUNT(*)::text AS total
+         FROM reserva
+         WHERE status = 'CONCLUIDA'
+           AND criado_em >= $1 AND criado_em < $2`,
+        [start, end],
+      ),
     ]);
 
     const reservasHoje = Number(reservasHojeRes.rows[0]?.count ?? 0);
@@ -141,6 +159,15 @@ export async function getHostMetrics(
       count:  Number(r.count),
     }));
 
+    const canceladas = Number(cancelamentoRes.rows[0]?.canceladas ?? 0);
+    const totalPeriodo = Number(cancelamentoRes.rows[0]?.total ?? 0);
+    const taxaCancelamento = totalPeriodo === 0 ? 0 : (canceladas / totalPeriodo) * 100;
+
+    const totalConcluidas = Number(estadiaRes.rows[0]?.total ?? 0);
+    const estadiaMediaDias = totalConcluidas === 0
+      ? null
+      : Number(estadiaRes.rows[0]?.media ?? 0);
+
     return {
       period,
       metrics: {
@@ -149,6 +176,8 @@ export async function getHostMetrics(
         receitaPeriodo,
         avaliacaoMedia,
         totalAvaliacoes,
+        taxaCancelamento,
+        estadiaMediaDias,
       },
       proximosCheckins,
       reservasPorStatus,
@@ -157,6 +186,53 @@ export async function getHostMetrics(
 }
 
 // ── Admin Dashboard ───────────────────────────────────────────────────────────
+
+/**
+ * Calcula o hotel com maior avaliação média (cross-schema).
+ * Itera pelos schemas dos hotéis ativos em paralelo. Aceita custo O(N) com N
+ * pequeno (~9 hotéis hoje). Se escalar, denormalizar avaliacao_media em anfitriao.
+ */
+async function getMelhorAvaliado(): Promise<MelhorAvaliado | null> {
+  const { rows: hotels } = await masterPool.query<{
+    hotel_id: string;
+    nome_hotel: string;
+    schema_name: string;
+  }>(
+    `SELECT hotel_id, nome_hotel, schema_name FROM anfitriao WHERE ativo = TRUE`,
+  );
+  if (!hotels.length) return null;
+
+  const results = await Promise.all(
+    hotels.map(async (h) => {
+      if (!SCHEMA_NAME_REGEX.test(h.schema_name)) return null;
+      try {
+        return await withTenant(h.schema_name, async (client) => {
+          const { rows } = await client.query<{ media: string | null; total: string }>(
+            `SELECT AVG(nota_total)::text AS media, COUNT(*)::text AS total FROM avaliacao`,
+          );
+          const total = Number(rows[0]?.total ?? 0);
+          if (total === 0) return null;
+          const media = Number(rows[0]?.media ?? 0);
+          return {
+            hotelId: h.hotel_id,
+            nomeHotel: h.nome_hotel,
+            avaliacaoMedia: media,
+            totalAvaliacoes: total,
+          } as MelhorAvaliado;
+        });
+      } catch (err) {
+        // Hotel com schema corrompido não deve derrubar o dashboard inteiro
+        console.error(`[getMelhorAvaliado] falha em schema ${h.schema_name}:`, err);
+        return null;
+      }
+    }),
+  );
+
+  const valid = results.filter((r): r is MelhorAvaliado => r !== null);
+  if (!valid.length) return null;
+
+  return valid.reduce((best, cur) => (cur.avaliacaoMedia > best.avaliacaoMedia ? cur : best));
+}
 
 export async function getAdminMetrics(
   period: Period,
@@ -171,6 +247,7 @@ export async function getAdminMetrics(
     topHoteisRes,
     statusRes,
     novosCadastrosRes,
+    melhorAvaliado,
   ] = await Promise.all([
     masterPool.query<{ count: string }>(
       `SELECT COUNT(*)::text AS count FROM usuario WHERE papel = 'usuario' AND ativo = TRUE`,
@@ -211,6 +288,7 @@ export async function getAdminMetrics(
          (SELECT COUNT(*)::text FROM usuario   WHERE criado_em >= NOW() - INTERVAL '7 days') AS usuarios,
          (SELECT COUNT(*)::text FROM anfitriao WHERE criado_em >= NOW() - INTERVAL '7 days') AS hoteis`,
     ),
+    getMelhorAvaliado(),
   ]);
 
   const topHoteis: TopHotel[] = topHoteisRes.rows.map((r) => ({
@@ -224,13 +302,18 @@ export async function getAdminMetrics(
     count:  Number(r.count),
   }));
 
+  const totalHoteis    = Number(totalHoteisRes.rows[0]?.count   ?? 0);
+  const receitaPeriodo = Number(receitaRes.rows[0]?.receita     ?? 0);
+  const receitaMediaHotel = totalHoteis === 0 ? 0 : receitaPeriodo / totalHoteis;
+
   return {
     period,
     metrics: {
-      totalUsuarios:  Number(totalUsuariosRes.rows[0]?.count ?? 0),
-      totalHoteis:    Number(totalHoteisRes.rows[0]?.count   ?? 0),
-      reservasHoje:   Number(reservasHojeRes.rows[0]?.count  ?? 0),
-      receitaPeriodo: Number(receitaRes.rows[0]?.receita     ?? 0),
+      totalUsuarios:     Number(totalUsuariosRes.rows[0]?.count ?? 0),
+      totalHoteis,
+      reservasHoje:      Number(reservasHojeRes.rows[0]?.count  ?? 0),
+      receitaPeriodo,
+      receitaMediaHotel,
     },
     topHoteis,
     reservasPorStatus,
@@ -238,5 +321,6 @@ export async function getAdminMetrics(
       usuarios: Number(novosCadastrosRes.rows[0]?.usuarios ?? 0),
       hoteis:   Number(novosCadastrosRes.rows[0]?.hoteis   ?? 0),
     },
+    melhorAvaliado,
   };
 }

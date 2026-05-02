@@ -51,7 +51,12 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
           : null,
       title: Padding(
         padding: const EdgeInsets.only(top: 30.0),
-        child: SvgPicture.asset('lib/assets/icons/logo/logo.svg', height: 32),
+        child: SvgPicture.asset(
+          Theme.of(context).brightness == Brightness.dark
+              ? 'lib/assets/icons/logo/logoDark.svg'
+              : 'lib/assets/icons/logo/logo.svg',
+          height: 32,
+        ),
       ),
     );
   }

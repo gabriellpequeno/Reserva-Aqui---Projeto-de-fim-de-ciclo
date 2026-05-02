@@ -113,7 +113,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               const SizedBox(width: 48),
               Expanded(
                 child: SvgPicture.asset(
-                  'lib/assets/icons/logo/logo.svg',
+                  Theme.of(context).brightness == Brightness.dark
+                      ? 'lib/assets/icons/logo/logoDark.svg'
+                      : 'lib/assets/icons/logo/logo.svg',
                   height: 32,
                 ),
               ),

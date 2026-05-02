@@ -8,7 +8,7 @@ class ThemeNotifier extends Notifier<ThemeMode> {
   @override
   ThemeMode build() {
     _load();
-    return ThemeMode.system;
+    return ThemeMode.light;
   }
 
   Future<void> _load() async {
@@ -16,7 +16,7 @@ class ThemeNotifier extends Notifier<ThemeMode> {
     final stored = prefs.getString(_themeKey);
     if (stored == 'dark') {
       state = ThemeMode.dark;
-    } else if (stored == 'light') {
+    } else {
       state = ThemeMode.light;
     }
   }

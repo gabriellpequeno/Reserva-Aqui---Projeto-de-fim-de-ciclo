@@ -147,8 +147,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 const SizedBox(height: 15),
                 SvgPicture.asset(
-                  "lib/assets/icons/logo/logo.svg",
-                  width: 260, // Aumentado para coincidir com a largura do texto acima
+                  Theme.of(context).brightness == Brightness.dark
+                      ? "lib/assets/icons/logo/logoDark.svg"
+                      : "lib/assets/icons/logo/logo.svg",
+                  width: 260,
                 ),
               ],
             ),

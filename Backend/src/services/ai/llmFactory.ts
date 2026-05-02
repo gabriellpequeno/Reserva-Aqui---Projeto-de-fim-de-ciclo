@@ -17,21 +17,45 @@ function normalizeProvider(raw: string | undefined): LLMProvider | null {
   return null;
 }
 
+let geminiKeyIndex = 0;
+let groqKeyIndex = 0;
+
+function getKeys(provider: LLMProvider): string[] {
+  const envVar = provider === 'gemini' ? process.env.GEMINI_API_KEY : process.env.GROQ_API_KEY;
+  if (!envVar) return [];
+  return envVar.split(',').map(k => k.trim()).filter(k => k.length > 0);
+}
+
 function getPrimaryProvider(): LLMProvider {
   const fromEnv = normalizeProvider(process.env.AI_PRIMARY_PROVIDER);
   if (fromEnv) return fromEnv;
-  if (!process.env.GEMINI_API_KEY && process.env.GROQ_API_KEY) return 'groq';
+  if (getKeys('gemini').length === 0 && getKeys('groq').length > 0) return 'groq';
   return 'gemini';
 }
 
 function hasKeyFor(provider: LLMProvider): boolean {
-  return provider === 'gemini' ? !!process.env.GEMINI_API_KEY : !!process.env.GROQ_API_KEY;
+  return getKeys(provider).length > 0;
+}
+
+function getNextKey(provider: LLMProvider): string {
+  const keys = getKeys(provider);
+  if (keys.length === 0) throw new Error(`${provider.toUpperCase()}_API_KEY ausente`);
+  
+  if (provider === 'gemini') {
+    const key = keys[geminiKeyIndex % keys.length];
+    geminiKeyIndex = (geminiKeyIndex + 1) % keys.length;
+    return key;
+  } else {
+    const key = keys[groqKeyIndex % keys.length];
+    groqKeyIndex = (groqKeyIndex + 1) % keys.length;
+    return key;
+  }
 }
 
 function buildLLM(provider: LLMProvider, opts: InvokeOptions) {
+  const apiKey = getNextKey(provider);
+
   if (provider === 'gemini') {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error('GEMINI_API_KEY ausente');
     const llm = new ChatGoogleGenerativeAI({
       apiKey,
       model: 'gemini-2.5-flash-lite',
@@ -41,8 +65,6 @@ function buildLLM(provider: LLMProvider, opts: InvokeOptions) {
     return opts.tools && opts.tools.length ? llm.bindTools(opts.tools) : llm;
   }
 
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) throw new Error('GROQ_API_KEY ausente');
   const llm = new ChatGroq({
     apiKey,
     model: 'llama-3.3-70b-versatile',
@@ -87,9 +109,35 @@ function extractRetryDelayMs(err: any): number | null {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function tryInvoke(provider: LLMProvider, input: string | BaseMessage[], opts: InvokeOptions): Promise<AIMessage> {
-  const llm = buildLLM(provider, opts);
-  return (await llm.invoke(input as any)) as AIMessage;
+async function tryInvokeWithKeys(provider: LLMProvider, input: string | BaseMessage[], opts: InvokeOptions): Promise<AIMessage> {
+  const keysCount = getKeys(provider).length;
+  if (keysCount === 0) throw new Error(`Sem chaves para ${provider}`);
+
+  let lastErr: any;
+  
+  // Tenta até passar por todas as chaves do provider (round-robin tenta todas 1x)
+  for (let i = 0; i < keysCount; i++) {
+    try {
+      const llm = buildLLM(provider, opts); // constrói com a próxima chave do round-robin
+      return (await llm.invoke(input as any)) as AIMessage;
+    } catch (err) {
+      lastErr = err;
+      if (!isRecoverableError(err)) throw err;
+      
+      console.warn(`[llmFactory] ${provider} falhou (chave ${i+1}/${keysCount}). Tentando próxima se houver...`);
+    }
+  }
+
+  // Se esgotou todas as chaves e a última retornou 429 com delay
+  const delay = extractRetryDelayMs(lastErr);
+  if (delay !== null) {
+    console.warn(`[llmFactory] ${provider} 429 transitório (esgotou chaves), aguardando ${delay}ms e retry.`);
+    await sleep(delay);
+    const llm = buildLLM(provider, opts);
+    return (await llm.invoke(input as any)) as AIMessage;
+  }
+
+  throw lastErr;
 }
 
 export async function invokeWithFallback(
@@ -99,28 +147,13 @@ export async function invokeWithFallback(
   const primary = getPrimaryProvider();
   const fallback: LLMProvider = primary === 'gemini' ? 'groq' : 'gemini';
 
-  // Tenta primário
+  // Tenta primário (passando por todas as suas chaves)
   if (hasKeyFor(primary)) {
     try {
-      return await tryInvoke(primary, input, opts);
+      return await tryInvokeWithKeys(primary, input, opts);
     } catch (err) {
-      if (!isRecoverableError(err)) throw err;
-
-      // Retry rápido no MESMO provider se ele sugeriu delay (típico TPM burst do Groq).
-      const delay = extractRetryDelayMs(err);
-      if (delay !== null) {
-        console.warn(`[llmFactory] ${primary} 429 transitório, aguardando ${delay}ms e retry.`);
-        await sleep(delay);
-        try {
-          return await tryInvoke(primary, input, opts);
-        } catch (retryErr) {
-          if (!hasKeyFor(fallback) || !isRecoverableError(retryErr)) throw retryErr;
-          console.warn(`[llmFactory] ${primary} falhou após retry; fallback -> ${fallback}.`);
-        }
-      } else {
-        if (!hasKeyFor(fallback)) throw err;
-        console.warn(`[llmFactory] ${primary} falhou (quota/rate); fallback -> ${fallback}.`);
-      }
+      if (!hasKeyFor(fallback) || !isRecoverableError(err)) throw err;
+      console.warn(`[llmFactory] ${primary} esgotado; fallback -> ${fallback}.`);
     }
   }
 
@@ -128,5 +161,6 @@ export async function invokeWithFallback(
     throw new Error('Nenhum provider de IA configurado (GEMINI_API_KEY ou GROQ_API_KEY).');
   }
 
-  return await tryInvoke(fallback, input, opts);
+  // Tenta fallback (passando por todas as suas chaves)
+  return await tryInvokeWithKeys(fallback, input, opts);
 }

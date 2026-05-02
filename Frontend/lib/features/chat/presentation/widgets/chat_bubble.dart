@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class ChatBubble extends StatelessWidget {
   final String message;
@@ -17,6 +16,7 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -29,7 +29,7 @@ class ChatBubble extends StatelessWidget {
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         decoration: BoxDecoration(
-          color: isMe ? AppColors.primary : AppColors.primary.withOpacity(0.1),
+          color: isMe ? colorScheme.primary : colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(isMe || !isFirstInGroup ? 18 : 4),
             topRight: Radius.circular(!isMe || !isFirstInGroup ? 18 : 4),
@@ -40,7 +40,7 @@ class ChatBubble extends StatelessWidget {
         child: Text(
           message,
           style: TextStyle(
-            color: isMe ? Colors.white : AppColors.primary,
+            color: isMe ? colorScheme.onPrimary : colorScheme.onSurface,
             fontSize: 14,
             fontWeight: FontWeight.w500,
             height: 1.4,

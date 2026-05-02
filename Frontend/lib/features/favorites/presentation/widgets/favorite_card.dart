@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/network/dio_client.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/favorite_hotel.dart';
 import '../providers/favorites_provider.dart';
 
@@ -60,6 +59,7 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
   @override
   Widget build(BuildContext context) {
     final coverUrl = _buildCoverUrl();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Dismissible(
       key: Key('fav_${widget.hotel.hotelId}'),
@@ -85,7 +85,7 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -98,7 +98,6 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
           child: IntrinsicHeight(
             child: Row(
               children: [
-                // Image Section
                 ClipRRect(
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(16),
@@ -110,11 +109,10 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
                           width: 120,
                           height: double.infinity,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                          errorBuilder: (_, __, ___) => _buildPlaceholder(context),
                         )
-                      : _buildPlaceholder(),
+                      : _buildPlaceholder(context),
                 ),
-                // Details Section
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(12),
@@ -127,10 +125,10 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
                             Expanded(
                               child: Text(
                                 widget.hotel.nomeHotel,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
-                                  color: AppColors.primary,
+                                  color: colorScheme.onSurface,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -140,8 +138,8 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
                               onPressed: () => ref
                                   .read(favoritesProvider.notifier)
                                   .removeFavorite(widget.hotel.hotelId),
-                              icon: const Icon(Icons.cancel_outlined,
-                                  size: 20, color: AppColors.greyText),
+                              icon: Icon(Icons.cancel_outlined,
+                                  size: 20, color: colorScheme.onSurfaceVariant),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                             ),
@@ -150,14 +148,14 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.location_on,
-                                size: 12, color: AppColors.greyText),
+                            Icon(Icons.location_on,
+                                size: 12, color: colorScheme.onSurfaceVariant),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 '${widget.hotel.bairro}, ${widget.hotel.cidade} - ${widget.hotel.uf}',
-                                style: const TextStyle(
-                                    color: AppColors.greyText, fontSize: 11),
+                                style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant, fontSize: 11),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -189,8 +187,8 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
                             onPressed: () => context
                                 .push('/hotel_details/${widget.hotel.hotelId}'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
+                              backgroundColor: colorScheme.primary,
+                              foregroundColor: colorScheme.onPrimary,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -215,11 +213,12 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: 120,
-      color: AppColors.primary.withValues(alpha: 0.08),
-      child: const Icon(Icons.hotel, color: AppColors.greyText, size: 36),
+      color: colorScheme.surfaceContainer,
+      child: Icon(Icons.hotel, color: colorScheme.onSurfaceVariant, size: 36),
     );
   }
 }

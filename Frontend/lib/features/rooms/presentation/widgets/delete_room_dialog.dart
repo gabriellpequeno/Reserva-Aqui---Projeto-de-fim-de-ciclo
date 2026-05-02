@@ -22,15 +22,15 @@ class DeleteRoomDialog extends StatefulWidget {
 }
 
 class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
-  // confirm → quantity → tipo → (warning)
   String _step = 'confirm';
   int _quantidade = 1;
   bool _loading = false;
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
@@ -51,9 +51,8 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
     }
   }
 
-  // ── Passo 1: Confirmar ────────────────────────────────────────────────────
-
   Widget _buildConfirm() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       key: const ValueKey('confirm'),
       mainAxisSize: MainAxisSize.min,
@@ -73,13 +72,13 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
         Text(
           widget.nomeCategoria,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.greyText, fontSize: 13),
+          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
         ),
         const SizedBox(height: 12),
-        const Text(
+        Text(
           'Unidades desativadas não aceitarão novas reservas.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.greyText, fontSize: 14, height: 1.4),
+          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14, height: 1.4),
         ),
         const SizedBox(height: 24),
         _buildBotoes(
@@ -92,9 +91,8 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
     );
   }
 
-  // ── Passo 2: Quantidade ───────────────────────────────────────────────────
-
   Widget _buildQuantity() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       key: const ValueKey('quantity'),
       mainAxisSize: MainAxisSize.min,
@@ -111,15 +109,15 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
               child: IconButton(
                 onPressed: _quantidade > 1 ? () => setState(() => _quantidade--) : null,
                 icon: Icon(Icons.remove_circle_outline,
-                    color: _quantidade > 1 ? AppColors.secondary : AppColors.greyText,
+                    color: _quantidade > 1 ? AppColors.secondary : colorScheme.onSurfaceVariant,
                     size: 36),
               ),
             ),
             const SizedBox(width: 16),
             Text(
               '$_quantidade',
-              style: const TextStyle(
-                color: AppColors.primary,
+              style: TextStyle(
+                color: colorScheme.onSurface,
                 fontSize: 40,
                 fontWeight: FontWeight.w700,
               ),
@@ -134,7 +132,7 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
                 icon: Icon(Icons.add_circle_outline,
                     color: _quantidade < widget.totalUnidades
                         ? AppColors.secondary
-                        : AppColors.greyText,
+                        : colorScheme.onSurfaceVariant,
                     size: 36),
               ),
             ),
@@ -145,7 +143,7 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
           Center(
             child: Text(
               'Todas as unidades serão desativadas.',
-              style: TextStyle(color: Colors.orange[700], fontSize: 12, fontWeight: FontWeight.w500),
+              style: TextStyle(color: Colors.orange[400], fontSize: 12, fontWeight: FontWeight.w500),
               textAlign: TextAlign.center,
             ),
           ),
@@ -161,9 +159,8 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
     );
   }
 
-  // ── Passo 3: Permanente ou Temporário ─────────────────────────────────────
-
   Widget _buildTipo() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       key: const ValueKey('tipo'),
       mainAxisSize: MainAxisSize.min,
@@ -182,7 +179,7 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
           titulo: 'Permanentemente',
           descricao: 'Unidades sem reservas são excluídas. Com reservas, ficam indisponíveis até a conclusão.',
           icone: Icons.delete_outline,
-          cor: Colors.red[600]!,
+          cor: Colors.red[400]!,
           onTap: () {
             if (widget.temReservaAtiva) {
               setState(() => _step = 'warning');
@@ -195,12 +192,12 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
         OutlinedButton(
           onPressed: _loading ? null : () => setState(() => _step = 'quantity'),
           style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: AppColors.primary),
+            side: BorderSide(color: colorScheme.primary),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
             minimumSize: const Size(double.infinity, 46),
           ),
-          child: const Text('Voltar',
-              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+          child: Text('Voltar',
+              style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600)),
         ),
       ],
     );
@@ -211,8 +208,10 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
     required String descricao,
     required IconData icone,
     required VoidCallback onTap,
-    Color cor = AppColors.primary,
+    Color? cor,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final resolvedCor = cor ?? colorScheme.primary;
     return InkWell(
       onTap: _loading ? null : onTap,
       borderRadius: BorderRadius.circular(11),
@@ -220,12 +219,12 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(11),
-          border: Border.all(color: cor.withValues(alpha: 0.3)),
-          color: cor.withValues(alpha: 0.04),
+          border: Border.all(color: resolvedCor.withValues(alpha: 0.3)),
+          color: resolvedCor.withValues(alpha: 0.04),
         ),
         child: Row(
           children: [
-            Icon(icone, color: cor, size: 28),
+            Icon(icone, color: resolvedCor, size: 28),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -233,36 +232,35 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
                 children: [
                   Text(titulo,
                       style: TextStyle(
-                          color: cor, fontSize: 15, fontWeight: FontWeight.w700)),
+                          color: resolvedCor, fontSize: 15, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 2),
                   Text(descricao,
-                      style: const TextStyle(
-                          color: AppColors.greyText, fontSize: 12, height: 1.3)),
+                      style: TextStyle(
+                          color: colorScheme.onSurfaceVariant, fontSize: 12, height: 1.3)),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: cor.withValues(alpha: 0.5)),
+            Icon(Icons.chevron_right, color: resolvedCor.withValues(alpha: 0.5)),
           ],
         ),
       ),
     );
   }
 
-  // ── Passo 4: Aviso reserva ativa (permanente + com reserva) ──────────────
-
   Widget _buildWarning() {
+    final colorScheme = Theme.of(context).colorScheme;
     final proxima = widget.proximaReservaAtiva;
     return Column(
       key: const ValueKey('warning'),
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.event_busy, color: Colors.orange[700], size: 44),
+        Icon(Icons.event_busy, color: Colors.orange[400], size: 44),
         const SizedBox(height: 12),
         Text(
           'Reservas em andamento',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.orange[700],
+            color: Colors.orange[400],
             fontSize: 20,
             fontWeight: FontWeight.w700,
           ),
@@ -273,7 +271,7 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
               ? 'Próxima reserva ativa: ${_fmtData(proxima)}.\n\nA unidade ficará indisponível até a conclusão ou cancelamento de todas as reservas.'
               : 'Existem reservas ativas para esta unidade.\n\nEla ficará indisponível até a conclusão ou cancelamento de todas as reservas.',
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.greyText, fontSize: 14, height: 1.5),
+          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 24),
         _buildBotoes(
@@ -281,15 +279,14 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
           labelVoltar: 'Voltar',
           onAvancar: _loading ? null : () => _confirmar(permanente: true),
           labelAvancar: 'Entendido, continuar',
-          corAvancar: Colors.orange[700]!,
+          corAvancar: Colors.orange[400]!,
         ),
       ],
     );
   }
 
-  // ── Helpers visuais ───────────────────────────────────────────────────────
-
   Widget _buildHeader(String titulo, String subtitulo) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -298,7 +295,7 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
                 color: AppColors.secondary, fontSize: 22, fontWeight: FontWeight.w700)),
         const SizedBox(height: 2),
         Text(subtitulo,
-            style: const TextStyle(color: AppColors.greyText, fontSize: 13)),
+            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13)),
       ],
     );
   }
@@ -310,19 +307,20 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
     required String labelAvancar,
     Color corAvancar = AppColors.secondary,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         Expanded(
           child: OutlinedButton(
             onPressed: onVoltar,
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.primary),
+              side: BorderSide(color: colorScheme.primary),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
               padding: const EdgeInsets.symmetric(vertical: 13),
             ),
             child: Text(labelVoltar,
-                style: const TextStyle(
-                    color: AppColors.primary, fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    color: colorScheme.primary, fontWeight: FontWeight.w600)),
           ),
         ),
         const SizedBox(width: 12),
@@ -331,7 +329,7 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
             onPressed: onAvancar,
             style: ElevatedButton.styleFrom(
               backgroundColor: corAvancar,
-              disabledBackgroundColor: Colors.grey[300],
+              disabledBackgroundColor: colorScheme.surfaceContainerHigh,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
               padding: const EdgeInsets.symmetric(vertical: 13),
               elevation: 0,

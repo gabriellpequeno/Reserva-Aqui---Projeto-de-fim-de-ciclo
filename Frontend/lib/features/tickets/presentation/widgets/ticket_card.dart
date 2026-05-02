@@ -85,8 +85,8 @@ class TicketCard extends StatelessWidget {
           child: ElevatedButton(
             onPressed: () => context.push('/tickets/details/${ticket.id}'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(11),

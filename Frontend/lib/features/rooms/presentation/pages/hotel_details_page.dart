@@ -27,7 +27,6 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
   void initState() {
     super.initState();
     _selectedCapacidades = {};
-    // Gatilho de carregamento ao montar a tela
     Future.microtask(() {
       ref.read(hotelDetailsNotifierProvider.notifier).loadHotel(widget.hotelId);
     });
@@ -76,12 +75,12 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(hotelDetailsNotifierProvider);
+    final colorScheme = Theme.of(context).colorScheme;
     final isFavorited = ref.watch(favoritesProvider).value
             ?.any((h) => h.hotelId == widget.hotelId) ??
         false;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
           : state.hasError
@@ -89,11 +88,11 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error, size: 48, color: Colors.grey[400]),
+                      Icon(Icons.error, size: 48, color: colorScheme.onSurfaceVariant),
                       const SizedBox(height: 12),
                       Text(
                         'Erro ao carregar detalhes do hotel',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(color: colorScheme.onSurfaceVariant),
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton(
@@ -115,7 +114,6 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Avatar abaixo da foto de capa com 15px de espaço
                               const SizedBox(height: 15),
                               Center(
                                 child: Container(
@@ -123,8 +121,8 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                                   height: 80,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 4),
-                                    color: Colors.grey[200],
+                                    border: Border.all(color: colorScheme.surface, width: 4),
+                                    color: colorScheme.surfaceContainerHigh,
                                     image: state.coverUrls.isNotEmpty
                                         ? DecorationImage(
                                             image: NetworkImage(state.coverUrls[0]),
@@ -143,14 +141,14 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     _buildHeader(state),
-                                    const Divider(height: 48, color: Color(0xFFE0E0E0)),
+                                    Divider(height: 48, color: colorScheme.outline),
                                     Center(child: _buildSectionTitle('Descrição')),
                                     const SizedBox(height: 12),
                                     Text(
                                       state.descricao ?? 'Sem descrição disponível',
                                       textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: AppColors.primary,
+                                      style: TextStyle(
+                                        color: colorScheme.onSurface,
                                         fontSize: 14,
                                         height: 1.5,
                                       ),
@@ -174,18 +172,18 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                                       ),
                                     ],
                                     if (state.comodidades.isNotEmpty) ...[
-                                      const Divider(height: 48, color: Color(0xFFE0E0E0)),
+                                      Divider(height: 48, color: colorScheme.outline),
                                       _buildSectionTitle('Comodidades'),
                                       const SizedBox(height: 16),
                                       _buildComodidades(state.comodidades),
                                     ],
-                                    const Divider(height: 48, color: Color(0xFFE0E0E0)),
+                                    Divider(height: 48, color: colorScheme.outline),
                                     _buildRichSectionTitle('Quartos ', 'Disponíveis'),
                                     const SizedBox(height: 16),
                                     _buildBedFilter(state.categorias),
                                     const SizedBox(height: 16),
                                     _buildCategorias(state.categorias, _selectedCapacidades),
-                                    const Divider(height: 48, color: Color(0xFFE0E0E0)),
+                                    Divider(height: 48, color: colorScheme.outline),
                                     _buildSectionTitle('Avaliações'),
                                     const SizedBox(height: 16),
                                     Center(
@@ -216,10 +214,10 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                                     if (state.avaliacoes.isNotEmpty)
                                       _buildAvaliacoes(state.avaliacoes)
                                     else
-                                      const Center(
+                                      Center(
                                         child: Text(
                                           'Nenhuma avaliação ainda',
-                                          style: TextStyle(color: AppColors.greyText),
+                                          style: TextStyle(color: colorScheme.onSurfaceVariant),
                                         ),
                                       ),
                                     const SizedBox(height: 48),
@@ -237,10 +235,11 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
   }
 
   void _showPoliticasModal(BuildContext context, PoliticasHotelModel politicas) {
+    final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -256,16 +255,16 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: colorScheme.outline,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Políticas do Hotel',
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: colorScheme.onSurface,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -275,10 +274,10 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
               _buildPoliticaRow('Check-out', politicas.horarioCheckout),
               if (politicas.politicaCancelamento != null) ...[
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Cancelamento',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -286,8 +285,8 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                 const SizedBox(height: 6),
                 Text(
                   politicas.politicaCancelamento!,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 14,
                     height: 1.5,
                   ),
@@ -345,7 +344,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
             shape: BoxShape.circle,
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.white),
             onPressed: () => context.pop(),
           ),
         ),
@@ -373,14 +372,15 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
   }
 
   Widget _buildHeader(HotelDetailsState state) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           state.nome ?? 'Hotel',
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: AppColors.primary,
+          style: TextStyle(
+            color: colorScheme.onSurface,
             fontSize: 28,
             fontWeight: FontWeight.bold,
           ),
@@ -389,12 +389,12 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.location_on, color: AppColors.greyText, size: 16),
+            Icon(Icons.location_on, color: colorScheme.onSurfaceVariant, size: 16),
             const SizedBox(width: 4),
             Text(
               '${state.cidade ?? ''}, ${state.uf ?? ''}',
-              style: const TextStyle(
-                color: AppColors.greyText,
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
                 fontSize: 14,
               ),
             ),
@@ -405,10 +405,11 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Text(
       title,
-      style: const TextStyle(
-        color: AppColors.primary,
+      style: TextStyle(
+        color: colorScheme.onSurface,
         fontSize: 20,
         fontWeight: FontWeight.bold,
       ),
@@ -416,20 +417,19 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
   }
 
   Widget _buildRichSectionTitle(String primary, String secondary) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Text.rich(
       TextSpan(
         text: primary,
-        style: const TextStyle(
-          color: AppColors.primary,
+        style: TextStyle(
+          color: colorScheme.onSurface,
           fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
         children: [
           TextSpan(
             text: secondary,
-            style: const TextStyle(
-              color: AppColors.secondary,
-            ),
+            style: const TextStyle(color: AppColors.secondary),
           ),
         ],
       ),
@@ -437,6 +437,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
   }
 
   Widget _buildPoliticaRow(String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -444,16 +445,16 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
         children: [
           Text(
             '$label: ',
-            style: const TextStyle(
-              color: AppColors.primary,
+            style: TextStyle(
+              color: colorScheme.onSurface,
               fontWeight: FontWeight.w500,
               fontSize: 14,
             ),
           ),
           Text(
             value,
-            style: const TextStyle(
-              color: AppColors.primary,
+            style: TextStyle(
+              color: colorScheme.onSurface,
               fontSize: 14,
             ),
           ),
@@ -462,7 +463,6 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
     );
   }
 
-  // Mapeia nomes de comodidades para ícones Material padronizados
   static IconData _iconForItem(String nome) {
     final n = nome.toLowerCase();
     if (n.contains('wi-fi') || n.contains('wifi') || n.contains('internet')) return Icons.wifi;
@@ -484,7 +484,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
   }
 
   Widget _buildComodidades(List<ComodidadeHotelModel> comodidades) {
-    // Exibe apenas COMODIDADE e LAZER — COMODO (camas/banheiro) fica nos cards de quarto
+    final colorScheme = Theme.of(context).colorScheme;
     final itens = comodidades
         .where((c) => c.categoria != 'COMODO')
         .toList();
@@ -498,18 +498,18 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F5),
+            color: colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(_iconForItem(com.nome), size: 14, color: AppColors.primary),
+              Icon(_iconForItem(com.nome), size: 14, color: colorScheme.onSurface),
               const SizedBox(width: 6),
               Text(
                 com.nome,
-                style: const TextStyle(
-                  color: AppColors.primary,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
                   fontSize: 12,
                 ),
               ),
@@ -521,6 +521,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
   }
 
   Widget _buildBedFilter(List<CategoriaHotelModel> categorias) {
+    final colorScheme = Theme.of(context).colorScheme;
     final capacidades = <int>{};
     for (final cat in categorias) {
       capacidades.add(cat.capacidadePessoas);
@@ -547,7 +548,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
             margin: const EdgeInsets.only(right: 12),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.secondary : const Color(0xFFF5F5F5),
+              color: isSelected ? AppColors.secondary : colorScheme.surfaceContainer,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -555,13 +556,13 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                 Icon(
                   Icons.king_bed_outlined,
                   size: 20,
-                  color: isSelected ? Colors.white : AppColors.primary,
+                  color: isSelected ? Colors.white : colorScheme.onSurface,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   '$cap pessoa${cap > 1 ? 's' : ''}',
                   style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.primary,
+                    color: isSelected ? Colors.white : colorScheme.onSurface,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -578,17 +579,18 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
     List<CategoriaHotelModel> categorias,
     Set<int> selectedCapacidades,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     final categoriasFiltradas = selectedCapacidades.isEmpty
         ? categorias
         : categorias.where((c) => selectedCapacidades.contains(c.capacidadePessoas)).toList();
 
     if (categoriasFiltradas.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: Text(
             'Nenhum quarto disponível para o filtro selecionado',
-            style: TextStyle(color: AppColors.greyText),
+            style: TextStyle(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
         ),
@@ -597,7 +599,6 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
 
     return Column(
       children: categoriasFiltradas.map((cat) {
-        // Itens visíveis: apenas COMODIDADE e LAZER (COMODO são as camas, já no nome da categoria)
         final itensVisiveis = cat.itens.where((i) => i.categoria != 'COMODO').toList();
         final podeNavegar = cat.primeiroQuartoId != null;
 
@@ -612,9 +613,9 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF9F9F9),
+                color: colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE0E0E0)),
+                border: Border.all(color: colorScheme.outline),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -628,8 +629,8 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                           children: [
                             Text(
                               cat.nome,
-                              style: const TextStyle(
-                                color: AppColors.primary,
+                              style: TextStyle(
+                                color: colorScheme.onSurface,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -637,8 +638,8 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                             const SizedBox(height: 4),
                             Text(
                               'Capacidade: ${cat.capacidadePessoas} pessoa${cat.capacidadePessoas > 1 ? 's' : ''}',
-                              style: const TextStyle(
-                                color: AppColors.greyText,
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
                                 fontSize: 12,
                               ),
                             ),
@@ -657,9 +658,9 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                           ),
                           if (podeNavegar) ...[
                             const SizedBox(width: 8),
-                            const Icon(
+                            Icon(
                               Icons.chevron_right,
-                              color: AppColors.greyText,
+                              color: colorScheme.onSurfaceVariant,
                               size: 20,
                             ),
                           ],
@@ -677,7 +678,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                           avatar: Icon(
                             _iconForItem(item.nome),
                             size: 14,
-                            color: AppColors.primary,
+                            color: colorScheme.onSurface,
                           ),
                           label: Text(
                             item.nome,
@@ -699,13 +700,14 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
   }
 
   Widget _buildAvaliacoes(List<AvaliacaoHotelModel> avaliacoes) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: avaliacoes.length,
-      separatorBuilder: (context, index) => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16.0),
-        child: Divider(height: 1, color: Color(0xFFE0E0E0)),
+      separatorBuilder: (context, index) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        child: Divider(height: 1, color: colorScheme.outline),
       ),
       itemBuilder: (context, index) {
         final review = avaliacoes[index];
@@ -715,9 +717,9 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 24,
-                  backgroundColor: Color(0xFFD9D9D9),
+                  backgroundColor: colorScheme.surfaceContainerHigh,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -726,8 +728,8 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                     children: [
                       Text(
                         review.nomeUsuario,
-                        style: const TextStyle(
-                          color: AppColors.primary,
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -748,8 +750,8 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                 ),
                 Text(
                   review.timeAgo,
-                  style: const TextStyle(
-                    color: AppColors.greyText,
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 12,
                   ),
                 ),
@@ -761,8 +763,8 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                 padding: const EdgeInsets.only(left: 60),
                 child: Text(
                   review.comentario!,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 14,
                     height: 1.4,
                   ),

@@ -648,7 +648,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                       Row(
                         children: [
                           Text(
-                            'R\$ ${cat.preco.toStringAsFixed(0)}/noite',
+                            'R\$ ${cat.preco.toStringAsFixed(0)}/dia',
                             style: const TextStyle(
                               color: AppColors.secondary,
                               fontSize: 16,

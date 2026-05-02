@@ -203,10 +203,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
-        path: '/booking/checkout/:roomId',
+        path: '/booking/checkout/:hotelId/:categoriaId/:quartoId',
         builder: (context, state) {
-          final roomId = state.pathParameters['roomId'] ?? '';
-          return CheckoutPage(roomId: roomId);
+          final hotelId = state.pathParameters['hotelId'] ?? '';
+          final categoriaId = int.tryParse(state.pathParameters['categoriaId'] ?? '') ?? 0;
+          final quartoId = int.tryParse(state.pathParameters['quartoId'] ?? '') ?? 0;
+          return CheckoutPage(
+            hotelId: hotelId,
+            categoriaId: categoriaId,
+            quartoId: quartoId,
+          );
         },
       ),
       GoRoute(

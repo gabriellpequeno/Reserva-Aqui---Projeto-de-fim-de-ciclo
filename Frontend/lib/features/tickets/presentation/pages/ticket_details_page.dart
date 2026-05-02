@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/ticket.dart';
+import '../notifiers/tickets_notifier.dart';
 
 class TicketDetailsPage extends ConsumerWidget {
   final String ticketId;
@@ -12,10 +13,23 @@ class TicketDetailsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ticket = mockTickets.firstWhere(
-      (t) => t.id == ticketId,
-      orElse: () => mockTickets.first,
-    );
+    final ticket = ref.watch(ticketsNotifierProvider).value
+        ?.cast<Ticket?>()
+        .firstWhere((t) => t?.id == ticketId, orElse: () => null);
+
+    if (ticket == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFD9D9D9),
+        body: Column(
+          children: [
+            _buildHeader(context),
+            const Expanded(
+              child: Center(child: Text('Reserva não encontrada.')),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFD9D9D9),

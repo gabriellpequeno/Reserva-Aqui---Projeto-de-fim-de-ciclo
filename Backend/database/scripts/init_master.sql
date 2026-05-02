@@ -138,6 +138,7 @@ CREATE TABLE IF NOT EXISTS historico_reserva_global (
     tipo_quarto         VARCHAR(100) NOT NULL,                  -- Cache do quarto ou categoria
     data_checkin        DATE NOT NULL,
     data_checkout       DATE NOT NULL,
+    num_hospedes        INT NOT NULL DEFAULT 1,                 -- Cache do núm. de hóspedes
     valor_total         DECIMAL(10, 2) NOT NULL,
     status              VARCHAR(20) NOT NULL,                   -- APROVADA, CANCELADA, CONCLUIDA, etc
     criado_em           TIMESTAMPTZ NOT NULL DEFAULT NOW(),

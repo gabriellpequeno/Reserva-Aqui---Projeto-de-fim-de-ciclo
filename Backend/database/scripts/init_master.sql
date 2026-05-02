@@ -18,9 +18,13 @@ CREATE TABLE IF NOT EXISTS usuario (
     cpf             VARCHAR(14)     UNIQUE NOT NULL,
     numero_celular  VARCHAR(20),
     data_nascimento DATE            NOT NULL,
+    papel           VARCHAR(20)     NOT NULL DEFAULT 'usuario'
+                                    CHECK (papel IN ('usuario', 'admin')),
     criado_em       TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
     ativo           BOOLEAN         NOT NULL DEFAULT TRUE
 );
+
+CREATE INDEX IF NOT EXISTS idx_usuario_papel ON usuario (papel) WHERE papel = 'admin';
 
 -- 2. Refresh Tokens de Usuário (JWT — server-side revocation)
 --    Cada login emite um refresh token armazenado aqui.

@@ -24,6 +24,13 @@ interface SeedEntry {
 // Adicione novos seeds respeitando a dependência: hotéis antes de quartos, etc.
 const SEEDS: SeedEntry[] = [
   {
+    name: 'admin',
+    run: async () => {
+      const { seedAdmin } = await import('./seed.admin');
+      await seedAdmin();
+    },
+  },
+  {
     name: 'hotels',
     run: async () => {
       const { seedHotels } = await import('./seed.hotels');

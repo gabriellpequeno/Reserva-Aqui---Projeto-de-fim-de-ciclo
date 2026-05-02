@@ -28,10 +28,14 @@ class MainLayout extends ConsumerWidget {
   void _navigateToProfile(BuildContext context, WidgetRef ref) {
     final auth = ref.read(authProvider).asData?.value;
     if (auth?.isAuthenticated == true) {
-      if (auth!.role == AuthRole.host) {
-        context.go('/profile/host');
-      } else {
-        context.go('/profile/user');
+      switch (auth!.role) {
+        case AuthRole.host:
+          context.go('/profile/host');
+        case AuthRole.admin:
+          context.go('/profile/admin');
+        case AuthRole.guest:
+        case null:
+          context.go('/profile/user');
       }
     } else {
       context.go('/auth/login');

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/auth_notifier.dart';
+import '../auth/auth_state.dart';
 import '../layouts/main_layout.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -11,6 +12,7 @@ import '../../features/auth/presentation/pages/user_or_host_page.dart';
 import '../../features/profile/presentation/pages/user_profile_page.dart';
 import '../../features/profile/presentation/pages/host_profile_page.dart';
 import '../../features/profile/presentation/pages/admin_profile_page.dart';
+import '../../features/profile/presentation/pages/admin_account_management_page.dart';
 import '../../features/profile/presentation/pages/settings_page.dart';
 import '../../features/profile/presentation/pages/edit_user_profile_page.dart';
 import '../../features/profile/presentation/pages/edit_host_profile_page.dart';
@@ -65,6 +67,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isProtected = protectedRoutes.any((r) => path.startsWith(r));
 
       if (!isAuthenticated && isProtected) return '/auth/login';
+
+      // Rotas admin — exigem papel 'admin'. Autoridade real fica no backend
+      // (adminGuard retorna 403 em /api/v1/admin/* para outros papéis); o guard
+      // de frontend previne que usuários errados vejam a UI admin via deep-link.
+      final needsAdmin = path.startsWith('/admin/') ||
+          path.startsWith('/profile/admin');
+      if (needsAdmin) {
+        if (!isAuthenticated) return '/auth/login';
+        if (auth?.role != AuthRole.admin) return '/home';
+      }
 
       return null;
     },
@@ -215,6 +227,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const Scaffold(
           body: Center(child: Text('Página: Admin Dashboard')),
         ),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/admin/accounts',
+        builder: (context, state) => const AdminAccountManagementPage(),
       ),
     ],
   );

@@ -37,7 +37,6 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
     final state = ref.watch(myRoomsNotifierProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Stack(
         children: [
           Column(
@@ -127,7 +126,7 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
           Container(
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(23),
             ),
             child: Semantics(
@@ -139,8 +138,11 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                 decoration: InputDecoration(
                   hintText: 'Pesquisar por tipo de quarto...',
                   hintStyle:
-                      TextStyle(color: Colors.grey[400], fontSize: 14),
+                      TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  filled: false,
                   suffixIcon: const Icon(Icons.search,
                       color: AppColors.secondary),
                   contentPadding: const EdgeInsets.symmetric(
@@ -182,6 +184,7 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
   }
 
   Widget _chip(String label, bool selected, VoidCallback onTap) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Semantics(
       label: '$label${selected ? ', selecionado' : ''}',
       child: GestureDetector(
@@ -190,16 +193,16 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
           decoration: BoxDecoration(
-            color: selected ? AppColors.primary : Colors.transparent,
+            color: selected ? colorScheme.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: selected ? AppColors.primary : const Color(0xFFCCCCCC),
+              color: selected ? colorScheme.primary : colorScheme.outline,
             ),
           ),
           child: Text(
             label,
             style: TextStyle(
-              color: selected ? Colors.white : AppColors.greyText,
+              color: selected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
               fontSize: 13,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             ),
@@ -241,19 +244,20 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
       child: CircularProgressIndicator(color: AppColors.secondary));
 
   Widget _buildError(String mensagem) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline,
-                color: AppColors.greyText, size: 48),
+            Icon(Icons.error_outline,
+                color: colorScheme.onSurfaceVariant, size: 48),
             const SizedBox(height: 16),
             Text(mensagem,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: AppColors.greyText, fontSize: 15)),
+                style: TextStyle(
+                    color: colorScheme.onSurfaceVariant, fontSize: 15)),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () =>
@@ -261,8 +265,8 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
               icon: const Icon(Icons.refresh),
               label: const Text('Tentar novamente'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(11)),
               ),
@@ -274,25 +278,26 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
   }
 
   Widget _buildEmpty() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.hotel_outlined,
-                color: AppColors.greyText, size: 64),
+            Icon(Icons.hotel_outlined,
+                color: colorScheme.onSurfaceVariant, size: 64),
             const SizedBox(height: 16),
-            const Text('Nenhum quarto cadastrado',
+            Text('Nenhum quarto cadastrado',
                 style: TextStyle(
-                    color: AppColors.primary,
+                    color: colorScheme.onSurface,
                     fontSize: 18,
                     fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
-            const Text('Adicione o primeiro tipo de quarto do seu hotel.',
+            Text('Adicione o primeiro tipo de quarto do seu hotel.',
                 textAlign: TextAlign.center,
                 style:
-                    TextStyle(color: AppColors.greyText, fontSize: 14)),
+                    TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14)),
           ],
         ),
       ),
@@ -300,25 +305,26 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
   }
 
   Widget _buildEmptyFilter() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.search_off,
-                color: AppColors.greyText, size: 48),
+            Icon(Icons.search_off,
+                color: colorScheme.onSurfaceVariant, size: 48),
             const SizedBox(height: 16),
-            const Text('Nenhum resultado',
+            Text('Nenhum resultado',
                 style: TextStyle(
-                    color: AppColors.primary,
+                    color: colorScheme.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            const Text('Tente outro nome ou ajuste o filtro.',
+            Text('Tente outro nome ou ajuste o filtro.',
                 textAlign: TextAlign.center,
                 style:
-                    TextStyle(color: AppColors.greyText, fontSize: 14)),
+                    TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14)),
           ],
         ),
       ),
@@ -328,12 +334,13 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
   // ── Card Ativo ────────────────────────────────────────────────────────────
 
   Widget _buildCardAtivo(MyRoomsState state, RoomCategoryCardModel card) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: const Color(0x3F182541)),
+        border: Border.all(color: colorScheme.outline),
       ),
       child: Column(
         children: [
@@ -364,8 +371,8 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                           children: [
                             Expanded(
                               child: Text(card.nomeCategoria,
-                                  style: const TextStyle(
-                                      color: AppColors.primary,
+                                  style: TextStyle(
+                                      color: colorScheme.onSurface,
                                       fontSize: 17,
                                       fontWeight: FontWeight.w700,
                                       height: 1.15),
@@ -406,8 +413,8 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                           const SizedBox(height: 4),
                           Expanded(
                             child: Text(card.descricao!,
-                                style: const TextStyle(
-                                    color: AppColors.greyText,
+                                style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant,
                                     fontSize: 11),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis),
@@ -425,8 +432,8 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                 icon: Icons.calendar_month_outlined,
                 label: 'Reserva manual',
                 onTap: () => _abrirReservaManual(state, card)),
-            const VerticalDivider(
-                width: 1, thickness: 1, color: Color(0x1F182541)),
+            VerticalDivider(
+                width: 1, thickness: 1, color: colorScheme.outline),
             _buildAcaoBtn(
                 icon: Icons.block,
                 label: 'Desativar',
@@ -441,12 +448,13 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
   // ── Card Inativo ──────────────────────────────────────────────────────────
 
   Widget _buildCardInativo(MyRoomsState state, RoomCategoryCardModel card) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F7),
+        color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: const Color(0x3F182541)),
+        border: Border.all(color: colorScheme.outline),
       ),
       child: Column(
         children: [
@@ -502,8 +510,8 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(card.nomeCategoria,
-                            style: const TextStyle(
-                                color: AppColors.greyText,
+                            style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                                 height: 1.15),
@@ -513,7 +521,7 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                         _infoRow(
                             Icons.meeting_room_outlined,
                             '${card.totalUnidades} unidade${card.totalUnidades != 1 ? 's' : ''}',
-                            cor: AppColors.greyText),
+                            cor: colorScheme.onSurfaceVariant),
                         const SizedBox(height: 4),
                         // Info de reserva ativa
                         card.proximaReservaAtiva != null
@@ -536,8 +544,8 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                 label: 'Reativar',
                 cor: Colors.green[700]!,
                 onTap: () => _abrirReativar(card)),
-            const VerticalDivider(
-                width: 1, thickness: 1, color: Color(0x1F182541)),
+            VerticalDivider(
+                width: 1, thickness: 1, color: colorScheme.outline),
             _buildAcaoBtn(
                 icon: Icons.delete_outline,
                 label: 'Remover',
@@ -553,9 +561,9 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
 
   Widget _buildBarraAcoes(List<Widget> children) {
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Color(0x1F182541))),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline)),
+        borderRadius: const BorderRadius.only(
             bottomLeft: Radius.circular(11),
             bottomRight: Radius.circular(11)),
       ),
@@ -567,8 +575,9 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
-    Color cor = AppColors.primary,
+    Color? cor,
   }) {
+    final resolvedCor = cor ?? Theme.of(context).colorScheme.onSurface;
     return Expanded(
       child: Semantics(
         label: label,
@@ -583,11 +592,11 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: 15, color: cor),
+                Icon(icon, size: 15, color: resolvedCor),
                 const SizedBox(width: 5),
                 Text(label,
                     style: TextStyle(
-                        color: cor,
+                        color: resolvedCor,
                         fontSize: 12,
                         fontWeight: FontWeight.w600)),
               ],
@@ -598,15 +607,15 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
     );
   }
 
-  Widget _infoRow(IconData icon, String text,
-      {Color cor = AppColors.greyText}) {
+  Widget _infoRow(IconData icon, String text, {Color? cor}) {
+    final resolvedCor = cor ?? Theme.of(context).colorScheme.onSurfaceVariant;
     return Row(
       children: [
-        Icon(icon, size: 13, color: cor),
+        Icon(icon, size: 13, color: resolvedCor),
         const SizedBox(width: 4),
         Expanded(
           child: Text(text,
-              style: TextStyle(color: cor, fontSize: 11),
+              style: TextStyle(color: resolvedCor, fontSize: 11),
               overflow: TextOverflow.ellipsis),
         ),
       ],
@@ -614,15 +623,14 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
   }
 
   Widget _buildFotoPlaceholder({bool inativo = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: 110,
       color: inativo
-          ? const Color(0xFFDDDDDD)
-          : AppColors.bgSecondary,
+          ? colorScheme.surfaceContainerHigh
+          : colorScheme.surfaceContainer,
       child: Icon(Icons.hotel,
-          color: inativo
-              ? Colors.grey[400]
-              : AppColors.greyText,
+          color: colorScheme.onSurfaceVariant,
           size: 36),
     );
   }

@@ -16,9 +16,10 @@ class TicketDetailsPage extends ConsumerWidget {
       (t) => t.id == ticketId,
       orElse: () => mockTickets.first,
     );
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFD9D9D9),
+      backgroundColor: colorScheme.surfaceContainerHigh,
       body: Column(
         children: [
           _buildHeader(context),
@@ -27,9 +28,9 @@ class TicketDetailsPage extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
               child: Column(
                 children: [
-                  _buildMainCard(ticket),
+                  _buildMainCard(context, ticket),
                   const SizedBox(height: 16),
-                  _buildFinancialCard(ticket),
+                  _buildFinancialCard(context, ticket),
                 ],
               ),
             ),
@@ -39,7 +40,6 @@ class TicketDetailsPage extends ConsumerWidget {
     );
   }
 
-  // ── Header ───────────────────────────────────────────────────────────────
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -116,20 +116,19 @@ class TicketDetailsPage extends ConsumerWidget {
     );
   }
 
-  // ── Card principal ────────────────────────────────────────────────────────
-  Widget _buildMainCard(Ticket ticket) {
+  Widget _buildMainCard(BuildContext context, Ticket ticket) {
     final theme = TicketStatusTheme.of(ticket.status);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Endereço e datas completas
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -137,8 +136,8 @@ class TicketDetailsPage extends ConsumerWidget {
               children: [
                 Text(
                   ticket.address,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 12,
                     fontFamily: 'Stack Sans Text',
                     fontWeight: FontWeight.w700,
@@ -148,8 +147,8 @@ class TicketDetailsPage extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   'Check-in: ${ticket.fullCheckIn}',
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 12,
                     fontFamily: 'Stack Sans Text',
                     fontWeight: FontWeight.w400,
@@ -158,8 +157,8 @@ class TicketDetailsPage extends ConsumerWidget {
                 ),
                 Text(
                   'Check-out: ${ticket.fullCheckOut}',
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 12,
                     fontFamily: 'Stack Sans Text',
                     fontWeight: FontWeight.w400,
@@ -169,31 +168,30 @@ class TicketDetailsPage extends ConsumerWidget {
               ],
             ),
           ),
-
-          _infoRow('Chegada', ticket.checkInTime, 'Saída', ticket.checkOutTime),
+          _infoRow(context, 'Chegada', ticket.checkInTime, 'Saída', ticket.checkOutTime),
           _infoRow(
+            context,
             'Ticket ID', ticket.id,
             'Status', theme.label,
             rightValueColor: theme.badgeColor,
           ),
           _infoRow(
+            context,
             'Hóspedes', '${ticket.guestCount} adultos',
             'Quarto', ticket.roomType,
             isLast: false,
           ),
-
-          // Seção Detalhes
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Divider(color: Color(0xFFE6E6E6), thickness: 0.5),
+                Divider(color: colorScheme.outline, thickness: 0.5),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Detalhes',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: colorScheme.onSurface,
                     fontSize: 12,
                     fontFamily: 'Stack Sans Text',
                     fontWeight: FontWeight.w700,
@@ -205,8 +203,8 @@ class TicketDetailsPage extends ConsumerWidget {
                   '${ticket.roomType} — ${ticket.hotelName}. '
                   'Quarto com vista panorâmica, ar-condicionado, '
                   'café da manhã incluso e Wi-Fi de alta velocidade.',
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 12,
                     fontFamily: 'Stack Sans Text',
                     fontWeight: FontWeight.w400,
@@ -222,6 +220,7 @@ class TicketDetailsPage extends ConsumerWidget {
   }
 
   Widget _infoRow(
+    BuildContext context,
     String leftLabel,
     String leftValue,
     String rightLabel,
@@ -229,14 +228,15 @@ class TicketDetailsPage extends ConsumerWidget {
     Color? rightValueColor,
     bool isLast = false,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         border: Border(
-          top: const BorderSide(width: 0.5, color: Color(0xFFE6E6E6)),
+          top: BorderSide(width: 0.5, color: colorScheme.outline),
           bottom: isLast
-              ? const BorderSide(width: 0.5, color: Color(0xFFE6E6E6))
+              ? BorderSide(width: 0.5, color: colorScheme.outline)
               : BorderSide.none,
         ),
       ),
@@ -248,16 +248,16 @@ class TicketDetailsPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(leftLabel,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 12,
                     fontFamily: 'Stack Sans Text',
                     fontWeight: FontWeight.w700,
                     height: 1.67,
                   )),
               Text(leftValue,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 12,
                     fontFamily: 'Stack Sans Text',
                     fontWeight: FontWeight.w300,
@@ -269,8 +269,8 @@ class TicketDetailsPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(rightLabel,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 12,
                     fontFamily: 'Stack Sans Text',
                     fontWeight: FontWeight.w700,
@@ -278,7 +278,7 @@ class TicketDetailsPage extends ConsumerWidget {
                   )),
               Text(rightValue,
                   style: TextStyle(
-                    color: rightValueColor ?? AppColors.primary,
+                    color: rightValueColor ?? colorScheme.onSurface,
                     fontSize: 12,
                     fontFamily: 'Stack Sans Text',
                     fontWeight: FontWeight.w300,
@@ -291,32 +291,33 @@ class TicketDetailsPage extends ConsumerWidget {
     );
   }
 
-  // ── Card financeiro ───────────────────────────────────────────────────────
-  Widget _buildFinancialCard(Ticket ticket) {
+  Widget _buildFinancialCard(BuildContext context, Ticket ticket) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         children: [
-          _financialRow('Subtotal', 'R\$${ticket.subtotal.toStringAsFixed(2)}'),
+          _financialRow(context, 'Subtotal', 'R\$${ticket.subtotal.toStringAsFixed(2)}'),
           const SizedBox(height: 10),
-          _financialRow('Descontos', '-R\$${ticket.discounts.toStringAsFixed(2)}'),
+          _financialRow(context, 'Descontos', '-R\$${ticket.discounts.toStringAsFixed(2)}'),
           const SizedBox(height: 10),
-          _financialRow('Taxas', 'R\$${ticket.taxes.toStringAsFixed(2)}'),
+          _financialRow(context, 'Taxas', 'R\$${ticket.taxes.toStringAsFixed(2)}'),
           const SizedBox(height: 10),
-          _financialRow('Total', 'R\$${ticket.total.toStringAsFixed(2)}',
+          _financialRow(context, 'Total', 'R\$${ticket.total.toStringAsFixed(2)}',
               isTotal: true),
         ],
       ),
     );
   }
 
-  Widget _financialRow(String label, String value, {bool isTotal = false}) {
-    final color = isTotal ? AppColors.secondary : AppColors.primary;
+  Widget _financialRow(BuildContext context, String label, String value, {bool isTotal = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = isTotal ? AppColors.secondary : colorScheme.onSurface;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [

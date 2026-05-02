@@ -103,8 +103,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFD9D9D9),
+      backgroundColor: colorScheme.surfaceContainerHigh,
       body: Column(
         children: [
           _buildHeader(context),
@@ -207,10 +208,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
   // ── Card principal ────────────────────────────────────────────────────────
   Widget _buildMainCard(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -244,6 +246,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   Widget _buildDateSection() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -251,8 +254,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         children: [
           Text(
             _mockBooking.locationName,
-            style: const TextStyle(
-              color: AppColors.primary,
+            style: TextStyle(
+              color: colorScheme.onSurface,
               fontSize: 12,
               fontFamily: 'Stack Sans Text',
               fontWeight: FontWeight.w700,
@@ -281,19 +284,20 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     required bool hasValue,
     required VoidCallback onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 220,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: ShapeDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           shape: RoundedRectangleBorder(
             side: BorderSide(
               width: 1,
               color: hasValue
-                  ? AppColors.primary.withValues(alpha: 0.5)
-                  : const Color(0x3F182541),
+                  ? colorScheme.onSurface.withValues(alpha: 0.5)
+                  : colorScheme.outline,
             ),
             borderRadius: BorderRadius.circular(11),
           ),
@@ -307,14 +311,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               child: Text(
                 label,
                 style: TextStyle(
-                  color: hasValue ? AppColors.primary : const Color(0x7F182541),
+                  color: hasValue ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
                   fontSize: 12,
                   fontFamily: 'Stack Sans Text',
                   fontWeight: hasValue ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ),
-            const Icon(Icons.keyboard_arrow_down, color: AppColors.primary, size: 18),
+            Icon(Icons.keyboard_arrow_down, color: colorScheme.onSurface, size: 18),
           ],
         ),
       ),
@@ -329,14 +333,15 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     Color? rightValueColor,
     bool isLast = false,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         border: Border(
-          top: const BorderSide(width: 0.5, color: Color(0xFFE6E6E6)),
+          top: BorderSide(width: 0.5, color: colorScheme.outline),
           bottom: isLast
-              ? const BorderSide(width: 0.5, color: Color(0xFFE6E6E6))
+              ? BorderSide(width: 0.5, color: colorScheme.outline)
               : BorderSide.none,
         ),
       ),
@@ -349,8 +354,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             children: [
               Text(
                 leftLabel,
-                style: const TextStyle(
-                  color: AppColors.primary,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
                   fontSize: 12,
                   fontFamily: 'Stack Sans Text',
                   fontWeight: FontWeight.w700,
@@ -359,8 +364,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               ),
               Text(
                 leftValue,
-                style: const TextStyle(
-                  color: AppColors.primary,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
                   fontSize: 12,
                   fontFamily: 'Stack Sans Text',
                   fontWeight: FontWeight.w300,
@@ -374,8 +379,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             children: [
               Text(
                 rightLabel,
-                style: const TextStyle(
-                  color: AppColors.primary,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
                   fontSize: 12,
                   fontFamily: 'Stack Sans Text',
                   fontWeight: FontWeight.w700,
@@ -385,7 +390,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               Text(
                 rightValue,
                 style: TextStyle(
-                  color: rightValueColor ?? AppColors.primary,
+                  color: rightValueColor ?? colorScheme.onSurface,
                   fontSize: 12,
                   fontFamily: 'Stack Sans Text',
                   fontWeight: FontWeight.w300,
@@ -434,11 +439,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
   // ── Card financeiro ───────────────────────────────────────────────────────
   Widget _buildFinancialCard() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -469,7 +475,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   Widget _buildFinancialRow(String label, String value, {bool isTotal = false}) {
-    final color = isTotal ? AppColors.secondary : AppColors.primary;
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = isTotal ? AppColors.secondary : colorScheme.onSurface;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [

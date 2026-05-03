@@ -11,6 +11,7 @@ import {
   ReservaStatus,
   CreateReservaUsuarioInput,
   CreateReservaWalkinInput,
+  CreateReservaGuestInput,
   UpdateStatusInput,
   AtribuirQuartoInput,
 } from '../entities/Reserva';
@@ -59,6 +60,10 @@ export async function createReservaWalkin(
   input:   CreateReservaWalkinInput,
 ): Promise<ReservaSafe> {
   return _createReservaWalkin(hotelId, input);
+}
+
+export async function createReservaGuest(input: CreateReservaGuestInput): Promise<ReservaSafe> {
+  return _createReservaGuest(input);
 }
 
 export async function listReservas(
@@ -167,6 +172,46 @@ async function _ensureHospede(client: import('pg').PoolClient, userId: string): 
   );
 }
 
+/**
+ * Garante que as colunas do fluxo guest/pagamento-fake existem no tenant.
+ * Idempotente — executa só uma vez por tenant via IF NOT EXISTS.
+ * Adiciona:
+ *   - reserva.email_hospede            (para reservas guest/WPP sem user_id)
+ *   - pagamento_reserva.expires_at     (timer de 30min no fluxo WhatsApp)
+ *   - idx_pagamento_expires            (acelera o job de expiração)
+ */
+export async function _ensureReservaFluxoColumns(client: import('pg').PoolClient): Promise<void> {
+  await client.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name   = 'reserva'
+          AND column_name  = 'email_hospede'
+      ) THEN
+        ALTER TABLE reserva ADD COLUMN email_hospede VARCHAR(255);
+      END IF;
+
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name   = 'pagamento_reserva'
+          AND column_name  = 'expires_at'
+      ) THEN
+        ALTER TABLE pagamento_reserva ADD COLUMN expires_at TIMESTAMP NULL;
+      END IF;
+    END
+    $$;
+  `);
+
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_pagamento_expires
+      ON pagamento_reserva(expires_at)
+      WHERE status = 'PENDENTE' AND expires_at IS NOT NULL
+  `);
+}
+
 /** Registra no master o mapeamento codigo_publico → hotel para acesso público. */
 async function _upsertReservaRouting(
   codigoPublico: string,
@@ -239,6 +284,7 @@ async function _createReservaUsuario(
   const { schema_name, nome_hotel } = await _getHotelInfo(input.hotel_id);
 
   return withTenant(schema_name, async (client) => {
+    await _ensureReservaFluxoColumns(client);
     // Garante hospede registrado no tenant
     await _ensureHospede(client, userId);
 
@@ -265,13 +311,18 @@ async function _createReservaUsuario(
 
     const { rows } = await client.query<ReservaSafe>(
       `INSERT INTO reserva
-         (user_id, quarto_id, tipo_quarto, canal_origem,
+         (user_id, nome_hospede, cpf_hospede, telefone_contato, email_hospede,
+          quarto_id, tipo_quarto, canal_origem,
           num_hospedes, data_checkin, data_checkout,
           valor_total, observacoes, p_turisticos, status)
-       VALUES ($1, $2, $3, 'APP', $4, $5, $6, $7, $8, $9, 'SOLICITADA')
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'APP', $8, $9, $10, $11, $12, $13, 'SOLICITADA')
        RETURNING *`,
       [
         userId,
+        input.nome_hospede     ?? null,
+        input.cpf_hospede      ?? null,
+        input.telefone_contato ?? null,
+        input.email_hospede    ?? null,
         input.quarto_id    ?? null,
         input.tipo_quarto  ?? null,
         input.num_hospedes,
@@ -316,6 +367,83 @@ async function _createReservaUsuario(
   });
 }
 
+async function _createReservaGuest(input: CreateReservaGuestInput): Promise<ReservaSafe> {
+  Reserva.validateGuest(input);
+  const { schema_name } = await _getHotelInfo(input.hotel_id);
+
+  return withTenant(schema_name, async (client) => {
+    await _ensureReservaFluxoColumns(client);
+
+    // Checa disponibilidade do quarto dentro da transação — defesa em profundidade
+    if (input.quarto_id) {
+      const { rows: dispRows } = await client.query<{ ocupado: boolean }>(
+        `SELECT EXISTS (
+           SELECT 1 FROM reserva
+           WHERE quarto_id    = $1
+             AND status       NOT IN ('CANCELADA')
+             AND data_checkin  < $3
+             AND data_checkout > $2
+         ) AS ocupado`,
+        [input.quarto_id, input.data_checkin, input.data_checkout],
+      );
+      if (dispRows[0]?.ocupado) {
+        throw new Error('Quarto indisponível nas datas selecionadas.');
+      }
+    }
+
+    const valorTotal = input.quarto_id
+      ? await _calcValorTotal(client, input.quarto_id, input.data_checkin, input.data_checkout)
+      : input.valor_total;
+
+    const { rows } = await client.query<ReservaSafe>(
+      `INSERT INTO reserva
+         (user_id, nome_hospede, cpf_hospede, telefone_contato, email_hospede,
+          quarto_id, tipo_quarto, canal_origem,
+          num_hospedes, data_checkin, data_checkout,
+          valor_total, observacoes, status)
+       VALUES (NULL, $1, $2, $3, $4, $5, $6, 'APP', $7, $8, $9, $10, $11, 'SOLICITADA')
+       RETURNING *`,
+      [
+        input.nome_hospede,
+        input.cpf_hospede,
+        input.telefone_contato,
+        input.email_hospede,
+        input.quarto_id   ?? null,
+        input.tipo_quarto ?? null,
+        input.num_hospedes,
+        input.data_checkin,
+        input.data_checkout,
+        valorTotal,
+        input.observacoes ?? null,
+      ],
+    );
+    const reserva = rows[0];
+
+    // Routing público (permite GET /api/reservas/:codigo_publico achar o tenant)
+    await _upsertReservaRouting(reserva.codigo_publico, input.hotel_id, schema_name);
+
+    // Guest não tem user_id — nenhum histórico global
+    // Notifica o hotel — fire-and-forget
+    Promise.all([
+      getHotelTokens(input.hotel_id).then((tokens) =>
+        sendPush(tokens, {
+          title: 'Nova reserva recebida',
+          body:  `Hóspede externo ${input.nome_hospede} — ${input.data_checkin} a ${input.data_checkout}.`,
+          data:  { reserva_id: String(reserva.id), tipo: 'NOVA_RESERVA', codigo_publico: reserva.codigo_publico },
+        }),
+      ),
+      insertNotificacao(input.hotel_id, {
+        titulo:   'Nova reserva recebida',
+        mensagem: `Solicitação de ${input.nome_hospede} para ${input.data_checkin} a ${input.data_checkout}.`,
+        tipo:     'NOVA_RESERVA',
+        payload:  { reserva_id: reserva.id, codigo_publico: reserva.codigo_publico },
+      }),
+    ]).catch(() => {});
+
+    return reserva;
+  });
+}
+
 async function _createReservaWalkin(
   hotelId: string,
   input:   CreateReservaWalkinInput,
@@ -324,6 +452,7 @@ async function _createReservaWalkin(
   const { schema_name, nome_hotel } = await _getHotelInfo(hotelId);
 
   return withTenant(schema_name, async (client) => {
+    await _ensureReservaFluxoColumns(client);
     // Hóspede registrado: garante entrada na tabela hospede
     if (input.user_id) {
       await _ensureHospede(client, input.user_id);

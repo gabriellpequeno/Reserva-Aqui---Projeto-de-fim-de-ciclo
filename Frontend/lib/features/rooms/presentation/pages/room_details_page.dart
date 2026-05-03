@@ -25,6 +25,10 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   late PageController _photoController;
   int _currentPhotoIndex = 0;
 
+  // Datas escolhidas no AvailabilityChecker — propagadas ao checkout via queryParam
+  DateTime? _checkInDate;
+  DateTime? _checkOutDate;
+
   @override
   void initState() {
     super.initState();
@@ -126,6 +130,10 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                                   AvailabilityChecker(
                                     hotelId: widget.hotelId,
                                     categoriaId: roomState.categoriaId,
+                                    onDatesChanged: (ci, co) => setState(() {
+                                      _checkInDate = ci;
+                                      _checkOutDate = co;
+                                    }),
                                   ),
 
                                 const SizedBox(height: 32),
@@ -491,9 +499,14 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
               child: ElevatedButton(
                 onPressed: () {
                   final roomState = ref.read(roomDetailsNotifierProvider);
-                  context.push(
-                    '/booking/checkout/${widget.hotelId}/${roomState.categoriaId}/${room.id}',
-                  );
+                  final base = '/booking/checkout/${widget.hotelId}/${roomState.categoriaId}/${room.id}';
+                  String url = base;
+                  if (_checkInDate != null && _checkOutDate != null) {
+                    final ci = _fmtDateIso(_checkInDate!);
+                    final co = _fmtDateIso(_checkOutDate!);
+                    url = '$base?checkin=$ci&checkout=$co';
+                  }
+                  context.push(url);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.secondary,
@@ -513,4 +526,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
       ),
     );
   }
+
+  String _fmtDateIso(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 }

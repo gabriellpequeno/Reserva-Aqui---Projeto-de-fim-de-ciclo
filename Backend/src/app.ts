@@ -22,12 +22,14 @@ import notificacaoHotelRoutes  from './routes/notificacaoHotel.routes';
 import {
   hotelPagamentoRouter,
   webhookPagamentoRouter,
+  publicPagamentoRouter,
 } from './routes/pagamentoReserva.routes';
 import saldoRoutes from './routes/saldo.routes';
 import whatsappRoutes from './routes/whatsapp.routes';
 import searchRoomRoutes from './routes/searchRoom.routes';
 import adminRoutes from './routes/admin.routes';
 import chatRoutes from './routes/chat.routes';
+import { startPaymentExpirationJob } from './services/paymentExpiration.job';
 
 const app = express();
 
@@ -56,8 +58,9 @@ app.use(`${API_PREFIX}/usuarios/avaliacoes`,       usuarioAvaliacaoRouter);
 app.use(`${API_PREFIX}/hotel/:hotel_id/avaliacoes`, publicAvaliacaoRouter);
 app.use(`${API_PREFIX}/dispositivos-fcm`,           dispositivoFcmRoutes);
 app.use(`${API_PREFIX}/hotel/notificacoes`,                      notificacaoHotelRoutes);
-app.use(`${API_PREFIX}/hotel/reservas/:reserva_id/pagamentos`,   hotelPagamentoRouter);
+app.use(`${API_PREFIX}/hotel/reservas/:reserva_id/pagamentos`,    hotelPagamentoRouter);
 app.use(`${API_PREFIX}/pagamentos/webhook`,                       webhookPagamentoRouter);
+app.use(`${API_PREFIX}/reservas/:codigo_publico/pagamentos`,      publicPagamentoRouter);
 app.use(`${API_PREFIX}/hotel`,                                    saldoRoutes);
 app.use(`${API_PREFIX}/whatsapp`,                                 whatsappRoutes);
 app.use(`${API_PREFIX}/quartos`, searchRoomRoutes);
@@ -72,6 +75,7 @@ if (require.main === module) {
     console.log(`Servidor rodando na porta ${PORT}`);
     console.log(`Rota padrão (API_PREFIX): ${API_PREFIX}`);
   });
+  startPaymentExpirationJob();
 }
 
 export default app;

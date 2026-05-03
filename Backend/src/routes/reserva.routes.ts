@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { hotelGuard }  from '../middlewares/hotelGuard';
 import { authGuard }   from '../middlewares/authGuard';
 import { requireFields } from '../middlewares/validateBody';
+import { guestReservaLimiter } from '../middlewares/rateLimiter';
 import {
   // Hotel
   createReservaWalkinController,
@@ -16,6 +17,7 @@ import {
   listReservasUsuarioController,
   cancelarReservaUsuarioController,
   // Público
+  createReservaGuestController,
   getReservaPublicaController,
 } from '../controllers/reserva.controller';
 
@@ -53,5 +55,16 @@ usuarioReservaRouter.patch('/:codigo_publico/cancelar', authGuard, cancelarReser
 
 // ── Router Público (/api/reservas) ────────────────────────────────────────────
 export const publicReservaRouter = Router();
+
+// Reserva de guest (sem JWT) — rate-limit por IP
+publicReservaRouter.post(
+  '/guest',
+  guestReservaLimiter,
+  requireFields(
+    'hotel_id', 'num_hospedes', 'data_checkin', 'data_checkout', 'valor_total',
+    'nome_hospede', 'email_hospede', 'cpf_hospede', 'telefone_contato',
+  ),
+  createReservaGuestController,
+);
 
 publicReservaRouter.get('/:codigo_publico', getReservaPublicaController);

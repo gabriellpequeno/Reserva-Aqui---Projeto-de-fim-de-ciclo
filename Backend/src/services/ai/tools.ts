@@ -2,6 +2,7 @@ import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { masterPool } from '../../database/masterDb';
 import { ChatContext, ContextResolverService } from './contextResolver.service';
+import { sendPaymentLinkViaWhatsApp } from '../whatsappReservation.service';
 
 /**
  * Cria e retorna as Tools (ferramentas) com o contexto de sessão acoplado.
@@ -148,14 +149,16 @@ export const buildAgentTools = (context: ChatContext | null) => {
         `, [novaReserva.codigo_publico, context.hotelId, context.schemaName]);
 
         await client.query('COMMIT');
-        
-        const bypassMode = process.env.INFINITEPAY_BYPASS === 'true';
-        let resMsg = `SUCESSO! Reserva criada. ID: ${novaReserva.id}. Valor total: R$ ${valorTotal.toFixed(2)}.`;
-        if (bypassMode) {
-           resMsg += ' [Aviso ao bot: informe ao usuário que o pagamento foi liberado (bypass mode) e a reserva está confirmada]';
-        } else {
-           resMsg += ' [Aviso ao bot: informe ao usuário que ele receberá em breve o link de pagamento da InfinitePay para garantir a reserva]';
-        }
+
+        // Gera pagamento fake + envia link via WhatsApp e email (fire-and-forget).
+        // Timer de 30 min é aplicado no backend (expires_at) e varrido pelo job.
+        sendPaymentLinkViaWhatsApp({
+          hotelId:   context.hotelId,
+          reservaId: novaReserva.id,
+        }).catch(() => {});
+
+        const resMsg = `SUCESSO! Reserva criada. ID: ${novaReserva.id}. Valor total: R$ ${valorTotal.toFixed(2)}.`
+          + ' [Aviso ao bot: informe ao usuário que já enviamos o link de pagamento por este chat e por email. O link expira em 30 minutos.]';
 
         return resMsg;
       } catch (error) {

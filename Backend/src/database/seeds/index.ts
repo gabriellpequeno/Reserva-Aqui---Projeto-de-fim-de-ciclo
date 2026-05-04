@@ -65,6 +65,13 @@ const SEEDS: SeedEntry[] = [
       await seedPushFcm();
     },
   },
+  {
+    name: 'completo',
+    run: async () => {
+      const { seedCompleto } = await import('./seed.completo');
+      await seedCompleto();
+    },
+  },
 ];
 // ──────────────────────────────────────────────────────────────────────────
 

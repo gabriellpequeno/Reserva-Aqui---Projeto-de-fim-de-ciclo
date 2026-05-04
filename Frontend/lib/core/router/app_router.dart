@@ -101,7 +101,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/chat',
-            builder: (context, state) => const ChatPage(),
+            builder: (context, state) {
+              final hotelId = state.uri.queryParameters['hotelId'];
+              return ChatPage(hotelId: hotelId);
+            },
           ),
           GoRoute(
             path: '/home',

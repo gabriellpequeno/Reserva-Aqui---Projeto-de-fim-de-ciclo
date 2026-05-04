@@ -31,6 +31,7 @@ import {
   hostDashboardRouter,
   adminDashboardRouter,
 } from './routes/dashboard.routes';
+import chatRoutes from './routes/chat.routes';
 
 const app = express();
 
@@ -67,6 +68,7 @@ app.use(`${API_PREFIX}/quartos`, searchRoomRoutes);
 app.use(`${API_PREFIX}/admin`,   adminRoutes);
 app.use(`${API_PREFIX}/host/dashboard`,  hostDashboardRouter);
 app.use(`${API_PREFIX}/admin/dashboard`, adminDashboardRouter);
+app.use(`${API_PREFIX}/chat`,    chatRoutes);
 
 // Exporta e/ou inicia o servidor
 const PORT = process.env.PORT || 3000;

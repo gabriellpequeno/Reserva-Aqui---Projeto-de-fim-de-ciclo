@@ -274,6 +274,6 @@ FIREBASE_SERVICE_ACCOUNT=
 |------|--------|
 | Gabriel Pequeno Saraiva Tavares | [@gabriellpequeno](https://github.com/gabriellpequeno) |
 | Lucas Gomes | [@fcolucascosta](https://github.com/fcolucascosta) |
-| Bianca G | [@bia-g](https://github.com/bia-g) |
+| Bianca G | [@biagonzag-hue](https://github.com/biagonzag-hue) |
 | Kellvin Correia Alves | [@kellvin-correia](https://github.com/kellvin-correia) |
 | Levi Matias | [@Levi-Matias](https://github.com/Levi-Matias) |

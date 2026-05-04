@@ -14,6 +14,7 @@
     "db:seed:hotels": "ts-node --transpile-only src/database/seeds/seed.hotels.ts",
     "db:seed:recommended": "ts-node --transpile-only src/database/seeds/seed.recommendedRooms.ts",
     "db:seed:my-rooms": "ts-node --transpile-only src/database/seeds/seed.my-rooms-page.ts",
+    "db:seed:reservas": "ts-node --transpile-only src/database/seeds/seed.reservas.ts",
     "db:seed:push": "ts-node --transpile-only src/database/seeds/seed.push-fcm.ts",
     "db:seed:catalogo": "ts-node --transpile-only src/database/seeds/seed.catalogo-default.ts",
     "db:migrate:cleanup-categorias": "ts-node --transpile-only src/database/seeds/migrate.cleanup-empty-categorias.ts",

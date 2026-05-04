@@ -29,6 +29,7 @@ export interface HistoricoReservaSafe {
   num_hospedes:     number;
   valor_total:      string;
   status:           ReservaStatus;
+  codigo_publico:   string;
   criado_em:        string;
   atualizado_em:    string;
 }
@@ -193,20 +194,22 @@ async function _upsertHistoricoGlobal(
   valorTotal:      string,
   status:          ReservaStatus,
   numHospedes:     number,
+  codigoPublico:   string,
 ): Promise<void> {
   await masterPool.query(
     `INSERT INTO historico_reserva_global
        (user_id, hotel_id, reserva_tenant_id, nome_hotel, tipo_quarto,
-        data_checkin, data_checkout, num_hospedes, valor_total, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        data_checkin, data_checkout, num_hospedes, valor_total, status, codigo_publico)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      ON CONFLICT (hotel_id, reserva_tenant_id)
      DO UPDATE SET
-       status        = EXCLUDED.status,
-       tipo_quarto   = EXCLUDED.tipo_quarto,
-       num_hospedes  = EXCLUDED.num_hospedes,
-       atualizado_em = NOW()`,
+       status         = EXCLUDED.status,
+       tipo_quarto    = EXCLUDED.tipo_quarto,
+       num_hospedes   = EXCLUDED.num_hospedes,
+       codigo_publico = COALESCE(historico_reserva_global.codigo_publico, EXCLUDED.codigo_publico),
+       atualizado_em  = NOW()`,
     [userId, hotelId, reservaTenantId, nomeHotel, tipoQuarto,
-     dataCheckin, dataCheckout, numHospedes, valorTotal, status],
+     dataCheckin, dataCheckout, numHospedes, valorTotal, status, codigoPublico],
   );
 }
 
@@ -293,6 +296,7 @@ async function _createReservaUsuario(
       userId, input.hotel_id, nome_hotel, reserva.id,
       tipoQuarto, input.data_checkin, input.data_checkout,
       String(valorTotal), 'SOLICITADA', input.num_hospedes,
+      reserva.codigo_publico,
     );
 
     // Notificações — fire-and-forget (falhas não interrompem o fluxo)
@@ -376,6 +380,7 @@ async function _createReservaWalkin(
         input.user_id, hotelId, nome_hotel, reserva.id,
         tipoQuarto, input.data_checkin, input.data_checkout,
         String(input.valor_total), 'APROVADA', input.num_hospedes,
+        reserva.codigo_publico,
       );
     }
 
@@ -481,6 +486,7 @@ async function _listReservasUsuario(userId: string): Promise<HistoricoReservaSaf
        h.num_hospedes,
        h.valor_total,
        h.status,
+       h.codigo_publico,
        h.criado_em,
        h.atualizado_em
      FROM historico_reserva_global h
@@ -540,6 +546,7 @@ async function _updateStatus(
         atualizada.valor_total,
         input.status,
         atualizada.num_hospedes,
+        atualizada.codigo_publico,
       );
     }
 
@@ -672,6 +679,7 @@ async function _registrarCheckout(hotelId: string, reservaId: number): Promise<R
         atualizada.valor_total,
         'CONCLUIDA',
         atualizada.num_hospedes,
+        atualizada.codigo_publico,
       );
     }
 
@@ -733,6 +741,7 @@ async function _cancelarReservaUsuario(userId: string, codigoPublico: string): P
       reserva.valor_total,
       'CANCELADA',
       reserva.num_hospedes,
+      reserva.codigo_publico,
     );
 
     // Notificações — fire-and-forget

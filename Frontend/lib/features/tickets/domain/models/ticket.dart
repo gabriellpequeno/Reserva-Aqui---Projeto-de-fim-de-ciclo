@@ -57,6 +57,7 @@ class Ticket {
   final String id;
   final String hotelId;
   final int? quartoId;
+  final int? categoriaId;
   final String hotelName;
   final String roomType;
   final String address;
@@ -64,8 +65,11 @@ class Ticket {
   final DateTime checkOut;
   final String checkInTime;
   final String checkOutTime;
+  final String? checkInRealTime;
+  final String? checkOutRealTime;
   final int guestCount;
   final TicketStatus status;
+  final String? nomeHospede;
   final String? imageUrl;
   final double subtotal;
   final double discounts;
@@ -76,6 +80,7 @@ class Ticket {
     required this.id,
     required this.hotelId,
     this.quartoId,
+    this.categoriaId,
     required this.hotelName,
     required this.roomType,
     required this.address,
@@ -83,8 +88,11 @@ class Ticket {
     required this.checkOut,
     required this.checkInTime,
     required this.checkOutTime,
+    this.checkInRealTime,
+    this.checkOutRealTime,
     required this.guestCount,
     required this.status,
+    this.nomeHospede,
     this.imageUrl,
     required this.subtotal,
     required this.discounts,
@@ -101,9 +109,10 @@ class Ticket {
         : int.tryParse(json['num_hospedes']?.toString() ?? '') ?? 1;
 
     return Ticket(
-      id: json['reserva_tenant_id']?.toString() ?? '',
+      id: json['codigo_publico']?.toString() ?? '',
       hotelId: json['hotel_id']?.toString() ?? '',
       quartoId: null,
+      categoriaId: null,
       hotelName: json['nome_hotel']?.toString() ?? '',
       roomType: json['tipo_quarto']?.toString() ?? '',
       address: '—',
@@ -113,6 +122,7 @@ class Ticket {
       checkOutTime: '—',
       guestCount: numHospedes,
       status: _mapStatus(json['status']?.toString() ?? '', checkin),
+      nomeHospede: json['nome_hospede']?.toString(),
       imageUrl: null,
       subtotal: total,
       discounts: 0.0,
@@ -121,10 +131,11 @@ class Ticket {
     );
   }
 
-  Ticket copyWith({String? imageUrl}) => Ticket(
+  Ticket copyWith({String? imageUrl, TicketStatus? status}) => Ticket(
         id: id,
         hotelId: hotelId,
         quartoId: quartoId,
+        categoriaId: categoriaId,
         hotelName: hotelName,
         roomType: roomType,
         address: address,
@@ -132,8 +143,11 @@ class Ticket {
         checkOut: checkOut,
         checkInTime: checkInTime,
         checkOutTime: checkOutTime,
+        checkInRealTime: checkInRealTime,
+        checkOutRealTime: checkOutRealTime,
         guestCount: guestCount,
-        status: status,
+        status: status ?? this.status,
+        nomeHospede: nomeHospede,
         imageUrl: imageUrl ?? this.imageUrl,
         subtotal: subtotal,
         discounts: discounts,

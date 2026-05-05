@@ -91,7 +91,7 @@ class AdminEditAccountSheet extends StatefulWidget {
     return showModalBottomSheet<AdminEditResult>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -268,6 +268,7 @@ class _AdminEditAccountSheetState extends State<AdminEditAccountSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final scrollController = widget.scrollController;
     final title = widget.kind == AdminAccountKind.user ? 'Editar usuário' : 'Editar hotel';
     final subtitle = widget.kind == AdminAccountKind.user
@@ -290,15 +291,15 @@ class _AdminEditAccountSheetState extends State<AdminEditAccountSheet> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: AppColors.strokeLight,
+                color: colorScheme.outline,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           Text(
             title,
-            style: const TextStyle(
-              color: AppColors.primary,
+            style: TextStyle(
+              color: colorScheme.onSurface,
               fontSize: 18,
               fontWeight: FontWeight.w700,
             ),
@@ -306,7 +307,7 @@ class _AdminEditAccountSheetState extends State<AdminEditAccountSheet> {
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: const TextStyle(color: AppColors.greyText, fontSize: 13),
+            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 16),
@@ -347,16 +348,16 @@ class _AdminEditAccountSheetState extends State<AdminEditAccountSheet> {
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.primary),
+                    side: BorderSide(color: colorScheme.primary),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(11),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 13),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Cancelar',
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -482,8 +483,8 @@ class _AdminEditAccountSheetState extends State<AdminEditAccountSheet> {
         padding: const EdgeInsets.only(bottom: 4, top: 4),
         child: Text(
           text,
-          style: const TextStyle(
-            color: AppColors.primary,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
             fontSize: 13,
             fontWeight: FontWeight.w700,
           ),

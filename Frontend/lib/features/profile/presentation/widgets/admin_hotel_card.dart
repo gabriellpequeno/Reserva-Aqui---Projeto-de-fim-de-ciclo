@@ -12,12 +12,13 @@ class AdminHotelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: const Color(0x3F182541)),
+        border: Border.all(color: colorScheme.outline),
       ),
       child: Row(
         children: [
@@ -26,7 +27,7 @@ class AdminHotelCard extends StatelessWidget {
               topLeft: Radius.circular(11),
               bottomLeft: Radius.circular(11),
             ),
-            child: _buildThumb(),
+            child: _buildThumb(context),
           ),
           Expanded(
             child: Padding(
@@ -36,8 +37,8 @@ class AdminHotelCard extends StatelessWidget {
                 children: [
                   Text(
                     hotel.nome.isEmpty ? '(sem nome)' : hotel.nome,
-                    style: const TextStyle(
-                      color: AppColors.primary,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
@@ -47,8 +48,8 @@ class AdminHotelCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     hotel.emailResponsavel,
-                    style: const TextStyle(
-                      color: AppColors.greyText,
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
                       fontSize: 12,
                     ),
                     maxLines: 1,
@@ -71,7 +72,7 @@ class AdminHotelCard extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEE8DB),
+                    color: AppColors.secondary.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                     border: Border.all(color: AppColors.secondary),
                   ),
@@ -89,7 +90,7 @@ class AdminHotelCard extends StatelessWidget {
     );
   }
 
-  Widget _buildThumb() {
+  Widget _buildThumb(BuildContext context) {
     final url = hotel.capaUrl;
     if (url != null && url.isNotEmpty) {
       return Image.network(
@@ -97,18 +98,19 @@ class AdminHotelCard extends StatelessWidget {
         width: 80,
         height: 80,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _placeholder(),
+        errorBuilder: (_, __, ___) => _placeholder(context),
       );
     }
-    return _placeholder();
+    return _placeholder(context);
   }
 
-  Widget _placeholder() {
+  Widget _placeholder(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: 80,
       height: 80,
-      color: AppColors.bgSecondary,
-      child: const Icon(Icons.hotel, color: AppColors.greyText, size: 32),
+      color: colorScheme.surfaceContainer,
+      child: Icon(Icons.hotel, color: colorScheme.onSurfaceVariant, size: 32),
     );
   }
 }

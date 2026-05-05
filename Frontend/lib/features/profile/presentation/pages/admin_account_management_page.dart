@@ -77,7 +77,6 @@ class _AdminAccountManagementPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Column(
         children: [
           _buildHeader(),
@@ -164,20 +163,24 @@ class _AdminAccountManagementPageState
           Container(
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(23),
             ),
             child: Semantics(
               label: 'Pesquisar por nome ou e-mail',
               child: TextField(
                 controller: _searchController,
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Pesquisar por nome ou e-mail...',
                   hintStyle: TextStyle(
-                    color: Colors.grey[400],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 14,
                   ),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  filled: false,
                   suffixIcon: const Icon(
                     Icons.search,
                     color: AppColors.secondary,
@@ -196,12 +199,13 @@ class _AdminAccountManagementPageState
   }
 
   Widget _buildTabs() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      color: Colors.white,
+      color: colorScheme.surface,
       child: TabBar(
         controller: _tabController,
-        labelColor: AppColors.primary,
-        unselectedLabelColor: AppColors.greyText,
+        labelColor: colorScheme.onSurface,
+        unselectedLabelColor: colorScheme.onSurfaceVariant,
         indicatorColor: AppColors.secondary,
         labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
         tabs: const [
@@ -388,23 +392,24 @@ class _AdminAccountManagementPageState
   }
 
   Widget _buildError({required String message, required VoidCallback onRetry}) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
-              color: AppColors.greyText,
+              color: colorScheme.onSurfaceVariant,
               size: 48,
             ),
             const SizedBox(height: 16),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.greyText,
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
                 fontSize: 14,
               ),
             ),
@@ -414,8 +419,8 @@ class _AdminAccountManagementPageState
               icon: const Icon(Icons.refresh),
               label: const Text('Tentar novamente'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(11),
                 ),
@@ -432,18 +437,19 @@ class _AdminAccountManagementPageState
     required String title,
     required String subtitle,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: AppColors.greyText, size: 56),
+            Icon(icon, color: colorScheme.onSurfaceVariant, size: 56),
             const SizedBox(height: 16),
             Text(
               title,
-              style: const TextStyle(
-                color: AppColors.primary,
+              style: TextStyle(
+                color: colorScheme.onSurface,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
@@ -452,8 +458,8 @@ class _AdminAccountManagementPageState
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.greyText,
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
                 fontSize: 13,
               ),
             ),

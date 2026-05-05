@@ -46,7 +46,6 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
     final ticketsAsync = ref.watch(ticketsNotifierProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Column(
         children: [
           _buildHeader(context),
@@ -70,18 +69,19 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
   }
 
   Widget _buildErrorState(String message) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+            Icon(Icons.error_outline, size: 48, color: colorScheme.onSurfaceVariant),
             const SizedBox(height: 12),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -170,14 +170,15 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
 
   // ── Barra de busca ────────────────────────────────────────────────────────
   Widget _buildSearchBar() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE6E6E6)),
+          border: Border.all(color: colorScheme.outline),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -192,23 +193,26 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
               child: TextField(
                 controller: _searchController,
                 onChanged: (v) => setState(() => _searchQuery = v),
-                style: const TextStyle(
-                  color: AppColors.primary,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
                   fontSize: 14,
                   fontFamily: 'Stack Sans Text',
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Buscar reserva...',
                   hintStyle: TextStyle(
-                    color: Color(0xFF828282),
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 14,
                     fontFamily: 'Stack Sans Text',
                   ),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  filled: false,
                 ),
               ),
             ),
-            Icon(Icons.search, color: AppColors.secondary, size: 22),
+            const Icon(Icons.search, color: AppColors.secondary, size: 22),
           ],
         ),
       ),
@@ -254,7 +258,7 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
                   style: TextStyle(
                     color: isActive
                         ? AppColors.secondary
-                        : const Color(0xFF828282),
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 13,
                     fontFamily: 'Stack Sans Text',
                     fontWeight: FontWeight.w600,
@@ -271,14 +275,15 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
   // ── Lista de tickets ──────────────────────────────────────────────────────
   Widget _buildList(List<Ticket> tickets) {
     if (tickets.isEmpty) {
+      final colorScheme = Theme.of(context).colorScheme;
       return ListView(
-        children: const [
-          SizedBox(height: 80),
+        children: [
+          const SizedBox(height: 80),
           Center(
             child: Text(
               'Nenhuma reserva encontrada',
               style: TextStyle(
-                color: Color(0xFF828282),
+                color: colorScheme.onSurfaceVariant,
                 fontSize: 14,
                 fontFamily: 'Stack Sans Text',
               ),

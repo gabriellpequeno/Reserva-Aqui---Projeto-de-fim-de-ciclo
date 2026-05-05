@@ -17,9 +17,10 @@ class FavoritesPage extends ConsumerWidget {
     final searchQuery = ref.watch(searchQueryProvider);
     final isLoggedIn =
         ref.watch(authProvider).asData?.value.isAuthenticated ?? false;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.bgSecondary,
+      backgroundColor: colorScheme.surfaceContainerLow,
       body: Column(
         children: [
           _buildHeader(context, ref),
@@ -35,11 +36,11 @@ class FavoritesPage extends ConsumerWidget {
                         ? Center(
                             child: Text(
                               'Erro ao carregar favoritos.',
-                              style: TextStyle(color: Colors.grey[600]),
+                              style: TextStyle(color: colorScheme.onSurfaceVariant),
                             ),
                           )
                         : filteredFavorites.isEmpty
-                            ? _buildEmptyState(searchQuery.isNotEmpty)
+                            ? _buildEmptyState(context, searchQuery.isNotEmpty)
                             : LayoutBuilder(
                                 builder: (context, constraints) {
                                   if (constraints.maxWidth > 800) {
@@ -77,6 +78,7 @@ class FavoritesPage extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 50, 16, 24),
       decoration: const BoxDecoration(
@@ -91,14 +93,13 @@ class FavoritesPage extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(width: 48), // Spacer to balance the bell icon
+              const SizedBox(width: 48),
               Expanded(
                 child: SvgPicture.asset(
                   'lib/assets/icons/logo/logoDark.svg',
                   height: 32,
                 ),
               ),
-              // Notification Bell Icon
               GestureDetector(
                 onTap: () => context.push('/notifications'),
                 child: Container(
@@ -122,25 +123,28 @@ class FavoritesPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 20),
-          // Integrated Search Bar
           Container(
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
             ),
             child: TextField(
               onChanged: (value) => ref.read(searchQueryProvider.notifier).update(value),
-              decoration: const InputDecoration(
+              style: TextStyle(color: colorScheme.onSurface),
+              decoration: InputDecoration(
                 hintText: 'Busque por destino, hotel ou quarto...',
-                hintStyle: TextStyle(color: AppColors.greyText, fontSize: 14),
-                prefixIcon: Icon(Icons.search, color: Colors.transparent), // Hidden prefix
-                suffixIcon: Padding(
+                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
+                prefixIcon: const Icon(Icons.search, color: Colors.transparent),
+                suffixIcon: const Padding(
                   padding: EdgeInsets.only(right: 12),
                   child: Icon(Icons.search, color: AppColors.secondary, size: 28),
                 ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 14),
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
             ),
           ),
@@ -150,12 +154,13 @@ class FavoritesPage extends ConsumerWidget {
   }
 
   Widget _buildLoginMessage(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -168,19 +173,19 @@ class FavoritesPage extends ConsumerWidget {
         children: [
           const Icon(Icons.lock_outline, size: 48, color: AppColors.secondary),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Faça login para favoritar hotéis',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
-              color: AppColors.primary,
+              color: colorScheme.onSurface,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Salve seus lugares favoritos para encontrá-los facilmente depois.',
-            style: TextStyle(color: AppColors.greyText),
+            style: TextStyle(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
@@ -201,7 +206,8 @@ class FavoritesPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(bool isSearch) {
+  Widget _buildEmptyState(BuildContext context, bool isSearch) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -209,21 +215,21 @@ class FavoritesPage extends ConsumerWidget {
           Icon(
             isSearch ? Icons.search_off : Icons.favorite_border,
             size: 64,
-            color: AppColors.greyText.withValues(alpha: 0.5),
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
             isSearch ? 'Nenhum resultado encontrado' : 'Você ainda não tem favoritos',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Explore quartos e clique no coração para salvá-los aqui.',
-            style: TextStyle(color: AppColors.greyText),
+            style: TextStyle(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
         ],

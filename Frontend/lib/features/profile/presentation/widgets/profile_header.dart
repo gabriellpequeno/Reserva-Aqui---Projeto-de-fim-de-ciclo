@@ -17,13 +17,14 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         Container(
           width: 96,
           height: 96,
           decoration: BoxDecoration(
-            color: const Color(0xFFD9D9D9),
+            color: colorScheme.surfaceContainerHigh,
             shape: BoxShape.circle,
             image: avatarUrl != null
                 ? DecorationImage(
@@ -33,14 +34,14 @@ class ProfileHeader extends StatelessWidget {
                 : null,
           ),
           child: avatarUrl == null
-              ? const Icon(Icons.person, size: 50, color: Colors.white)
+              ? Icon(Icons.person, size: 50, color: colorScheme.onSurfaceVariant)
               : null,
         ),
         const SizedBox(height: 12),
         Text(
           name,
-          style: const TextStyle(
-            color: AppColors.primary,
+          style: TextStyle(
+            color: colorScheme.onSurface,
             fontSize: 20,
             fontWeight: FontWeight.w700,
           ),
@@ -48,7 +49,7 @@ class ProfileHeader extends StatelessWidget {
         Text(
           email,
           style: TextStyle(
-            color: AppColors.primary.withOpacity(0.3),
+            color: colorScheme.onSurfaceVariant,
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
@@ -59,14 +60,14 @@ class ProfileHeader extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.secondary.withOpacity(0.2),
+              color: AppColors.secondary.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(100),
               border: Border.all(color: AppColors.secondary),
             ),
-            child: const Text(
+            child: Text(
               'Editar perfil',
               style: TextStyle(
-                color: AppColors.primary,
+                color: colorScheme.onSurface,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class ProfileMenuItem extends StatelessWidget {
   final String title;
@@ -17,6 +16,7 @@ class ProfileMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         InkWell(
@@ -26,20 +26,20 @@ class ProfileMenuItem extends StatelessWidget {
             child: Row(
               children: [
                 if (icon != null) ...[
-                  Icon(icon, size: 20, color: AppColors.primary.withOpacity(0.5)),
+                  Icon(icon, size: 20, color: colorScheme.onSurfaceVariant),
                   const SizedBox(width: 12),
                 ],
                 Expanded(
                   child: Text(
                     title,
                     style: TextStyle(
-                      color: AppColors.primary.withOpacity(0.5),
+                      color: colorScheme.onSurfaceVariant,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-                Icon(Icons.chevron_right, size: 20, color: AppColors.primary.withOpacity(0.3)),
+                Icon(Icons.chevron_right, size: 20, color: colorScheme.onSurfaceVariant),
               ],
             ),
           ),
@@ -49,7 +49,7 @@ class ProfileMenuItem extends StatelessWidget {
             height: 1,
             indent: 16,
             endIndent: 16,
-            color: AppColors.primary.withOpacity(0.1),
+            color: colorScheme.outline,
           ),
       ],
     );
@@ -68,6 +68,7 @@ class ProfileMenuSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -76,7 +77,7 @@ class ProfileMenuSection extends StatelessWidget {
           child: Text(
             title,
             style: TextStyle(
-              color: AppColors.primary.withOpacity(0.5),
+              color: colorScheme.onSurfaceVariant,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -84,10 +85,10 @@ class ProfileMenuSection extends StatelessWidget {
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppColors.primary.withOpacity(0.1),
+              color: colorScheme.outline,
             ),
           ),
           child: Column(

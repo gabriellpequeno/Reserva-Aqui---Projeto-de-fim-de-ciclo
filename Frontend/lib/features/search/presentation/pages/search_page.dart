@@ -39,16 +39,17 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       }
     });
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () => ref.read(searchProvider.notifier).hideAllPickers(),
       child: Scaffold(
-        backgroundColor: Colors.white,
         body: Column(
           children: [
             _buildSearchHeader(context, searchState),
             Container(
               height: 1,
-              color: Colors.black.withValues(alpha: 0.1),
+              color: colorScheme.outline,
               margin: const EdgeInsets.symmetric(horizontal: 24),
             ),
             Expanded(
@@ -94,6 +95,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   }
 
   Widget _buildSearchHeader(BuildContext context, SearchState state) {
+    final colorScheme = Theme.of(context).colorScheme;
     final range = state.dateRange;
     final dateLabel = range != null
         ? '${_fmt(range.start)} → ${_fmt(range.end)}'
@@ -101,26 +103,27 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 50, 24, 24),
-      color: Colors.white,
+      color: colorScheme.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Logo + notificações
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(width: 48),
               Expanded(
                 child: SvgPicture.asset(
-                  'lib/assets/icons/logo/logo.svg',
+                  Theme.of(context).brightness == Brightness.dark
+                      ? 'lib/assets/icons/logo/logoDark.svg'
+                      : 'lib/assets/icons/logo/logo.svg',
                   height: 32,
                 ),
               ),
               GestureDetector(
                 onTap: () => context.push('/notifications'),
-                child: const Icon(
+                child: Icon(
                   Icons.notifications_none,
-                  color: AppColors.primary,
+                  color: colorScheme.onSurface,
                   size: 28,
                 ),
               ),
@@ -155,8 +158,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             onPressed: () =>
                 ref.read(searchProvider.notifier).performSearch(),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(11),
@@ -175,6 +178,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   // ── Campo destino com dropdown de sugestões ──────────────────────────────
 
   Widget _buildDestinationField(SearchState state) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -192,18 +196,21 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       .updateDestination(val),
                   onSubmitted: (_) =>
                       ref.read(searchProvider.notifier).performSearch(),
-                  style: const TextStyle(
-                    color: AppColors.greyText,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Para Onde Você Vai?',
                     hintStyle: TextStyle(
-                      color: AppColors.greyText,
+                      color: colorScheme.onSurfaceVariant,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
                     isDense: true,
                   ),
                 ),
@@ -216,7 +223,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   state.showSuggestions
                       ? Icons.arrow_drop_up
                       : Icons.arrow_drop_down,
-                  color: AppColors.greyText,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -229,6 +236,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   }
 
   Widget _dropdownSuggestions(List<String> suggestions) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(top: 4),
       decoration: _dropdownDecoration(),
@@ -239,7 +247,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         itemCount: suggestions.length,
         separatorBuilder: (_, __) => Divider(
           height: 1,
-          color: Colors.grey.withValues(alpha: 0.2),
+          color: colorScheme.outline,
           indent: 16,
           endIndent: 16,
         ),
@@ -268,15 +276,15 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(hotelName,
-                            style: const TextStyle(
-                              color: AppColors.primary,
+                            style: TextStyle(
+                              color: colorScheme.onSurface,
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             )),
                         if (location.isNotEmpty)
                           Text(location,
-                              style: const TextStyle(
-                                color: AppColors.greyText,
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
                                 fontSize: 12,
                               )),
                       ],
@@ -294,6 +302,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   // ── Campo hóspedes com lista cascata (1-20) ───────────────────────────────
 
   Widget _buildGuestsField(SearchState state) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -311,8 +320,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     state.guests == 1
                         ? '1 Hóspede'
                         : '${state.guests} Hóspedes',
-                    style: const TextStyle(
-                      color: AppColors.greyText,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
                     ),
@@ -323,7 +332,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   state.showGuestsPicker
                       ? Icons.arrow_drop_up
                       : Icons.arrow_drop_down,
-                  color: AppColors.greyText,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ],
             ),
@@ -335,6 +344,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   }
 
   Widget _buildGuestsList(int selected) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(top: 4),
       height: 200,
@@ -344,7 +354,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         itemCount: 20,
         separatorBuilder: (_, __) => Divider(
           height: 1,
-          color: Colors.grey.withValues(alpha: 0.2),
+          color: colorScheme.outline,
           indent: 16,
           endIndent: 16,
         ),
@@ -358,7 +368,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             },
             child: Container(
               color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.08)
+                  ? colorScheme.primary.withValues(alpha: 0.08)
                   : null,
               padding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 12),
@@ -367,16 +377,16 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   Icon(Icons.person,
                       size: 16,
                       color: isSelected
-                          ? AppColors.primary
-                          : AppColors.greyText),
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       count == 1 ? '1 hóspede' : '$count hóspedes',
                       style: TextStyle(
                         color: isSelected
-                            ? AppColors.primary
-                            : AppColors.greyText,
+                            ? colorScheme.primary
+                            : colorScheme.onSurface,
                         fontWeight: isSelected
                             ? FontWeight.w600
                             : FontWeight.w400,
@@ -385,8 +395,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     ),
                   ),
                   if (isSelected)
-                    const Icon(Icons.check,
-                        size: 16, color: AppColors.primary),
+                    Icon(Icons.check,
+                        size: 16, color: colorScheme.primary),
                 ],
               ),
             ),
@@ -400,6 +410,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
   Widget _buildDateField(
       BuildContext context, SearchState state, String? dateLabel) {
+    final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => _openDateRangePicker(context, state.dateRange),
       child: _inputBox(
@@ -412,7 +423,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               child: Text(
                 dateLabel ?? 'Check-in → Check-out',
                 style: TextStyle(
-                  color: AppColors.greyText,
+                  color: dateLabel != null
+                      ? colorScheme.onSurface
+                      : colorScheme.onSurfaceVariant,
                   fontSize: dateLabel != null ? 12 : 13,
                   fontWeight: dateLabel != null
                       ? FontWeight.w600
@@ -421,7 +434,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const Icon(Icons.arrow_drop_down, color: AppColors.greyText),
+            Icon(Icons.arrow_drop_down, color: colorScheme.onSurfaceVariant),
           ],
         ),
       ),
@@ -439,25 +452,14 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       initialDateRange: current,
       helpText: 'Selecione as datas',
       saveText: 'Confirmar',
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: Theme.of(context).colorScheme.copyWith(
-                primary: AppColors.primary,
-                onPrimary: Colors.white,
-              ),
-          textButtonTheme: TextButtonThemeData(
-            style: TextButton.styleFrom(foregroundColor: Colors.white),
-          ),
-        ),
-        child: Dialog(
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16)),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: child!,
-          ),
+      builder: (context, child) => Dialog(
+        insetPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: child!,
         ),
       ),
     );
@@ -469,23 +471,25 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   // ── Helpers visuais ───────────────────────────────────────────────────────
 
   Widget _inputBox({required Widget child}) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE5E5E5),
+        color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: const Color(0xFFB5B5B5)),
+        border: Border.all(color: colorScheme.outline),
       ),
       child: child,
     );
   }
 
   BoxDecoration _dropdownDecoration() {
+    final colorScheme = Theme.of(context).colorScheme;
     return BoxDecoration(
-      color: Colors.white,
+      color: colorScheme.surface,
       borderRadius: BorderRadius.circular(11),
-      border: Border.all(color: const Color(0xFFB5B5B5)),
+      border: Border.all(color: colorScheme.outline),
       boxShadow: [
         BoxShadow(
           color: Colors.black.withValues(alpha: 0.08),
@@ -499,12 +503,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   // ── Resultado: card de hotel ──────────────────────────────────────────────
 
   Widget _buildHotelCard(BuildContext context, FavoriteRoom hotel) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F0F0),
+        color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+        border: Border.all(color: colorScheme.outline),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -535,8 +540,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 children: [
                   Text(
                     hotel.hotelName,
-                    style: const TextStyle(
-                      color: AppColors.primary,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       height: 1.2,
@@ -546,8 +551,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     const SizedBox(height: 4),
                     Text(
                       hotel.destination,
-                      style: const TextStyle(
-                        color: AppColors.greyText,
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
                         fontSize: 12,
                       ),
                     ),
@@ -566,8 +571,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     onPressed: () => context
                         .push('/room_details/${hotel.hotelId}/${hotel.id}'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
                       minimumSize: const Size(double.infinity, 40),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(11),
@@ -592,21 +597,23 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   }
 
   Widget _amenityTag(IconData icon) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFE5E5E5),
+        color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(
         icon,
         size: 16,
-        color: AppColors.primary.withValues(alpha: 0.6),
+        color: colorScheme.onSurface.withValues(alpha: 0.6),
       ),
     );
   }
 
   Widget _buildInitialState() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -614,12 +621,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           Icon(
             Icons.search,
             size: 64,
-            color: AppColors.primary.withValues(alpha: 0.1),
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Encontre o lugar perfeito',
-            style: TextStyle(color: AppColors.greyText, fontSize: 16),
+            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16),
           ),
         ],
       ),

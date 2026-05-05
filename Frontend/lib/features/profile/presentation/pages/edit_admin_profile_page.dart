@@ -59,15 +59,12 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
     try {
       final notifier = ref.read(adminProfileProvider.notifier);
 
-      // Sempre envia apenas os campos realmente preenchidos; o service já
-      // descarta strings vazias antes de bater no PATCH.
       await notifier.updateProfile(
         nomeCompleto: _nameController.text,
         email: _emailController.text,
         numeroCelular: _phoneController.text,
       );
 
-      // Troca de senha é opcional — só dispara se nova senha foi preenchida.
       if (_passwordController.text.isNotEmpty) {
         await notifier.changePassword(
           senhaAtual: _currentPasswordController.text,
@@ -97,8 +94,8 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
   @override
   Widget build(BuildContext context) {
     final asyncProfile = ref.watch(adminProfileProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
-    // Pré-preenche os campos na primeira vez que o provider entrega dados.
     asyncProfile.whenData((profile) {
       if (!_prefilled) {
         _nameController.text = profile.nome;
@@ -109,7 +106,6 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: asyncProfile.when(
           loading: () => const Center(
@@ -121,14 +117,14 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline,
-                      color: AppColors.greyText, size: 48),
+                  Icon(Icons.error_outline,
+                      color: colorScheme.onSurfaceVariant, size: 48),
                   const SizedBox(height: 16),
                   Text(
                     'Não foi possível carregar o perfil.\n$err',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.greyText,
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
                       fontSize: 14,
                     ),
                   ),
@@ -139,8 +135,8 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
                     icon: const Icon(Icons.refresh),
                     label: const Text('Tentar novamente'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(11),
                       ),
@@ -157,6 +153,7 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
   }
 
   Widget _buildForm() {
+    final colorScheme = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Form(
@@ -165,10 +162,10 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Editar Perfil Admin',
               style: TextStyle(
-                color: AppColors.primary,
+                color: colorScheme.onSurface,
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
               ),
@@ -267,15 +264,15 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
               child: OutlinedButton(
                 onPressed: () => context.pop(),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.primary),
+                  side: BorderSide(color: colorScheme.primary),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Cancelar',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: colorScheme.primary,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -298,27 +295,29 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
     String? hint,
     String? Function(String?)? validator,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
       minLines: maxLines == 1 ? 1 : maxLines,
       validator: validator,
-      style: const TextStyle(color: AppColors.primary, fontSize: 16),
+      style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         prefixIcon: Icon(icon, color: AppColors.secondary),
-        labelStyle: const TextStyle(color: AppColors.greyText, fontSize: 14),
+        labelStyle: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
+        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         filled: true,
-        fillColor: AppColors.bgSecondary,
+        fillColor: colorScheme.surfaceContainer,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.strokeLight),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.strokeLight),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -326,7 +325,7 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red),
+          borderSide: BorderSide(color: colorScheme.error),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -345,11 +344,12 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
     String? hint,
     String? Function(String?)? validator,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return TextFormField(
       controller: controller,
       obscureText: obscure,
       validator: validator,
-      style: const TextStyle(color: AppColors.primary, fontSize: 16),
+      style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -363,16 +363,17 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
             color: AppColors.secondary,
           ),
         ),
-        labelStyle: const TextStyle(color: AppColors.greyText, fontSize: 14),
+        labelStyle: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
+        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         filled: true,
-        fillColor: AppColors.bgSecondary,
+        fillColor: colorScheme.surfaceContainer,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.strokeLight),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.strokeLight),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -380,7 +381,7 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red),
+          borderSide: BorderSide(color: colorScheme.error),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,

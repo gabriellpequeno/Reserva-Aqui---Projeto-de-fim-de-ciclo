@@ -14,9 +14,9 @@ class UserProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(userProfileProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: profileAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -29,7 +29,7 @@ class UserProfilePage extends ConsumerWidget {
                   Text(
                     error.toString().replaceFirst('Exception: ', ''),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.primary),
+                    style: TextStyle(color: colorScheme.onSurface),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(

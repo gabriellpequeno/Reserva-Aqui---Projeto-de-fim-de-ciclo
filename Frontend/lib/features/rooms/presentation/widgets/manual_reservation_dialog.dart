@@ -33,7 +33,6 @@ class _ManualReservationDialogState extends State<ManualReservationDialog> {
     return _intervalo!.end.difference(_intervalo!.start).inDays;
   }
 
-  // valorBase * noites; fallback de 1.0 para satisfazer a constraint CHECK (valor_total > 0)
   double get _valorTotal =>
       (_noites > 0 ? (widget.valorBase ?? 1.0) * _noites : 0.0);
 
@@ -49,20 +48,13 @@ class _ManualReservationDialogState extends State<ManualReservationDialog> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       currentDate: DateTime.now(),
-      selectableDayPredicate: (day, _s, _e) => !_isDiaIndisponivel(day),
+      selectableDayPredicate: (day, s, e) => !_isDiaIndisponivel(day),
       helpText: 'Selecionar período de bloqueio',
       saveText: 'Confirmar',
       builder: (context, child) {
         final screenWidth = MediaQuery.of(context).size.width;
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              secondary: AppColors.secondary,
-            ),
-            datePickerTheme: DatePickerThemeData(
-              dividerColor: AppColors.primary.withValues(alpha: 0.15),
-            ),
             dialogTheme: DialogThemeData(
               insetPadding: EdgeInsets.symmetric(
                 horizontal: screenWidth * 0.10,
@@ -83,8 +75,9 @@ class _ManualReservationDialogState extends State<ManualReservationDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
@@ -92,7 +85,6 @@ class _ManualReservationDialogState extends State<ManualReservationDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -111,8 +103,8 @@ class _ManualReservationDialogState extends State<ManualReservationDialog> {
                       const SizedBox(height: 2),
                       Text(
                         widget.nomeCategoria,
-                        style: const TextStyle(
-                          color: AppColors.greyText,
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
                           fontSize: 13,
                         ),
                       ),
@@ -121,7 +113,7 @@ class _ManualReservationDialogState extends State<ManualReservationDialog> {
                 ),
                 IconButton(
                   onPressed: _loading ? null : () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close, color: AppColors.greyText, size: 20),
+                  icon: Icon(Icons.close, color: colorScheme.onSurfaceVariant, size: 20),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   tooltip: 'Fechar',
@@ -131,7 +123,6 @@ class _ManualReservationDialogState extends State<ManualReservationDialog> {
 
             const SizedBox(height: 20),
 
-            // Seletor de período
             Semantics(
               label: 'Selecionar período de reserva',
               child: GestureDetector(
@@ -140,12 +131,12 @@ class _ManualReservationDialogState extends State<ManualReservationDialog> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(11),
                     border: Border.all(
                       color: _intervalo != null
-                          ? AppColors.primary
-                          : AppColors.primary.withValues(alpha: 0.3),
+                          ? colorScheme.primary
+                          : colorScheme.outline,
                       width: 1.5,
                     ),
                   ),
@@ -155,16 +146,16 @@ class _ManualReservationDialogState extends State<ManualReservationDialog> {
                         Icons.calendar_today_outlined,
                         size: 16,
                         color: _intervalo != null
-                            ? AppColors.primary
-                            : AppColors.primary.withValues(alpha: 0.4),
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _intervalo == null
-                            ? const Text(
+                            ? Text(
                                 'Selecionar datas',
                                 style: TextStyle(
-                                  color: AppColors.greyText,
+                                  color: colorScheme.onSurfaceVariant,
                                   fontSize: 14,
                                 ),
                               )
@@ -173,16 +164,16 @@ class _ManualReservationDialogState extends State<ManualReservationDialog> {
                                 children: [
                                   Text(
                                     '${_fmtData(_intervalo!.start)}  →  ${_fmtData(_intervalo!.end)}',
-                                    style: const TextStyle(
-                                      color: AppColors.primary,
+                                    style: TextStyle(
+                                      color: colorScheme.onSurface,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   Text(
                                     '$_noites noite${_noites != 1 ? 's' : ''}',
-                                    style: const TextStyle(
-                                      color: AppColors.greyText,
+                                    style: TextStyle(
+                                      color: colorScheme.onSurfaceVariant,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -191,7 +182,7 @@ class _ManualReservationDialogState extends State<ManualReservationDialog> {
                       ),
                       Icon(
                         Icons.chevron_right,
-                        color: AppColors.primary.withValues(alpha: 0.4),
+                        color: colorScheme.onSurfaceVariant,
                         size: 20,
                       ),
                     ],
@@ -211,28 +202,27 @@ class _ManualReservationDialogState extends State<ManualReservationDialog> {
                 ),
                 child: Text(
                   _erro!,
-                  style: TextStyle(color: Colors.red[700], fontSize: 13),
+                  style: TextStyle(color: Colors.red[400], fontSize: 13),
                 ),
               ),
             ],
 
             const SizedBox(height: 24),
 
-            // Botões
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
                     onPressed: _loading ? null : () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.primary),
+                      side: BorderSide(color: colorScheme.primary),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(11)),
                       padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Cancelar',
-                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -244,7 +234,7 @@ class _ManualReservationDialogState extends State<ManualReservationDialog> {
                       onPressed: _intervalo != null && !_loading ? _confirmar : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.secondary,
-                        disabledBackgroundColor: Colors.grey[300],
+                        disabledBackgroundColor: colorScheme.surfaceContainerHigh,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(11)),
                         padding: const EdgeInsets.symmetric(vertical: 13),

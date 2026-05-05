@@ -262,8 +262,10 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFD9D9D9),
+      backgroundColor: colorScheme.surfaceContainerHigh,
       body: Column(
         children: [
           _buildHeader(context),
@@ -386,12 +388,16 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
   // ── Card principal ────────────────────────────────────────────────────────
 
   Widget _buildMainCard(_ReservaInfo reserva, TicketStatusTheme theme) {
+    final colorScheme = Theme.of(context).colorScheme;
     final checkinDisplay = reserva.horaCheckinReal ?? _configuracao?.horarioCheckin ?? '—';
     final checkoutDisplay = reserva.horaCheckoutReal ?? _configuracao?.horarioCheckout ?? '—';
 
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: colorScheme.surface, 
+        borderRadius: BorderRadius.circular(20)
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -402,23 +408,23 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
               children: [
                 Text(
                   reserva.tipoQuarto,
-                  style: const TextStyle(
-                    color: AppColors.primary, fontSize: 12,
+                  style: TextStyle(
+                    color: colorScheme.onSurface, fontSize: 12,
                     fontFamily: 'Stack Sans Text', fontWeight: FontWeight.w700, height: 1.67,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Check-in: ${_fullDate(reserva.checkIn)}',
-                  style: const TextStyle(
-                    color: AppColors.primary, fontSize: 12,
+                  style: TextStyle(
+                    color: colorScheme.onSurface, fontSize: 12,
                     fontFamily: 'Stack Sans Text', fontWeight: FontWeight.w400, height: 1.67,
                   ),
                 ),
                 Text(
                   'Check-out: ${_fullDate(reserva.checkOut)}',
-                  style: const TextStyle(
-                    color: AppColors.primary, fontSize: 12,
+                  style: TextStyle(
+                    color: colorScheme.onSurface, fontSize: 12,
                     fontFamily: 'Stack Sans Text', fontWeight: FontWeight.w400, height: 1.67,
                   ),
                 ),
@@ -445,10 +451,12 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
   // ── Card de detalhes ──────────────────────────────────────────────────────
 
   Widget _buildDetailsCard(_ReservaInfo reserva) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -467,9 +475,9 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
             ),
           ],
           if (_categoria != null && _configuracao != null)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Divider(color: Color(0xFFE6E6E6), thickness: 0.5),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Divider(color: colorScheme.outline, thickness: 0.5),
             ),
           if (_configuracao != null) ...[
             _detailsTitle('Política do hotel'),
@@ -487,16 +495,16 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
               const SizedBox(height: 8),
               Text(
                 'Cancelamento:',
-                style: const TextStyle(
-                  color: AppColors.primary, fontSize: 12,
+                style: TextStyle(
+                  color: colorScheme.onSurface, fontSize: 12,
                   fontFamily: 'Stack Sans Text', fontWeight: FontWeight.w700, height: 1.67,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 _configuracao!.politicaCancelamento!,
-                style: const TextStyle(
-                  color: AppColors.primary, fontSize: 12,
+                style: TextStyle(
+                  color: colorScheme.onSurface, fontSize: 12,
                   fontFamily: 'Stack Sans Text', fontWeight: FontWeight.w400, height: 1.67,
                 ),
               ),
@@ -510,10 +518,12 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
   // ── Card financeiro ───────────────────────────────────────────────────────
 
   Widget _buildFinancialCard(_ReservaInfo reserva) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(20)),
       child: Column(
         children: [
           _financialRow('Subtotal', 'R\$${reserva.valorTotal.toStringAsFixed(2)}'),
@@ -565,14 +575,16 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
     Color? rightValueColor,
     bool isLast = false,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         border: Border(
-          top: const BorderSide(width: 0.5, color: Color(0xFFE6E6E6)),
+          top: BorderSide(width: 0.5, color: colorScheme.outline),
           bottom: isLast
-              ? const BorderSide(width: 0.5, color: Color(0xFFE6E6E6))
+              ? BorderSide(width: 0.5, color: colorScheme.outline)
               : BorderSide.none,
         ),
       ),
@@ -591,7 +603,7 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(rightLabel, style: _labelStyle),
-              Text(rightValue, style: _valueStyle.copyWith(color: rightValueColor ?? AppColors.primary)),
+              Text(rightValue, style: _valueStyle.copyWith(color: rightValueColor ?? colorScheme.onSurface)),
             ],
           ),
         ],
@@ -600,11 +612,13 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
   }
 
   Widget _observacoesRow(String obs) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(width: 0.5, color: Color(0xFFE6E6E6))),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(width: 0.5, color: colorScheme.outline)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -620,17 +634,19 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
   Widget _detailsTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        color: AppColors.primary, fontSize: 12,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface, fontSize: 12,
         fontFamily: 'Stack Sans Text', fontWeight: FontWeight.w700, height: 1.67,
       ),
     );
   }
 
   Widget _infoLine(IconData icon, String text) {
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+    
     return Row(
       children: [
-        Icon(icon, size: 14, color: AppColors.primary),
+        Icon(icon, size: 14, color: onSurfaceColor),
         const SizedBox(width: 6),
         Flexible(
           child: Text(text, style: _valueStyle),
@@ -640,7 +656,9 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
   }
 
   Widget _financialRow(String label, String value, {bool isTotal = false}) {
-    final color = isTotal ? AppColors.secondary : AppColors.primary;
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = isTotal ? AppColors.secondary : colorScheme.onSurface;
+    
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -659,13 +677,13 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
     return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}, $day';
   }
 
-  static const _labelStyle = TextStyle(
-    color: AppColors.primary, fontSize: 12,
+  TextStyle get _labelStyle => TextStyle(
+    color: Theme.of(context).colorScheme.onSurface, fontSize: 12,
     fontFamily: 'Stack Sans Text', fontWeight: FontWeight.w700, height: 1.67,
   );
 
-  static const _valueStyle = TextStyle(
-    color: AppColors.primary, fontSize: 12,
+  TextStyle get _valueStyle => TextStyle(
+    color: Theme.of(context).colorScheme.onSurface, fontSize: 12,
     fontFamily: 'Stack Sans Text', fontWeight: FontWeight.w300, height: 1.67,
   );
 }

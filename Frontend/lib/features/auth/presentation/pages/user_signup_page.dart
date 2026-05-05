@@ -118,8 +118,8 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -129,10 +129,10 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 120),
-                const Text(
+                Text(
                   'cadastre-se',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: colorScheme.onSurface,
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                     height: 1.2,

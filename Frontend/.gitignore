@@ -4,6 +4,7 @@
 *.keystore
 .env
 PRIVATE_KEY/
+PRIVATE_KEYS/
 android/app/google-services.json
 
 # Miscellaneous

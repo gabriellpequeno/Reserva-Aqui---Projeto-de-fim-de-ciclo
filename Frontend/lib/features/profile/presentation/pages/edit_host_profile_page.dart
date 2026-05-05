@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 import '../../../../core/auth/auth_notifier.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/via_cep.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -27,7 +30,6 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
   late final TextEditingController _phoneController;
   late final TextEditingController _descricaoController;
   late final TextEditingController _cepController;
-  late final TextEditingController _ufController;
   late final TextEditingController _cidadeController;
   late final TextEditingController _bairroController;
   late final TextEditingController _ruaController;
@@ -42,6 +44,11 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
     mask: '#####-###',
     filter: {'#': RegExp(r'[0-9]')},
   );
+
+  String? _selectedUf;
+  String? _policyFileName;
+  PlatformFile? _pendingPolicy;
+  String? _hotelId;
 
   Map<String, String> _initial = const {};
   bool _isSubmitting = false;
@@ -62,7 +69,6 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
     _phoneController = TextEditingController();
     _descricaoController = TextEditingController();
     _cepController = TextEditingController();
-    _ufController = TextEditingController();
     _cidadeController = TextEditingController();
     _bairroController = TextEditingController();
     _ruaController = TextEditingController();
@@ -83,7 +89,6 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
     _phoneController.dispose();
     _descricaoController.dispose();
     _cepController.dispose();
-    _ufController.dispose();
     _cidadeController.dispose();
     _bairroController.dispose();
     _ruaController.dispose();
@@ -106,7 +111,8 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
     _phoneController.text = s(hotel['telefone']);
     _descricaoController.text = s(hotel['descricao']);
     _cepController.text = cepMasked;
-    _ufController.text = s(hotel['uf']);
+    final uf = s(hotel['uf']);
+    _selectedUf = uf.isEmpty ? null : uf;
     _cidadeController.text = s(hotel['cidade']);
     _bairroController.text = s(hotel['bairro']);
     _ruaController.text = s(hotel['rua']);
@@ -119,13 +125,24 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
       'telefone': _phoneController.text,
       'descricao': _descricaoController.text,
       'cep': _onlyDigits(cepMasked),
-      'uf': _ufController.text,
+      'uf': _selectedUf ?? '',
       'cidade': _cidadeController.text,
       'bairro': _bairroController.text,
       'rua': _ruaController.text,
       'numero': _numeroController.text,
       'complemento': _complementoController.text,
     };
+  }
+
+  Future<void> _fetchPolicy(String hotelId) async {
+    try {
+      final dio = ref.read(dioProvider);
+      final response = await dio.get('/uploads/hotels/$hotelId/policy');
+      final policy = response.data?['policy'];
+      if (mounted) {
+        setState(() => _policyFileName = policy?['nome_arquivo'] as String?);
+      }
+    } catch (_) {}
   }
 
   String _formatCep(String raw) {
@@ -162,7 +179,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
           _cepLookupError = 'CEP não encontrado. Preencha manualmente.';
         } else {
           _cepLookupError = null;
-          _ufController.text = result.uf;
+          _selectedUf = result.uf;
           _cidadeController.text = result.cidade;
           _bairroController.text = result.bairro;
           _ruaController.text = result.rua;
@@ -178,7 +195,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
       'telefone': _phoneController.text.trim(),
       'descricao': _descricaoController.text.trim(),
       'cep': _onlyDigits(_cepController.text),
-      'uf': _ufController.text.trim(),
+      'uf': _selectedUf ?? '',
       'cidade': _cidadeController.text.trim(),
       'bairro': _bairroController.text.trim(),
       'rua': _ruaController.text.trim(),
@@ -195,6 +212,39 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
     return diff;
   }
 
+  Future<void> _pickPolicyFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'txt', 'md'],
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+
+    final file = result.files.first;
+    const maxBytes = 5 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      if (mounted) {
+        _showSnack(
+          'Arquivo muito grande (${(file.size / (1024 * 1024)).toStringAsFixed(1)} MB). '
+          'O limite é 5 MB.',
+        );
+      }
+      return;
+    }
+
+    final ext = file.name.split('.').last.toLowerCase();
+    if (!['pdf', 'txt', 'md'].contains(ext)) {
+      if (mounted) {
+        _showSnack(
+          'Formato "$ext" não aceito. Use PDF, TXT ou MD.',
+        );
+      }
+      return;
+    }
+
+    setState(() => _pendingPolicy = file);
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -203,8 +253,9 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
         _confirmPasswordController.text.isNotEmpty;
 
     final diff = _buildDiff();
+    final hasPolicyUpload = _pendingPolicy != null;
 
-    if (diff.isEmpty && !wantsPasswordChange) {
+    if (diff.isEmpty && !wantsPasswordChange && !hasPolicyUpload) {
       _showSnack('Nenhuma alteração a salvar.');
       return;
     }
@@ -252,7 +303,35 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
         return;
       }
 
-      if (diff.isNotEmpty) {
+      if (hasPolicyUpload && _hotelId != null) {
+        try {
+          final dio = ref.read(dioProvider);
+          final file = _pendingPolicy!;
+          final formData = FormData.fromMap({
+            'policy': MultipartFile.fromBytes(
+              file.bytes!,
+              filename: file.name,
+            ),
+          });
+          final response = await dio.post(
+            '/uploads/hotels/$_hotelId/policy',
+            data: formData,
+          );
+          final policyData = response.data?['policy'];
+          if (mounted) {
+            setState(() {
+              _policyFileName = policyData?['nome_arquivo'] as String?;
+              _pendingPolicy = null;
+            });
+          }
+        } catch (e) {
+          if (!mounted) return;
+          _showSnack('Erro ao enviar política: ${_messageFrom(e)}');
+          return;
+        }
+      }
+
+      if (diff.isNotEmpty || hasPolicyUpload) {
         if (!mounted) return;
         _showSnack('Perfil atualizado com sucesso.');
         context.pop();
@@ -263,6 +342,11 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
   }
 
   String _messageFrom(Object e) {
+    if (e is DioException) {
+      final data = e.response?.data;
+      if (data is Map && data['error'] is String) return data['error'] as String;
+      if (data is Map && data['message'] is String) return data['message'] as String;
+    }
     if (e is Exception) {
       final s = e.toString();
       return s.startsWith('Exception: ') ? s.substring(11) : s;
@@ -301,8 +385,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
                   ),
                   const SizedBox(height: 24),
                   TextButton(
-                    onPressed: () =>
-                        ref.invalidate(hostProfileProvider),
+                    onPressed: () => ref.invalidate(hostProfileProvider),
                     child: const Text('Tentar novamente'),
                   ),
                 ],
@@ -312,6 +395,10 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
           data: (profile) {
             if (!_initialized) {
               _populateFromHotel(profile.hotel);
+              _hotelId =
+                  (profile.hotel['hotel_id'] ?? profile.hotel['id'])
+                      ?.toString();
+              if (_hotelId != null) _fetchPolicy(_hotelId!);
               _initialized = true;
             }
             return _buildForm();
@@ -453,18 +540,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
                     const SizedBox(width: 12),
                     Expanded(
                       flex: 1,
-                      child: _buildTextField(
-                        controller: _ufController,
-                        label: 'UF',
-                        icon: Icons.map_outlined,
-                        maxLength: 2,
-                        validator: (value) {
-                          if (value?.trim().isEmpty ?? true) {
-                            return 'UF';
-                          }
-                          return null;
-                        },
-                      ),
+                      child: _buildUfDropdown(),
                     ),
                   ],
                 ),
@@ -523,6 +599,8 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
                 ),
               ],
             ),
+            const SizedBox(height: 24),
+            _buildPolicySection(),
             const SizedBox(height: 24),
             ProfileFormSection(
               title: 'Segurança',
@@ -607,6 +685,173 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPolicySection() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ProfileFormSection(
+      title: 'Política do Hotel',
+      children: [
+        // Arquivo atual no servidor
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              _policyFileName != null
+                  ? Icons.check_circle_outline
+                  : Icons.info_outline,
+              size: 18,
+              color: _policyFileName != null
+                  ? AppColors.secondary
+                  : colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                _policyFileName != null
+                    ? 'Política atual: $_policyFileName'
+                    : 'Nenhuma política cadastrada ainda.',
+                style: TextStyle(
+                  color: _policyFileName != null
+                      ? colorScheme.onSurface
+                      : colorScheme.onSurfaceVariant,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+        // Arquivo selecionado aguardando envio
+        if (_pendingPolicy != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.secondary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.secondary.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.attach_file, size: 16, color: AppColors.secondary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _pendingPolicy!.name,
+                        style: const TextStyle(
+                          color: AppColors.secondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Será enviado ao salvar',
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => setState(() => _pendingPolicy = null),
+                  child: Icon(
+                    Icons.close,
+                    size: 16,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _pickPolicyFile,
+            icon: const Icon(Icons.upload_file_outlined),
+            label: Text(
+              _pendingPolicy != null ? 'Trocar Arquivo' : 'Selecionar Arquivo',
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.secondary,
+              side: const BorderSide(color: AppColors.secondary),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Formatos aceitos: PDF, TXT ou MD\n'
+          'Tamanho máximo: 5 MB\n'
+          'Nome do arquivo: qualquer nome válido do sistema',
+          style: TextStyle(
+            color: colorScheme.onSurfaceVariant,
+            fontSize: 12,
+            height: 1.6,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUfDropdown() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return DropdownButtonFormField<String>(
+      key: ValueKey(_selectedUf),
+      initialValue: _selectedUf,
+      isExpanded: true,
+      dropdownColor: colorScheme.surfaceContainer,
+      decoration: InputDecoration(
+        labelText: 'UF',
+        prefixIcon: const Icon(Icons.map_outlined, color: AppColors.secondary),
+        labelStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant,
+          fontSize: 14,
+        ),
+        filled: true,
+        fillColor: colorScheme.surfaceContainer,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.secondary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.error),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+      ),
+      style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
+      items: const [
+        'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+        'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN',
+        'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO',
+      ]
+          .map((uf) => DropdownMenuItem(value: uf, child: Text(uf)))
+          .toList(),
+      onChanged: (uf) => setState(() => _selectedUf = uf),
+      validator: (_) => _selectedUf == null ? 'UF' : null,
     );
   }
 
@@ -702,7 +947,9 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
         suffixIcon: GestureDetector(
           onTap: onToggle,
           child: Icon(
-            obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+            obscure
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
             color: AppColors.secondary,
           ),
         ),

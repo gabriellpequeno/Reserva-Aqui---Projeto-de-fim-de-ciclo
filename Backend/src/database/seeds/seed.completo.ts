@@ -708,14 +708,18 @@ export async function seedCompleto(): Promise<void> {
 
     try {
       // 3b. Configuração operacional
-      await createConfiguracaoHotel(hotel.hotel_id, {
-        horario_checkin:       '14:00',
-        horario_checkout:      '12:00',
-        max_dias_reserva:      30,
-        politica_cancelamento: 'Cancelamento gratuito até 48h antes do check-in. Após esse prazo, será cobrada 1 diária como taxa.',
-        aceita_animais:        hi === 4,
-        idiomas_atendimento:   hi === 1 ? 'Português, Inglês, Espanhol' : 'Português, Inglês',
-      });
+      try {
+        await createConfiguracaoHotel(hotel.hotel_id, {
+          horario_checkin:       '14:00',
+          horario_checkout:      '12:00',
+          max_dias_reserva:      30,
+          politica_cancelamento: 'Cancelamento gratuito até 48h antes do check-in. Após esse prazo, será cobrada 1 diária como taxa.',
+          aceita_animais:        hi === 4,
+          idiomas_atendimento:   hi === 1 ? 'Português, Inglês, Espanhol' : 'Português, Inglês',
+        });
+      } catch {
+        console.log('  ⚠️  Configuração já existe (ignorado)');
+      }
 
       // 3c. Fotos de capa mockadas
       // foto_hotel não tem UNIQUE em storage_path → DELETE das seeds + INSERT fresco

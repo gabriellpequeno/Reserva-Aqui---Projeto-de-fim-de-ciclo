@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_notifier.dart';
-import 'terms_page.dart';
-import 'privacy_page.dart';
-import 'about_page.dart';
-import 'support_page.dart';
 
 const _notificationsKey = 'notifications_enabled';
 
@@ -125,40 +122,28 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       context: context,
                       icon: Icons.list_alt,
                       title: 'Termos De Uso',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const TermsPage()),
-                      ),
+                      onTap: () => context.push('/profile/settings/terms'),
                     ),
                     Divider(color: colorScheme.outline, height: 1, indent: 16, endIndent: 16),
                     _buildActionTile(
                       context: context,
                       icon: Icons.privacy_tip_outlined,
                       title: 'Privacidade',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const PrivacyPage()),
-                      ),
+                      onTap: () => context.push('/profile/settings/privacy'),
                     ),
                     Divider(color: colorScheme.outline, height: 1, indent: 16, endIndent: 16),
                     _buildActionTile(
                       context: context,
                       icon: Icons.info_outline,
                       title: 'Sobre O App',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AboutPage()),
-                      ),
+                      onTap: () => context.push('/profile/settings/about'),
                     ),
                     Divider(color: colorScheme.outline, height: 1, indent: 16, endIndent: 16),
                     _buildActionTile(
                       context: context,
                       icon: Icons.support_agent_outlined,
                       title: 'Suporte',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const SupportPage()),
-                      ),
+                      onTap: () => context.push('/profile/settings/support'),
                     ),
                   ],
                 ),

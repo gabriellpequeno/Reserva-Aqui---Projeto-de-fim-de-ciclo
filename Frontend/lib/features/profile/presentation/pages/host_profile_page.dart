@@ -54,7 +54,8 @@ class HostProfilePage extends ConsumerWidget {
 
             final name = hotel['nome_hotel'] ?? 'Sem nome';
             final email = hotel['email'] ?? 'Sem e-mail';
-            final avatarUrl = fotos.isNotEmpty ? fotos.first['url'] : null;
+            final avatarUrl = (hotel['foto_perfil'] as String?) ??
+                (fotos.isNotEmpty ? fotos.first['url'] as String? : null);
 
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),

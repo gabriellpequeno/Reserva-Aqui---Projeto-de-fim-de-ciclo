@@ -1,7 +1,14 @@
 import { Router } from 'express';
 import { imageUpload } from '../middlewares/imageUpload';
 import { hotelGuard } from '../middlewares/hotelGuard';
+import { authGuard } from '../middlewares/authGuard';
 import {
+  uploadUsuarioAvatar,
+  deleteUsuarioAvatar,
+  serveUsuarioAvatar,
+  uploadHotelAvatar,
+  deleteHotelAvatar,
+  serveHotelAvatar,
   uploadHotelCover,
   deleteHotelCover,
   serveHotelCover,
@@ -13,6 +20,24 @@ import {
 } from '../controllers/upload.controller';
 
 const router = Router();
+
+// ── Avatars de Usuário ────────────────────────────────────────────────────────
+// GET    /usuarios/:id/avatar          → serve avatar (público)
+// POST   /usuarios/:id/avatar          → upload/atualiza avatar (requer auth usuario)
+// DELETE /usuarios/:id/avatar          → remove avatar (requer auth usuario)
+
+router.get('/usuarios/:id/avatar', serveUsuarioAvatar);
+router.post('/usuarios/:id/avatar', authGuard, imageUpload.single('foto'), uploadUsuarioAvatar);
+router.delete('/usuarios/:id/avatar', authGuard, deleteUsuarioAvatar);
+
+// ── Avatar de Hotel ───────────────────────────────────────────────────────────
+// GET    /hotels/:hotel_id/avatar      → serve avatar (público)
+// POST   /hotels/:hotel_id/avatar      → upload/atualiza avatar (requer auth anfitriao)
+// DELETE /hotels/:hotel_id/avatar      → remove avatar (requer auth anfitriao)
+
+router.get('/hotels/:hotel_id/avatar', serveHotelAvatar);
+router.post('/hotels/:hotel_id/avatar', hotelGuard, imageUpload.single('foto'), uploadHotelAvatar);
+router.delete('/hotels/:hotel_id/avatar', hotelGuard, deleteHotelAvatar);
 
 // ── Hotel Cover Photos ────────────────────────────────────────────────────────
 // GET    /hotels/:hotel_id/cover               → lista todas as fotos de capa (opcionalmente filtrar por ?orientacao=)

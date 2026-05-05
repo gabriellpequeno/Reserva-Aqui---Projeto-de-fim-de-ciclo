@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     senha           VARCHAR(255)    NOT NULL,          -- hash bcrypt
     cpf             VARCHAR(14)     UNIQUE NOT NULL,
     numero_celular  VARCHAR(20),
+    foto_perfil     TEXT,
     data_nascimento DATE            NOT NULL,
     papel           VARCHAR(20)     NOT NULL DEFAULT 'usuario'
                                     CHECK (papel IN ('usuario', 'admin')),
@@ -59,6 +60,7 @@ CREATE TABLE IF NOT EXISTS anfitriao (
     saldo       DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,
     descricao   VARCHAR(1000),
     cover_storage_path TEXT,                       -- caminho relativo a UPLOAD_DIR (foto de capa)
+    foto_perfil     TEXT,                          -- caminho relativo a UPLOAD_DIR (avatar do hotel)
     schema_name VARCHAR(150)    UNIQUE NOT NULL,       -- nome do schema lógico do tenant
     criado_em   TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
     ativo       BOOLEAN         NOT NULL DEFAULT TRUE

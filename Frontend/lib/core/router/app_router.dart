@@ -34,6 +34,10 @@ import '../../features/booking/presentation/pages/reservation_success_page.dart'
 import '../../features/booking/presentation/pages/whatsapp_payment_page.dart';
 import '../../features/tickets/presentation/pages/tickets_page.dart';
 import '../../features/tickets/presentation/pages/ticket_details_page.dart';
+import '../../features/profile/presentation/pages/terms_page.dart';
+import '../../features/profile/presentation/pages/privacy_page.dart';
+import '../../features/profile/presentation/pages/about_page.dart';
+import '../../features/profile/presentation/pages/support_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -261,6 +265,26 @@ final routerProvider = Provider<GoRouter>((ref) {
           final mode = state.uri.queryParameters['mode'] ?? 'user';
           return ReservationSuccessPage(codigoPublico: cp, mode: mode);
         },
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/profile/settings/terms',
+        builder: (context, state) => const TermsPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/profile/settings/privacy',
+        builder: (context, state) => const PrivacyPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/profile/settings/about',
+        builder: (context, state) => const AboutPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/profile/settings/support',
+        builder: (context, state) => const SupportPage(),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

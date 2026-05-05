@@ -12,15 +12,19 @@ class SearchService {
     String? checkin,
     String? checkout,
     int? hospedes,
+    List<String>? amenities,
   }) async {
     final queryParams = <String, dynamic>{};
-    
+
     if (q.isNotEmpty) {
       queryParams['q'] = q;
     }
     if (checkin != null) queryParams['checkin'] = checkin;
     if (checkout != null) queryParams['checkout'] = checkout;
     if (hospedes != null) queryParams['hospedes'] = hospedes;
+    if (amenities != null && amenities.isNotEmpty) {
+      queryParams['amenities'] = amenities;
+    }
 
     final response = await _dio.get<List<dynamic>>(
       '/quartos/busca',

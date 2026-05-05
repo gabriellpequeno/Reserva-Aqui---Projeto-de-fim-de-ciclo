@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/auth/auth_notifier.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/auth/auth_state.dart';
 import '../providers/notifications_provider.dart';
 import '../../domain/models/app_notification.dart';
@@ -19,9 +20,12 @@ class NotificationsPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          _buildHeader(context, ref),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+          child: Column(
+            children: [
+              _buildHeader(context, ref),
           Expanded(
             child: !isLoggedIn
                 ? _buildLoginMessage(context)
@@ -61,7 +65,9 @@ class NotificationsPage extends ConsumerWidget {
                           ),
                   ),
           ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

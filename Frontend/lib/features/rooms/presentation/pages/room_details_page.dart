@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../domain/models/room.dart';
 import '../notifiers/room_details_notifier.dart';
 import '../widgets/availability_checker.dart';
@@ -81,90 +82,147 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                     ],
                   ),
                 )
-              : Stack(
-                  children: [
-                    SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Top Image Section
-                          _buildImageSection(roomState.room!),
-
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 58, 24, 24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Title — toque navega para hotel_details
-                                GestureDetector(
-                                  onTap: () => context.push('/hotel_details/${widget.hotelId}'),
-                                  child: Text(
-                                    roomState.room!.hotelName,
-                                    style: const TextStyle(
-                                      color: AppColors.primary,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
+              : Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+                    child: Stack(
+                      children: [
+                        isTablet(context)
+                            ? SingleChildScrollView(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: _buildImageSection(roomState.room!),
                                     ),
-                                  ),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () => context.push('/hotel_details/${widget.hotelId}'),
+                                              child: Text(
+                                                roomState.room!.hotelName,
+                                                style: const TextStyle(
+                                                  color: AppColors.primary,
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 24),
+                                            const Text(
+                                              'Comodidades',
+                                              style: TextStyle(
+                                                color: AppColors.primary,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            _buildAmenitiesGrid(roomState.room!.amenities),
+                                            if (roomState.categoriaId > 0)
+                                              AvailabilityChecker(
+                                                hotelId: widget.hotelId,
+                                                categoriaId: roomState.categoriaId,
+                                              ),
+                                            const SizedBox(height: 32),
+                                            const Text(
+                                              'Detalhes',
+                                              style: TextStyle(
+                                                color: AppColors.primary,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              roomState.room!.description,
+                                              style: const TextStyle(
+                                                color: AppColors.primary,
+                                                fontSize: 14,
+                                                height: 1.5,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 32),
+                                            _buildHostSection(context, roomState.room!.host),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 24),
-
-                                // Amenities Section
-                                const Text(
-                                  'Comodidades',
-                                  style: TextStyle(
-                                    color: AppColors.primary,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              )
+                            : SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildImageSection(roomState.room!),
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(24, 58, 24, 24),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          GestureDetector(
+                                            onTap: () => context.push('/hotel_details/${widget.hotelId}'),
+                                            child: Text(
+                                              roomState.room!.hotelName,
+                                              style: const TextStyle(
+                                                color: AppColors.primary,
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 24),
+                                          const Text(
+                                            'Comodidades',
+                                            style: TextStyle(
+                                              color: AppColors.primary,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          _buildAmenitiesGrid(roomState.room!.amenities),
+                                          if (roomState.categoriaId > 0)
+                                            AvailabilityChecker(
+                                              hotelId: widget.hotelId,
+                                              categoriaId: roomState.categoriaId,
+                                            ),
+                                          const SizedBox(height: 32),
+                                          const Text(
+                                            'Detalhes',
+                                            style: TextStyle(
+                                              color: AppColors.primary,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            roomState.room!.description,
+                                            style: const TextStyle(
+                                              color: AppColors.primary,
+                                              fontSize: 14,
+                                              height: 1.5,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 32),
+                                          _buildHostSection(context, roomState.room!.host),
+                                          const SizedBox(height: 100),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 12),
-                                _buildAmenitiesGrid(roomState.room!.amenities),
-
-                                // Availability Checker
-                                if (roomState.categoriaId > 0)
-                                  AvailabilityChecker(
-                                    hotelId: widget.hotelId,
-                                    categoriaId: roomState.categoriaId,
-                                  ),
-
-                                const SizedBox(height: 32),
-
-                                // Details Section
-                                const Text(
-                                  'Detalhes',
-                                  style: TextStyle(
-                                    color: AppColors.primary,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  roomState.room!.description,
-                                  style: const TextStyle(
-                                    color: AppColors.primary,
-                                    fontSize: 14,
-                                    height: 1.5,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 32),
-
-                                // Host Section
-                                _buildHostSection(context, roomState.room!.host),
-
-                                const SizedBox(height: 100), // Space for bottom bar
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                              ),
+                        _buildBottomBar(context, roomState.room!),
+                      ],
                     ),
-
-                    // Bottom Reservation Bar
-                    _buildBottomBar(context, roomState.room!),
-                  ],
+                  ),
                 ),
     );
   }

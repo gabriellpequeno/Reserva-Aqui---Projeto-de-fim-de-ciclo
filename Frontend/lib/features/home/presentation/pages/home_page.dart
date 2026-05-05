@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers/ui_providers.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../notifiers/home_notifier.dart';
 import '../notifiers/home_state.dart';
 import '../widgets/room_card.dart';
@@ -87,7 +88,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final bool isWeb = size.width > 900;
+    final bool isWeb = isDesktop(context);
 
     return Stack(
       children: [
@@ -261,25 +262,41 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildRoomCards(HomeState homeState) {
+    if (isTablet(context)) {
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 1.1,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        itemCount: homeState.rooms.length,
+        itemBuilder: (context, index) => _buildRoomCardItem(homeState.rooms[index]),
+      );
+    }
+
     return SizedBox(
       height: 400,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: homeState.rooms.length,
-        itemBuilder: (context, index) {
-          final room = homeState.rooms[index];
-          final roomId = room.id;
-          final hotelId = room.hotelId;
-          return RoomCard(
-            roomId: roomId.isNotEmpty ? roomId : '0',
-            hotelId: hotelId.isNotEmpty ? hotelId : '0',
-            title: room.title,
-            imageUrl: room.imageUrls.isNotEmpty ? room.imageUrls.first : '',
-            rating: room.rating,
-            amenities: room.amenities.map((a) => a.icon).toList(),
-          );
-        },
+        itemBuilder: (context, index) => _buildRoomCardItem(homeState.rooms[index]),
       ),
+    );
+  }
+
+  Widget _buildRoomCardItem(dynamic room) {
+    final roomId = room.id;
+    final hotelId = room.hotelId;
+    return RoomCard(
+      roomId: roomId.isNotEmpty ? roomId : '0',
+      hotelId: hotelId.isNotEmpty ? hotelId : '0',
+      title: room.title,
+      imageUrl: room.imageUrls.isNotEmpty ? room.imageUrls.first : '',
+      rating: room.rating,
+      amenities: room.amenities.map((a) => a.icon).toList(),
     );
   }
 

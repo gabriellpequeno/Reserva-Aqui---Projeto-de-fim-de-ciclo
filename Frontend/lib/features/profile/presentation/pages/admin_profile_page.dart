@@ -3,13 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/admin_profile_provider.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_menu_item.dart';
 
 class AdminProfilePage extends ConsumerWidget {
-  const AdminProfilePage({super.key});
+  final bool isModal;
+  const AdminProfilePage({super.key, this.isModal = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -17,8 +19,11 @@ class AdminProfilePage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
-      body: SafeArea(
-        child: asyncProfile.when(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+          child: SafeArea(
+            child: asyncProfile.when(
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.secondary),
           ),
@@ -31,7 +36,7 @@ class AdminProfilePage extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Column(
               children: [
-                const SizedBox(height: 120),
+                SizedBox(height: isModal ? 20 : 120),
                 ProfileHeader(
                   name: profile.nome.isEmpty ? 'Admin' : profile.nome,
                   email: profile.email,
@@ -85,6 +90,8 @@ class AdminProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 40),
               ],
+            ),
+          ),
             ),
           ),
         ),

@@ -1,18 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/primary_button.dart';
 
 class UserOrHostPage extends StatelessWidget {
-  const UserOrHostPage({super.key});
+  final VoidCallback? onUserTap;
+  final VoidCallback? onHostTap;
+  final VoidCallback? onLoginTap;
+
+  const UserOrHostPage({
+    super.key,
+    this.onUserTap,
+    this.onHostTap,
+    this.onLoginTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: Breakpoints.maxFormWidth),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -32,7 +45,7 @@ class UserOrHostPage extends StatelessWidget {
               const SizedBox(height: 48),
               PrimaryButton(
                 text: 'Sou Hóspede',
-                onPressed: () => context.push('/auth/signup/user'),
+                onPressed: onUserTap ?? () => context.push('/auth/signup/user'),
               ),
               const SizedBox(height: 24),
               Row(
@@ -53,11 +66,11 @@ class UserOrHostPage extends StatelessWidget {
                 text: 'Sou Anfitrião',
                 color: AppColors.primary,
                 textColor: Colors.white,
-                onPressed: () => context.push('/auth/signup/host'),
+                onPressed: onHostTap ?? () => context.push('/auth/signup/host'),
               ),
               const SizedBox(height: 48),
               TextButton(
-                onPressed: () => context.pop(),
+                onPressed: onLoginTap ?? () => context.pop(),
                 child: RichText(
                   text: const TextSpan(
                     text: 'Já tem conta? ',
@@ -75,6 +88,8 @@ class UserOrHostPage extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+            ),
           ),
         ),
       ),

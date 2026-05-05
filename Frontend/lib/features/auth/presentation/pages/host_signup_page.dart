@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/auth_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/phone_mask_formatter.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../data/models/register_host_request.dart';
@@ -144,8 +145,11 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: Breakpoints.maxFormWidth),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Form(
             key: _formKey,
             child: Column(
@@ -351,6 +355,8 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                       ),
                 const SizedBox(height: 40),
               ],
+            ),
+          ),
             ),
           ),
         ),

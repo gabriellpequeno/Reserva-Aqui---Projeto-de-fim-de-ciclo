@@ -29,10 +29,16 @@ class CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final itemWidth   = screenWidth / _items.length;
+    return LayoutBuilder(
+      builder: (context, constraints) => _buildNav(constraints.maxWidth),
+    );
+  }
+
+  Widget _buildNav(double navWidth) {
+    final itemWidth = navWidth / _items.length;
 
     return SizedBox(
+      width: navWidth,
       height: _kWidgetHeight,
       child: TweenAnimationBuilder<double>(
         duration: const Duration(milliseconds: 400),

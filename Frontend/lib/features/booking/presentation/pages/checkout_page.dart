@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../notifiers/checkout_notifier.dart';
 import '../../../tickets/presentation/notifiers/tickets_notifier.dart';
 
@@ -51,32 +52,64 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFD9D9D9),
-      body: Column(
-        children: [
-          _buildHeader(context),
-          Expanded(
-            child: state.isLoadingData
-                ? const Center(child: CircularProgressIndicator())
-                : state.errorMessage != null && state.categoria == null
-                    ? _buildErrorState(state.errorMessage!)
-                    : SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
-                        child: Column(
-                          children: [
-                            if (state.errorMessage != null)
-                              _buildErrorBanner(state.errorMessage!),
-                            _buildMainCard(context, state),
-                            const SizedBox(height: 16),
-                            _buildFinancialCard(state),
-                            if (state.politicas != null) ...[
-                              const SizedBox(height: 16),
-                              _buildPoliciesCard(state),
-                            ],
-                          ],
-                        ),
-                      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+          child: Column(
+            children: [
+              _buildHeader(context),
+              Expanded(
+                child: state.isLoadingData
+                    ? const Center(child: CircularProgressIndicator())
+                    : state.errorMessage != null && state.categoria == null
+                        ? _buildErrorState(state.errorMessage!)
+                        : SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
+                            child: isTablet(context)
+                                ? Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            if (state.errorMessage != null)
+                                              _buildErrorBanner(state.errorMessage!),
+                                            _buildMainCard(context, state),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            _buildFinancialCard(state),
+                                            if (state.politicas != null) ...[
+                                              const SizedBox(height: 16),
+                                              _buildPoliciesCard(state),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Column(
+                                    children: [
+                                      if (state.errorMessage != null)
+                                        _buildErrorBanner(state.errorMessage!),
+                                      _buildMainCard(context, state),
+                                      const SizedBox(height: 16),
+                                      _buildFinancialCard(state),
+                                      if (state.politicas != null) ...[
+                                        const SizedBox(height: 16),
+                                        _buildPoliciesCard(state),
+                                      ],
+                                    ],
+                                  ),
+                          ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

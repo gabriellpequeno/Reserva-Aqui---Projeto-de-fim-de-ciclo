@@ -49,5 +49,9 @@ tasks/
 # ─── tasks ────────────────────────────────────────────────────────
 _tasks/
 
-PRIVITE_KEY/
+PRIVATE_KEY/
+PRIVATE_KEYS/
+**/PRIVATE_KEYS/
+google-services.json
+*firebase-adminsdk*.json
 

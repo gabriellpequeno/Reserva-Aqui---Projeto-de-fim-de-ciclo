@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/admin_profile_provider.dart';
 import '../widgets/profile_form_section.dart';
@@ -110,8 +111,11 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
-      body: SafeArea(
-        child: asyncProfile.when(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+          child: SafeArea(
+            child: asyncProfile.when(
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.secondary),
           ),
@@ -151,6 +155,8 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
             ),
           ),
           data: (_) => _buildForm(),
+            ),
+          ),
         ),
       ),
     );

@@ -5,13 +5,17 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/auth_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/models/auth_response.dart';
 import '../widgets/auth_text_field.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
-  const LoginPage({super.key});
+  final VoidCallback? onSignupTap;
+  final void Function(AuthRole role)? onLoginDesktopSuccess;
+
+  const LoginPage({super.key, this.onSignupTap, this.onLoginDesktopSuccess});
 
   @override
   ConsumerState<LoginPage> createState() => _LoginPageState();
@@ -27,8 +31,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
-    _role = extra?['role'] as String? ?? 'guest';
+    try {
+      final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
+      _role = extra?['role'] as String? ?? 'guest';
+    } catch (_) {
+      // Página renderizada fora da árvore do GoRouter (ex: modal da landing)
+      _role = 'guest';
+    }
   }
 
   @override
@@ -88,7 +97,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           .setAuth(response.accessToken, response.refreshToken, role);
 
       if (mounted) {
-        context.go(role == AuthRole.admin ? '/profile/admin' : '/home');
+        if (widget.onLoginDesktopSuccess != null) {
+          widget.onLoginDesktopSuccess!(role);
+        } else {
+          context.go(role == AuthRole.admin ? '/profile/admin' : '/home');
+        }
       }
     } catch (e, stack) {
       if (!mounted) return;
@@ -126,64 +139,69 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 120),
-                Text(
-                  _role == 'host' ? 'Acesso Anfitrião' : 'Acesse agora',
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
-                  ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: Breakpoints.maxFormWidth),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 120),
+                    Text(
+                      _role == 'host' ? 'Acesso Anfitrião' : 'Acesse agora',
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    AuthTextField(
+                      controller: _emailController,
+                      hintText: 'email@domain.com',
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Informe o e-mail';
+                        }
+                        final emailRegex = RegExp(
+                          r'^[\w\.\+\-]+@[\w\-]+\.[a-zA-Z]{2,}$',
+                        );
+                        if (!emailRegex.hasMatch(value)) return 'E-mail inválido';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    AuthTextField(
+                      controller: _senhaController,
+                      hintText: 'senha',
+                      isPassword: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Informe a senha';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : PrimaryButton(text: 'Login', onPressed: _submit),
+                    const SizedBox(height: 48),
+                    PrimaryButton(
+                      text: 'cadastre-se agora',
+                      color: AppColors.primary,
+                      textColor: Colors.white,
+                      onPressed: widget.onSignupTap ?? () => context.push('/auth'),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-                const SizedBox(height: 32),
-                AuthTextField(
-                  controller: _emailController,
-                  hintText: 'email@domain.com',
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty)
-                      return 'Informe o e-mail';
-                    final emailRegex = RegExp(
-                      r'^[\w\.\+\-]+@[\w\-]+\.[a-zA-Z]{2,}$',
-                    );
-                    if (!emailRegex.hasMatch(value)) return 'E-mail inválido';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                AuthTextField(
-                  controller: _senhaController,
-                  hintText: 'senha',
-                  isPassword: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty)
-                      return 'Informe a senha';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : PrimaryButton(text: 'Login', onPressed: _submit),
-                const SizedBox(height: 48),
-                PrimaryButton(
-                  text: 'cadastre-se agora',
-                  color: AppColors.primary,
-                  textColor: Colors.white,
-                  onPressed: () {
-                    context.push('/auth');
-                  },
-                ),
-                const SizedBox(height: 24),
-              ],
+              ),
             ),
           ),
         ),

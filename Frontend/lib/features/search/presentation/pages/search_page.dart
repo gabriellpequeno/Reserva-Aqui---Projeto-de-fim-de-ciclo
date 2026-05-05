@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../favorites/domain/models/favorite_room.dart';
 import '../providers/search_provider.dart';
 
@@ -43,9 +44,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       onTap: () => ref.read(searchProvider.notifier).hideAllPickers(),
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: Column(
-          children: [
-            _buildSearchHeader(context, searchState),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+            child: Column(
+              children: [
+                _buildSearchHeader(context, searchState),
             Container(
               height: 1,
               color: Colors.black.withValues(alpha: 0.1),
@@ -87,7 +91,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                           },
                         ),
             ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );

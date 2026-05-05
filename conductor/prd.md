@@ -29,7 +29,7 @@ Hotel de médio ou grande porte que quer aumentar a base de clientes e automatiz
 
 ### 3. Admin da Plataforma
 Responsável pela gestão global da plataforma. Tem visão de todos os hotéis e usuários. Para o MVP, o papel de admin é operacional (gestão de dados), sem painel analítico avançado.
-
+   
 ---
 
 ## Plataformas e Canais
@@ -40,7 +40,7 @@ Responsável pela gestão global da plataforma. Tem visão de todos os hotéis e
 | App mobile — Web (browser) | MVP |
 | Responsividade portrait + landscape | MVP |
 | Layout dedicado para tablet | Nice to Have |
-| WhatsApp (via WhatsApp Cloud API) | MVP |
+| WhatsApp (via WhatsApp Cloud API) | MVP |1
 
 **Tema:** Light e Dark mode obrigatórios em todas as plataformas.
 

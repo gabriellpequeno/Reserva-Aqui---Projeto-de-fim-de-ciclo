@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/auth/auth_notifier.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/favorite_card.dart';
 
@@ -20,9 +21,12 @@ class FavoritesPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.bgSecondary,
-      body: Column(
-        children: [
-          _buildHeader(context, ref),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+          child: Column(
+            children: [
+              _buildHeader(context, ref),
 
           if (!isLoggedIn) _buildLoginMessage(context),
 
@@ -40,38 +44,25 @@ class FavoritesPage extends ConsumerWidget {
                           )
                         : filteredFavorites.isEmpty
                             ? _buildEmptyState(searchQuery.isNotEmpty)
-                            : LayoutBuilder(
-                                builder: (context, constraints) {
-                                  if (constraints.maxWidth > 800) {
-                                    return GridView.builder(
-                                      padding: const EdgeInsets.only(
-                                          bottom: 100, top: 10),
-                                      gridDelegate:
-                                          const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                        childAspectRatio: 2.2,
-                                        mainAxisSpacing: 8,
-                                        crossAxisSpacing: 8,
-                                      ),
-                                      itemCount: filteredFavorites.length,
-                                      itemBuilder: (context, index) =>
-                                          FavoriteCard(
-                                              hotel:
-                                                  filteredFavorites[index]),
-                                    );
-                                  }
-                                  return ListView.builder(
-                                    padding: const EdgeInsets.only(
-                                        bottom: 100, top: 10),
-                                    itemCount: filteredFavorites.length,
-                                    itemBuilder: (context, index) =>
-                                        FavoriteCard(
-                                            hotel: filteredFavorites[index]),
-                                  );
-                                },
+                            : GridView.builder(
+                                padding: const EdgeInsets.only(
+                                    bottom: 100, top: 10),
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: isTablet(context) ? 2 : 1,
+                                  childAspectRatio: 2.2,
+                                  mainAxisSpacing: 8,
+                                  crossAxisSpacing: 8,
+                                ),
+                                itemCount: filteredFavorites.length,
+                                itemBuilder: (context, index) =>
+                                    FavoriteCard(
+                                        hotel: filteredFavorites[index]),
                               ),
+            ),
+          ],
           ),
-        ],
+        ),
       ),
     );
   }

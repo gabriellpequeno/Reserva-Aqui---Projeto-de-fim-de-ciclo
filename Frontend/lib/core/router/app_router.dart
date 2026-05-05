@@ -31,6 +31,8 @@ import '../../features/rooms/presentation/pages/edit_room_page.dart';
 import '../../features/booking/presentation/pages/checkout_page.dart';
 import '../../features/tickets/presentation/pages/tickets_page.dart';
 import '../../features/tickets/presentation/pages/ticket_details_page.dart';
+import '../../features/landing/presentation/pages/landing_page.dart';
+import '../utils/breakpoints.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -63,7 +65,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthenticated = auth?.isAuthenticated ?? false;
       final path = state.uri.path;
 
-      if (path == '/') return '/home';
+      if (path == '/') {
+        final width = MediaQuery.of(context).size.width;
+        return width >= Breakpoints.tablet ? '/landing' : '/home';
+      }
 
       final protectedRoutes = ['/profile', '/tickets', '/favorites'];
       final isProtected = protectedRoutes.any((r) => path.startsWith(r));
@@ -227,6 +232,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             quartoId: quartoId,
           );
         },
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/landing',
+        redirect: (context, state) {
+          final width = MediaQuery.of(context).size.width;
+          if (width < Breakpoints.tablet) return '/home';
+          return null;
+        },
+        builder: (context, state) => const LandingPage(),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

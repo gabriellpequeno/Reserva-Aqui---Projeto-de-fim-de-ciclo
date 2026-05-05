@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../domain/models/ticket.dart';
 import '../notifiers/tickets_notifier.dart';
 import '../widgets/ticket_card.dart';
@@ -47,10 +48,13 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          _buildHeader(context),
-          _buildSearchBar(),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+          child: Column(
+            children: [
+              _buildHeader(context),
+              _buildSearchBar(),
           _buildFilterTabs(),
           Expanded(
             child: ticketsAsync.when(
@@ -64,7 +68,9 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
               ),
             ),
           ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

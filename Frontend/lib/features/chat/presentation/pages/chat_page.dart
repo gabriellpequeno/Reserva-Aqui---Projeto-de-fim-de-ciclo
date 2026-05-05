@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../widgets/chat_bubble.dart';
 import '../providers/chat_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -8,8 +9,10 @@ import 'package:go_router/go_router.dart';
 
 class ChatPage extends ConsumerStatefulWidget {
   final String? hotelId;
+  /// Quando fornecido, o botão de voltar fecha o painel em vez de navegar.
+  final VoidCallback? onClose;
 
-  const ChatPage({super.key, this.hotelId});
+  const ChatPage({super.key, this.hotelId, this.onClose});
 
   @override
   ConsumerState<ChatPage> createState() => _ChatPageState();
@@ -236,19 +239,22 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Back Button (Circular)
-              GestureDetector(
-                onTap: () => context.go('/home'),
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    shape: BoxShape.circle,
+              // Back Button (Circular) — hidden on desktop
+              if (!isDesktop(context))
+                GestureDetector(
+                  onTap: widget.onClose ?? () => context.go('/home'),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.chevron_left, color: Colors.white, size: 32),
                   ),
-                  child: const Icon(Icons.chevron_left, color: Colors.white, size: 32),
-                ),
-              ),
+                )
+              else
+                const SizedBox(width: 48),
               
               // Logo
               SvgPicture.asset(

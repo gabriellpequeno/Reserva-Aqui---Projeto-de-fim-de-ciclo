@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../data/services/tickets_service.dart';
 import '../../domain/models/ticket.dart';
 import '../notifiers/tickets_notifier.dart';
@@ -264,11 +265,16 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFD9D9D9),
-      body: Column(
-        children: [
-          _buildHeader(context),
-          Expanded(child: _buildBody()),
-        ],
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+          child: Column(
+            children: [
+              _buildHeader(context),
+              Expanded(child: _buildBody()),
+            ],
+          ),
+        ),
       ),
     );
   }

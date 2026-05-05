@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../domain/models/room_category_card.dart';
 import '../notifiers/my_rooms_notifier.dart';
 import '../notifiers/my_rooms_state.dart';
@@ -38,17 +39,22 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          Column(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+          child: Stack(
             children: [
-              _buildHeader(state),
-              _buildFiltroChips(state),
-              Expanded(child: _buildBody(state)),
+              Column(
+                children: [
+                  _buildHeader(state),
+                  _buildFiltroChips(state),
+                  Expanded(child: _buildBody(state)),
+                ],
+              ),
+              _buildAddButton(state),
             ],
           ),
-          _buildAddButton(state),
-        ],
+        ),
       ),
     );
   }

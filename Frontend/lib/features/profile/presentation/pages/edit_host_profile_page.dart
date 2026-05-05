@@ -6,6 +6,7 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/utils/via_cep.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/host_profile_provider.dart';
@@ -282,8 +283,11 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
-      body: SafeArea(
-        child: profileAsync.when(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+          child: SafeArea(
+            child: profileAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, _) => Center(
             child: Padding(
@@ -316,6 +320,8 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
             }
             return _buildForm();
           },
+            ),
+          ),
         ),
       ),
     );

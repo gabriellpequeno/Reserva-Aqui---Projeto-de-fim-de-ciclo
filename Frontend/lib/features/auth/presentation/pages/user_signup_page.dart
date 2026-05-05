@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/auth_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/date_picker_field.dart';
 import '../../../../core/widgets/phone_mask_formatter.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -14,7 +15,9 @@ import '../../data/services/auth_service.dart';
 import '../widgets/auth_text_field.dart';
 
 class UserSignUpPage extends ConsumerStatefulWidget {
-  const UserSignUpPage({super.key});
+  final VoidCallback? onHostSignupTap;
+
+  const UserSignUpPage({super.key, this.onHostSignupTap});
 
   @override
   ConsumerState<UserSignUpPage> createState() => _UserSignUpPageState();
@@ -121,8 +124,11 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: Breakpoints.maxFormWidth),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Form(
             key: _formKey,
             child: Column(
@@ -218,7 +224,7 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                 const SizedBox(height: 24),
                 Center(
                   child: TextButton(
-                    onPressed: () => context.push('/auth/signup/host'),
+                    onPressed: widget.onHostSignupTap ?? () => context.push('/auth/signup/host'),
                     child: const Text(
                       'É um anfitrião? Cadastre seu hotel aqui',
                       style: TextStyle(
@@ -230,6 +236,8 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                 ),
                 const SizedBox(height: 24),
               ],
+            ),
+          ),
             ),
           ),
         ),

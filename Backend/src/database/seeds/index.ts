@@ -52,10 +52,24 @@ const SEEDS: SeedEntry[] = [
     },
   },
   {
+    name: 'reservas',
+    run: async () => {
+      const { seedReservas } = await import('./seed.reservas');
+      await seedReservas();
+    },
+  },
+  {
     name: 'pushFcm',
     run: async () => {
       const { seedPushFcm } = await import('./seed.push-fcm');
       await seedPushFcm();
+    },
+  },
+  {
+    name: 'completo',
+    run: async () => {
+      const { seedCompleto } = await import('./seed.completo');
+      await seedCompleto();
     },
   },
 ];

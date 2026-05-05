@@ -3,7 +3,9 @@
  * Responsabilidade: validação pura — nunca toca o banco.
  */
 
-export type PagamentoStatus = 'PENDENTE' | 'APROVADO' | 'ESTORNADO';
+export type PagamentoStatus  = 'PENDENTE' | 'APROVADO' | 'ESTORNADO' | 'CANCELADO';
+export type FormaPagamento   = 'PIX' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO';
+export type CanalPagamento   = 'APP' | 'WHATSAPP';
 
 // ── Interfaces de Output ──────────────────────────────────────────────────────
 
@@ -19,6 +21,7 @@ export interface PagamentoReservaSafe {
   metodo_captura:        string | null;
   recibo_url:            string | null;
   data_pagamento:        string;
+  expires_at:            string | null;
 }
 
 // ── Interface do Webhook InfinitePay ─────────────────────────────────────────

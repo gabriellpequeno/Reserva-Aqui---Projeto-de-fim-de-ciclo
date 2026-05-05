@@ -4,6 +4,7 @@ import { AuthRequest }  from '../middlewares/authGuard';
 import {
   createReservaUsuario,
   createReservaWalkin,
+  createReservaGuest,
   listReservas,
   getReservaById,
   getReservaByCodigoPublico,
@@ -206,6 +207,20 @@ export async function cancelarReservaUsuarioController(
 }
 
 // ── Controller Público ────────────────────────────────────────────────────────
+
+export async function createReservaGuestController(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const input  = Reserva.validateGuest(req.body);
+    const result = await createReservaGuest(input);
+    res.status(201).json({ data: result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Erro interno';
+    res.status(mapError(message)).json({ error: message });
+  }
+}
 
 export async function getReservaPublicaController(
   req: Request,

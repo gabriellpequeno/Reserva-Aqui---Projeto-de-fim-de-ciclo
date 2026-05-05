@@ -139,7 +139,11 @@ class NotificationService {
           router.push('/tickets/details/$codigoPublico');
         }
       case 'NOVA_RESERVA':
-        router.push('/tickets');
+        if (codigoPublico != null) {
+          router.push('/tickets/details/$codigoPublico');
+        } else {
+          router.push('/tickets');
+        }
       case 'MENSAGEM_CHAT':
         router.go('/chat');
     }

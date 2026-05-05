@@ -29,6 +29,9 @@ import '../../features/rooms/presentation/pages/add_room_page.dart';
 import '../../features/rooms/presentation/pages/my_rooms_page.dart';
 import '../../features/rooms/presentation/pages/edit_room_page.dart';
 import '../../features/booking/presentation/pages/checkout_page.dart';
+import '../../features/booking/presentation/pages/public_ticket_page.dart';
+import '../../features/booking/presentation/pages/reservation_success_page.dart';
+import '../../features/booking/presentation/pages/whatsapp_payment_page.dart';
 import '../../features/tickets/presentation/pages/tickets_page.dart';
 import '../../features/tickets/presentation/pages/ticket_details_page.dart';
 
@@ -221,11 +224,42 @@ final routerProvider = Provider<GoRouter>((ref) {
           final hotelId = state.pathParameters['hotelId'] ?? '';
           final categoriaId = int.tryParse(state.pathParameters['categoriaId'] ?? '') ?? 0;
           final quartoId = int.tryParse(state.pathParameters['quartoId'] ?? '') ?? 0;
+          final checkinRaw  = state.uri.queryParameters['checkin'];
+          final checkoutRaw = state.uri.queryParameters['checkout'];
           return CheckoutPage(
             hotelId: hotelId,
             categoriaId: categoriaId,
             quartoId: quartoId,
+            initialCheckin:  checkinRaw  != null ? DateTime.tryParse(checkinRaw)  : null,
+            initialCheckout: checkoutRaw != null ? DateTime.tryParse(checkoutRaw) : null,
           );
+        },
+      ),
+      // Rotas públicas do fluxo de reserva (nunca protegidas, fora do ShellRoute)
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/reservas/:codigoPublico',
+        builder: (context, state) {
+          final cp = state.pathParameters['codigoPublico'] ?? '';
+          return PublicTicketPage(codigoPublico: cp);
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/pagamento/:codigoPublico/:pagamentoId',
+        builder: (context, state) {
+          final cp = state.pathParameters['codigoPublico'] ?? '';
+          final pid = int.tryParse(state.pathParameters['pagamentoId'] ?? '') ?? 0;
+          return WhatsappPaymentPage(codigoPublico: cp, pagamentoId: pid);
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/booking/success',
+        builder: (context, state) {
+          final cp = state.uri.queryParameters['codigo'] ?? '';
+          final mode = state.uri.queryParameters['mode'] ?? 'user';
+          return ReservationSuccessPage(codigoPublico: cp, mode: mode);
         },
       ),
       GoRoute(

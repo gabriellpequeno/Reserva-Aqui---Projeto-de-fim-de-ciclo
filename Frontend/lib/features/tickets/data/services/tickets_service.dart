@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/auth/auth_state.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../domain/models/ticket.dart';
 
@@ -8,12 +9,18 @@ class TicketsService {
 
   final Dio _dio;
 
+  /// Busca reservas — endpoint varia por role:
+  ///   - user  → /usuarios/reservas  (histórico global do hóspede)
+  ///   - host  → /hotel/reservas     (reservas do tenant)
+  ///   - admin → /usuarios/reservas  (fallback, admin normalmente não precisa)
   Future<void> fetchReservas({
+    required AuthRole role,
     required void Function(List<Ticket>) onSuccess,
     required void Function(String) onError,
   }) async {
+    final path = role == AuthRole.host ? '/hotel/reservas' : '/usuarios/reservas';
     try {
-      final response = await _dio.get<Map<String, dynamic>>('/usuarios/reservas');
+      final response = await _dio.get<Map<String, dynamic>>(path);
       final data = response.data!['data'] as List<dynamic>;
       final tickets = data
           .cast<Map<String, dynamic>>()
@@ -24,6 +31,31 @@ class TicketsService {
       onError(_handleError(e, {401: 'Sessão expirada. Faça login novamente.'}));
     } catch (_) {
       onError('Erro inesperado ao buscar reservas.');
+    }
+  }
+
+  /// PATCH /api/hotel/reservas/:id/status — aprovar / cancelar / concluir.
+  /// Requer auth como hotel (hotelGuard no backend).
+  Future<void> updateReservaStatus({
+    required int reservaId,
+    required String novoStatus,
+    required void Function() onSuccess,
+    required void Function(String) onError,
+  }) async {
+    try {
+      await _dio.patch<void>(
+        '/hotel/reservas/$reservaId/status',
+        data: {'status': novoStatus},
+      );
+      onSuccess();
+    } on DioException catch (e) {
+      onError(_handleError(e, {
+        401: 'Sessão expirada. Faça login novamente.',
+        403: 'Você não tem permissão para alterar esta reserva.',
+        404: 'Reserva não encontrada.',
+      }));
+    } catch (_) {
+      onError('Erro inesperado ao atualizar status da reserva.');
     }
   }
 

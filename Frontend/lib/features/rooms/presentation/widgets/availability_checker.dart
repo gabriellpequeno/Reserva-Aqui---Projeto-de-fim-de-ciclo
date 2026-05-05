@@ -7,10 +7,15 @@ class AvailabilityChecker extends ConsumerStatefulWidget {
   final String hotelId;
   final int categoriaId;
 
+  /// Chamado sempre que check-in ou check-out mudam. O parent (room_details_page)
+  /// usa isso pra propagar as datas pro botão "Reservar".
+  final void Function(DateTime? checkin, DateTime? checkout)? onDatesChanged;
+
   const AvailabilityChecker({
     super.key,
     required this.hotelId,
     required this.categoriaId,
+    this.onDatesChanged,
   });
 
   @override
@@ -36,10 +41,15 @@ class _AvailabilityCheckerState extends ConsumerState<AvailabilityChecker> {
       setState(() {
         if (isCheckIn) {
           _checkInDate = picked;
+          // Se o checkout selecionado antes fica antes/igual ao novo checkin, reseta
+          if (_checkOutDate != null && !_checkOutDate!.isAfter(picked)) {
+            _checkOutDate = null;
+          }
         } else {
           _checkOutDate = picked;
         }
       });
+      widget.onDatesChanged?.call(_checkInDate, _checkOutDate);
     }
   }
 

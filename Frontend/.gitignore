@@ -3,7 +3,7 @@
 *.jks
 *.keystore
 .env
-PRIVITE_KEY/
+PRIVATE_KEY/
 android/app/google-services.json
 
 # Miscellaneous

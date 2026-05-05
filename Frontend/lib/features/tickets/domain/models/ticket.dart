@@ -54,7 +54,8 @@ class TicketStatusTheme {
 
 // ─── Model ─────────────────────────────────────────────────────────────────
 class Ticket {
-  final String id;
+  final String id;                // reserva_tenant_id (numérico, local ao hotel)
+  final String codigoPublico;     // codigo_publico (opaco, usado em deep-links)
   final String hotelId;
   final int? quartoId;
   final int? categoriaId;
@@ -69,6 +70,7 @@ class Ticket {
   final String? checkOutRealTime;
   final int guestCount;
   final TicketStatus status;
+  final String statusRaw;         // status cru vindo do backend (SOLICITADA, APROVADA, ...)
   final String? nomeHospede;
   final String? imageUrl;
   final double subtotal;
@@ -78,6 +80,7 @@ class Ticket {
 
   const Ticket({
     required this.id,
+    this.codigoPublico = '',
     required this.hotelId,
     this.quartoId,
     this.categoriaId,
@@ -92,6 +95,7 @@ class Ticket {
     this.checkOutRealTime,
     required this.guestCount,
     required this.status,
+    this.statusRaw = '',
     this.nomeHospede,
     this.imageUrl,
     required this.subtotal,
@@ -108,12 +112,21 @@ class Ticket {
         ? json['num_hospedes'] as int
         : int.tryParse(json['num_hospedes']?.toString() ?? '') ?? 1;
 
+    // Payload compatível com dois formatos:
+    //   - Hotel: /api/hotel/reservas  → { id, codigo_publico, tipo_quarto, status, ... }
+    //   - User:  /api/usuarios/reservas → { reserva_tenant_id, codigo_publico, nome_hotel, ... }
+    final idValue = (json['reserva_tenant_id'] ?? json['id'])?.toString() ?? '';
+    final statusRaw = json['status']?.toString() ?? '';
+
     return Ticket(
-      id: json['codigo_publico']?.toString() ?? '',
+      id: idValue,
+      codigoPublico: json['codigo_publico']?.toString() ?? '',
       hotelId: json['hotel_id']?.toString() ?? '',
-      quartoId: null,
-      categoriaId: null,
-      hotelName: json['nome_hotel']?.toString() ?? '',
+      quartoId: json['quarto_id'] is int
+          ? json['quarto_id'] as int
+          : int.tryParse(json['quarto_id']?.toString() ?? ''),
+      hotelName: (json['nome_hotel'] ?? json['tipo_quarto'] ?? '').toString(),
+      nomeHospede: json['nome_hospede']?.toString(),
       roomType: json['tipo_quarto']?.toString() ?? '',
       address: '—',
       checkIn: checkin,
@@ -121,8 +134,8 @@ class Ticket {
       checkInTime: '—',
       checkOutTime: '—',
       guestCount: numHospedes,
-      status: _mapStatus(json['status']?.toString() ?? '', checkin),
-      nomeHospede: json['nome_hospede']?.toString(),
+      status: _mapStatus(statusRaw, checkin),
+      statusRaw: statusRaw,
       imageUrl: null,
       subtotal: total,
       discounts: 0.0,
@@ -131,8 +144,9 @@ class Ticket {
     );
   }
 
-  Ticket copyWith({String? imageUrl, TicketStatus? status}) => Ticket(
+  Ticket copyWith({String? imageUrl, TicketStatus? status, String? statusRaw}) => Ticket(
         id: id,
+        codigoPublico: codigoPublico,
         hotelId: hotelId,
         quartoId: quartoId,
         categoriaId: categoriaId,
@@ -147,6 +161,7 @@ class Ticket {
         checkOutRealTime: checkOutRealTime,
         guestCount: guestCount,
         status: status ?? this.status,
+        statusRaw: statusRaw ?? this.statusRaw,
         nomeHospede: nomeHospede,
         imageUrl: imageUrl ?? this.imageUrl,
         subtotal: subtotal,

@@ -62,6 +62,7 @@ export const SELECT_QUARTO_COM_ITENS = `
     q.categoria_quarto_id,
     q.disponivel,
     q.descricao,
+    cq.nome AS nome_categoria,
     COALESCE(q.valor_override, cq.preco_base) AS valor_diaria,
     COALESCE(
       json_agg(
@@ -72,6 +73,15 @@ export const SELECT_QUARTO_COM_ITENS = `
           'quantidade',  iq.quantidade
         ) ORDER BY c.categoria, c.nome
       ) FILTER (WHERE iq.catalogo_id IS NOT NULL),
+      (SELECT json_agg(json_build_object(
+           'catalogo_id', ci.catalogo_id,
+           'nome',        c2.nome,
+           'categoria',   c2.categoria,
+           'quantidade',  ci.quantidade
+         ) ORDER BY c2.categoria, c2.nome)
+       FROM categoria_item ci
+       JOIN catalogo c2 ON c2.id = ci.catalogo_id AND c2.deleted_at IS NULL
+       WHERE ci.categoria_quarto_id = q.categoria_quarto_id),
       '[]'
     ) AS itens
   FROM quarto q
@@ -121,7 +131,7 @@ async function _listQuartos(hotelId: string): Promise<QuartoSafe[]> {
     const { rows } = await client.query<QuartoSafe>(
       `${SELECT_QUARTO_COM_ITENS}
        WHERE q.deleted_at IS NULL
-       GROUP BY q.id, cq.id
+       GROUP BY q.id, cq.id, cq.nome
        ORDER BY q.numero`,
     );
     return rows;
@@ -138,7 +148,7 @@ async function _getQuarto(hotelId: string, quartoId: number): Promise<QuartoSafe
     const { rows } = await client.query<QuartoSafe>(
       `${SELECT_QUARTO_COM_ITENS}
        WHERE q.id = $1 AND q.deleted_at IS NULL
-       GROUP BY q.id, cq.id`,
+       GROUP BY q.id, cq.id, cq.nome`,
       [quartoId],
     );
     if (!rows[0]) throw new Error('Quarto não encontrado');
@@ -191,7 +201,7 @@ async function _createQuarto(hotelId: string, input: CreateQuartoInput): Promise
     const { rows: full } = await client.query<QuartoSafe>(
       `${SELECT_QUARTO_COM_ITENS}
        WHERE q.id = $1
-       GROUP BY q.id, cq.id`,
+       GROUP BY q.id, cq.id, cq.nome`,
       [quartoId],
     );
     return full[0];
@@ -253,7 +263,7 @@ async function _updateQuarto(hotelId: string, quartoId: number, input: UpdateQua
     const { rows: full } = await client.query<QuartoSafe>(
       `${SELECT_QUARTO_COM_ITENS}
        WHERE q.id = $1 AND q.deleted_at IS NULL
-       GROUP BY q.id, cq.id`,
+       GROUP BY q.id, cq.id, cq.nome`,
       [quartoId],
     );
     if (!full[0]) throw new Error('Quarto não encontrado');

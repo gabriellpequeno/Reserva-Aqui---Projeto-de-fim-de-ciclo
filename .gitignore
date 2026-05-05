@@ -26,6 +26,7 @@ Backend/dist
 Backend/bancos
 Backend/package-lock.json
 Backend/storage/
+Backend/PRIVATE_KEY/
 Backend/dist
 
 # Android build artifacts
@@ -49,5 +50,5 @@ tasks/
 # ─── tasks ────────────────────────────────────────────────────────
 _tasks/
 
-PRIVITE_KEY/
+PRIVATE_KEY/
 

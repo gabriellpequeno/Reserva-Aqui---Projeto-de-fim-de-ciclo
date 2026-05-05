@@ -11,6 +11,7 @@ import '../../../../core/widgets/phone_mask_formatter.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../data/models/register_request.dart';
 import '../../data/services/auth_service.dart';
+import '../../utils/validators.dart';
 import '../widgets/auth_text_field.dart';
 
 class UserSignUpPage extends ConsumerStatefulWidget {
@@ -142,11 +143,7 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                 AuthTextField(
                   hintText: 'nome completo',
                   controller: _nomeController,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Informe seu nome';
-                    if (value.trim().length < 3) return 'Nome muito curto';
-                    return null;
-                  },
+                  validator: validateNomeCompleto,
                 ),
                 const SizedBox(height: 16),
                 AuthTextField(
@@ -154,13 +151,7 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                   keyboardType: TextInputType.number,
                   controller: _cpfController,
                   inputFormatters: [_cpfFormatter],
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Informe o CPF';
-                    if (!RegExp(r'^[\d\.\-]+$').hasMatch(value)) return 'CPF inválido';
-                    final digits = value.replaceAll(RegExp(r'\D'), '');
-                    if (digits.length != 11) return 'CPF inválido';
-                    return null;
-                  },
+                  validator: validateCpf,
                 ),
                 const SizedBox(height: 16),
                 AuthTextField(
@@ -168,23 +159,14 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
                   keyboardType: TextInputType.phone,
                   controller: _telefoneController,
                   inputFormatters: [PhoneMaskFormatter()],
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Informe o telefone';
-                    final digits = value.replaceAll(RegExp(r'\D'), '');
-                    if (digits.length < 10 || digits.length > 11) return 'Telefone inválido (10 ou 11 dígitos com DDD)';
-                    return null;
-                  },
+                  validator: validateTelefoneBr,
                 ),
                 const SizedBox(height: 16),
                 AuthTextField(
                   hintText: 'email@domain.com',
                   keyboardType: TextInputType.emailAddress,
                   controller: _emailController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Informe o e-mail';
-                    if (!RegExp(r'^[\w\.\+\-]+@[\w\-]+\.[a-zA-Z]{2,}$').hasMatch(value.trim())) return 'E-mail inválido';
-                    return null;
-                  },
+                  validator: validateEmail,
                 ),
                 const SizedBox(height: 16),
                 DatePickerField(

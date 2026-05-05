@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/auth/auth_notifier.dart';
+import '../../../../core/auth/auth_state.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/services/tickets_service.dart';
 import '../../domain/models/ticket.dart';
 import '../notifiers/tickets_notifier.dart';
+import '../widgets/approval_bottom_sheet.dart';
 
 // ── Modelos locais para detalhe ───────────────────────────────────────────────
 
@@ -325,7 +328,81 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
+  Widget _manageButton(Ticket ticket) {
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.rule, size: 18),
+        label: const Text('Gerenciar reserva', style: TextStyle(fontWeight: FontWeight.w700)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+        ),
+        onPressed: () => _openApprovalSheet(ticket),
+      ),
+    );
+  }
+
+  Future<void> _openApprovalSheet(Ticket ticket) async {
+    final id = int.tryParse(ticket.id);
+    if (id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID de reserva inválido.')),
+      );
+      return;
+    }
+
+    final notifier = ref.read(ticketsNotifierProvider.notifier);
+
+    final statusLabel = ticket.statusRaw == 'AGUARDANDO_PAGAMENTO'
+        ? 'Pagamento confirmado — aguardando sua aprovação'
+        : 'Aguardando sua aprovação';
+
+    final datas =
+        '${_fmt(ticket.checkIn)} → ${_fmt(ticket.checkOut)}';
+
+    final result = await showApprovalBottomSheet(
+      context: context,
+      resumo: ApprovalResumo(
+        nomeHospede:  ticket.hotelName, // reutiliza hotelName como nome do hóspede quando host vê (backend retorna nome_hotel)
+        datas:        datas,
+        tipoQuarto:   ticket.roomType,
+        valorTotal:   ticket.total,
+        statusAtual:  statusLabel,
+      ),
+      onApprove: () async {
+        final err = await notifier.aprovarReserva(id);
+        return err == null
+            ? const ApprovalOutcome.success()
+            : ApprovalOutcome.failure(err);
+      },
+      onReject: () async {
+        final err = await notifier.negarReserva(id);
+        return err == null
+            ? const ApprovalOutcome.success()
+            : ApprovalOutcome.failure(err);
+      },
+    );
+
+    if (!mounted || result == null) return;
+
+    final isApprove = result == ApprovalResult.approved;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(isApprove ? 'Reserva aprovada.' : 'Reserva cancelada.'),
+        backgroundColor: isApprove ? const Color(0xFF1E7A1E) : const Color(0xFFC0392B),
+      ),
+    );
+    if (context.canPop()) context.pop();
+  }
+
+  String _fmt(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
+
+  // ── Header ───────────────────────────────────────────────────────────────
 
   Widget _buildHeader(BuildContext context) {
     return Container(

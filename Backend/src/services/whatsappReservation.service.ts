@@ -248,3 +248,118 @@ export async function sendApprovedReservationConfirmation(input: {
 
   await closeChatSession(session.sessionId);
 }
+
+// ── Envio do link de pagamento fake via WhatsApp + email ─────────────────────
+//
+// Disparado imediatamente após a criação de uma reserva pelo bot WhatsApp.
+// Gera um pagamento fake com `expires_at = +30min` e envia o link para o
+// hóspede pelos dois canais (WPP quando há sessão ativa; email sempre).
+
+/**
+ * Envia link de pagamento fake para o guest que acabou de reservar via WhatsApp.
+ * Idempotente — se já existe pagamento pendente na reserva, reutiliza.
+ * Fire-and-forget: chamador não precisa esperar; erros só são logados.
+ */
+export async function sendPaymentLinkViaWhatsApp(input: {
+  hotelId:   string;
+  reservaId: number;
+}): Promise<void> {
+  // Import dinâmico para evitar ciclo com pagamentoReserva.service
+  const { createPagamentoFake } = await import('./pagamentoReserva.service');
+  const { sendEmail }           = await import('./email.service');
+  const { reservaPendentePagamentoTemplate } = await import('./emailTemplates');
+
+  try {
+    const reservation = await getReservationForConfirmation(input.hotelId, input.reservaId);
+
+    const pagamento = await createPagamentoFake({
+      codigoPublico: reservation.codigo_publico,
+      canal:         'WHATSAPP',
+    });
+
+    const frontend    = (process.env.FRONTEND_URL ?? 'http://localhost:8080').replace(/\/+$/, '');
+    const pagamentoUrl = `${frontend}/pagamento/${reservation.codigo_publico}/${pagamento.pagamento_id}`;
+
+    // WhatsApp: manda só se conseguir uma sessão com janela ativa (evita erro de template)
+    const userContact = reservation.user_id ? await getUserContact(reservation.user_id) : null;
+    const rawPhone    = userContact?.numero_celular ?? reservation.telefone_contato ?? null;
+
+    if (rawPhone) {
+      try {
+        const normalizedPhone = normalizePhoneNumber(rawPhone);
+        const session = await getOrCreateOpenSession(normalizedPhone, reservation.user_id);
+
+        if (session.hasActiveCustomerWindow) {
+          const msg = [
+            `Sua reserva em ${reservation.nome_hotel} foi registrada.`,
+            `Total: R$ ${Number(reservation.valor_total).toFixed(2)}`,
+            '',
+            `Link de pagamento (expira em 30 min):`,
+            pagamentoUrl,
+          ].join('\n');
+
+          const textResponse = await WhatsAppService.sendText(normalizedPhone, msg);
+          await persistChatMessage({
+            sessionId: session.sessionId,
+            origem: 'BOT_SISTEMA',
+            conteudo: msg,
+            tipoMensagem: 'TEXT',
+            metaMessageId: textResponse.messages?.[0]?.id ?? null,
+            metaStatus: 'ACCEPTED',
+            metadata: {
+              deliveryChannel: 'WHATSAPP',
+              codigoPublico: reservation.codigo_publico,
+              pagamentoId:   pagamento.pagamento_id,
+            },
+          });
+        }
+      } catch (err) {
+        console.warn('[wppReservation] falha ao enviar link via WPP:', err);
+      }
+    }
+
+    // Email — usa email_hospede quando presente, cai no user se autenticado
+    const reservaRow = await getReservationEmailRow(input.hotelId, input.reservaId);
+    const destinoEmail = reservaRow?.email_hospede ?? reservaRow?.user_email ?? null;
+    const nomeDestino  = reservation.nome_hospede ?? userContact?.nome_completo ?? 'Hóspede';
+
+    if (destinoEmail) {
+      const { subject, html } = reservaPendentePagamentoTemplate({
+        nomeHospede:   nomeDestino,
+        codigoPublico: reservation.codigo_publico,
+        pagamentoUrl,
+        expiresAt:     pagamento.expires_at,
+        resumo: {
+          nomeHotel:    reservation.nome_hotel,
+          tipoQuarto:   reservation.tipo_quarto ?? 'Quarto',
+          dataCheckin:  reservation.data_checkin,
+          dataCheckout: reservation.data_checkout,
+          numHospedes:  1, // `ReservationRow` não tem num_hospedes; fallback neutro
+          valorTotal:   reservation.valor_total,
+        },
+      });
+      sendEmail({ to: destinoEmail, subject, html }).catch(() => {});
+    }
+  } catch (err) {
+    console.warn('[wppReservation] sendPaymentLinkViaWhatsApp falhou:', err);
+  }
+}
+
+async function getReservationEmailRow(
+  hotelId:   string,
+  reservaId: number,
+): Promise<{ email_hospede: string | null; user_email: string | null } | null> {
+  const hotel = await getHotelInfo(hotelId);
+  const { _ensureReservaFluxoColumns } = await import('./reserva.service');
+  return withTenant(hotel.schema_name, async (client) => {
+    await _ensureReservaFluxoColumns(client);
+    const { rows } = await client.query<{ email_hospede: string | null; user_email: string | null }>(
+      `SELECT r.email_hospede, u.email AS user_email
+       FROM reserva r
+       LEFT JOIN public.usuario u ON u.user_id = r.user_id
+       WHERE r.id = $1`,
+      [reservaId],
+    );
+    return rows[0] ?? null;
+  });
+}

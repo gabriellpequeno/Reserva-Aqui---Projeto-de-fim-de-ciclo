@@ -226,7 +226,11 @@ class NotificationsPage extends ConsumerWidget {
           context.push('/tickets/details/$codigoPublico');
         }
       case 'NOVA_RESERVA':
-        context.push('/tickets');
+        if (codigoPublico != null) {
+          context.push('/tickets/details/$codigoPublico');
+        } else {
+          context.push('/tickets');
+        }
       case 'MENSAGEM_CHAT':
         context.go('/chat');
       default:

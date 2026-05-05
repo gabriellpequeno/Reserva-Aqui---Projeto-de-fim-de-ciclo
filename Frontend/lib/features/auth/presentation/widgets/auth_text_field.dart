@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class AuthTextField extends StatelessWidget {
   final String hintText;
@@ -26,35 +25,42 @@ class AuthTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.strokeLight),
+    final colorScheme = Theme.of(context).colorScheme;
+    return TextFormField(
+      controller: controller,
+      obscureText: isPassword,
+      validator: validator,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      onChanged: onChanged,
+      style: TextStyle(
+        color: colorScheme.onSurface,
+        fontSize: 16,
       ),
-      child: TextFormField(
-        controller: controller,
-        obscureText: isPassword,
-        validator: validator,
-        keyboardType: keyboardType,
-        inputFormatters: inputFormatters,
-        onChanged: onChanged,
-        style: const TextStyle(
-          color: AppColors.primary,
+      decoration: InputDecoration(
+        suffixIcon: suffixIcon,
+        hintText: hintText,
+        hintStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant,
           fontSize: 16,
         ),
-        decoration: InputDecoration(
-          suffixIcon: suffixIcon,
-          hintText: hintText,
-          hintStyle: const TextStyle(
-            color: AppColors.greyText,
-            fontSize: 16,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-          border: InputBorder.none,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        filled: true,
+        fillColor: colorScheme.surfaceContainer,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
         ),
       ),
     );

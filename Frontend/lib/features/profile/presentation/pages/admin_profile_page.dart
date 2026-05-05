@@ -16,7 +16,6 @@ class AdminProfilePage extends ConsumerWidget {
     final asyncProfile = ref.watch(adminProfileProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: asyncProfile.when(
           loading: () => const Center(
@@ -97,23 +96,24 @@ class AdminProfilePage extends ConsumerWidget {
     required String message,
     required VoidCallback onRetry,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
-              color: AppColors.greyText,
+              color: colorScheme.onSurfaceVariant,
               size: 48,
             ),
             const SizedBox(height: 16),
             Text(
               'Não foi possível carregar o perfil.\n$message',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.greyText,
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
                 fontSize: 14,
               ),
             ),
@@ -123,8 +123,8 @@ class AdminProfilePage extends ConsumerWidget {
               icon: const Icon(Icons.refresh),
               label: const Text('Tentar novamente'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(11),
                 ),

@@ -58,6 +58,7 @@ class Ticket {
   final String codigoPublico;     // codigo_publico (opaco, usado em deep-links)
   final String hotelId;
   final int? quartoId;
+  final int? categoriaId;
   final String hotelName;
   final String roomType;
   final String address;
@@ -65,9 +66,12 @@ class Ticket {
   final DateTime checkOut;
   final String checkInTime;
   final String checkOutTime;
+  final String? checkInRealTime;
+  final String? checkOutRealTime;
   final int guestCount;
   final TicketStatus status;
   final String statusRaw;         // status cru vindo do backend (SOLICITADA, APROVADA, ...)
+  final String? nomeHospede;
   final String? imageUrl;
   final double subtotal;
   final double discounts;
@@ -79,6 +83,7 @@ class Ticket {
     this.codigoPublico = '',
     required this.hotelId,
     this.quartoId,
+    this.categoriaId,
     required this.hotelName,
     required this.roomType,
     required this.address,
@@ -86,9 +91,12 @@ class Ticket {
     required this.checkOut,
     required this.checkInTime,
     required this.checkOutTime,
+    this.checkInRealTime,
+    this.checkOutRealTime,
     required this.guestCount,
     required this.status,
     this.statusRaw = '',
+    this.nomeHospede,
     this.imageUrl,
     required this.subtotal,
     required this.discounts,
@@ -118,6 +126,7 @@ class Ticket {
           ? json['quarto_id'] as int
           : int.tryParse(json['quarto_id']?.toString() ?? ''),
       hotelName: (json['nome_hotel'] ?? json['tipo_quarto'] ?? '').toString(),
+      nomeHospede: json['nome_hospede']?.toString(),
       roomType: json['tipo_quarto']?.toString() ?? '',
       address: '—',
       checkIn: checkin,
@@ -140,6 +149,7 @@ class Ticket {
         codigoPublico: codigoPublico,
         hotelId: hotelId,
         quartoId: quartoId,
+        categoriaId: categoriaId,
         hotelName: hotelName,
         roomType: roomType,
         address: address,
@@ -147,9 +157,12 @@ class Ticket {
         checkOut: checkOut,
         checkInTime: checkInTime,
         checkOutTime: checkOutTime,
+        checkInRealTime: checkInRealTime,
+        checkOutRealTime: checkOutRealTime,
         guestCount: guestCount,
         status: status ?? this.status,
         statusRaw: statusRaw ?? this.statusRaw,
+        nomeHospede: nomeHospede,
         imageUrl: imageUrl ?? this.imageUrl,
         subtotal: subtotal,
         discounts: discounts,

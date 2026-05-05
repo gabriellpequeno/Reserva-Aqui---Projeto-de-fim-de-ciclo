@@ -120,30 +120,32 @@ class TicketCard extends StatelessWidget {
         ),
 
         // ── Botão Detalhes ─────────────────────────────────────────────
-        const SizedBox(height: 8),
-        SizedBox(
-          width: 160,
-          height: 38,
-          child: ElevatedButton(
-            onPressed: () => context.push('/tickets/details/${ticket.id}'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(11),
+        if (ticket.id.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            width: 160,
+            height: 38,
+            child: ElevatedButton(
+              onPressed: () => context.push('/tickets/details/${ticket.id}'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(11),
+                ),
               ),
-            ),
-            child: const Text(
-              'Detalhes',
-              style: TextStyle(
-                fontSize: 14,
-                fontFamily: 'Stack Sans Headline',
-                fontWeight: FontWeight.w700,
+              child: const Text(
+                'Detalhes',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'Stack Sans Headline',
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }

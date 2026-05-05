@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/theme/app_colors.dart';
 
 class GuestsPickerSheet extends StatefulWidget {
   const GuestsPickerSheet({
@@ -38,6 +37,7 @@ class _GuestsPickerSheetState extends State<GuestsPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
       child: Column(
@@ -47,17 +47,17 @@ class _GuestsPickerSheetState extends State<GuestsPickerSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: colorScheme.outline,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Número de hóspedes',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: AppColors.primary,
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 32),
@@ -71,10 +71,10 @@ class _GuestsPickerSheetState extends State<GuestsPickerSheet> {
               const SizedBox(width: 32),
               Text(
                 '$_count',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(width: 32),
@@ -87,14 +87,14 @@ class _GuestsPickerSheetState extends State<GuestsPickerSheet> {
           const SizedBox(height: 8),
           Text(
             _count == 1 ? '1 hóspede' : '$_count hóspedes',
-            style: const TextStyle(color: AppColors.greyText, fontSize: 14),
+            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
           ),
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(11),
@@ -119,6 +119,7 @@ class _CounterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final enabled = onTap != null;
     return GestureDetector(
       onTap: onTap,
@@ -126,12 +127,12 @@ class _CounterButton extends StatelessWidget {
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: enabled ? AppColors.primary : Colors.grey[200],
+          color: enabled ? colorScheme.primary : colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
           icon,
-          color: enabled ? Colors.white : Colors.grey[400],
+          color: enabled ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
           size: 24,
         ),
       ),

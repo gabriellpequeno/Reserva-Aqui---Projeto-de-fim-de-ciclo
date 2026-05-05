@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../core/theme/app_colors.dart';
 
 /// Campo de data com máscara automática dd/mm/aaaa e ícone de calendário.
 /// Digitação formata em tempo real; toque no ícone abre DatePicker nativo.
@@ -22,7 +21,6 @@ class _DatePickerFieldState extends State<DatePickerField> {
   Future<void> _openCalendar() async {
     final now = DateTime.now();
 
-    // Tenta pré-popular o calendário com a data já digitada
     DateTime initial = now;
     final text = widget.controller.text;
     if (RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(text)) {
@@ -46,7 +44,6 @@ class _DatePickerFieldState extends State<DatePickerField> {
       final m = picked.month.toString().padLeft(2, '0');
       final y = picked.year.toString();
       widget.controller.text = '$d/$m/$y';
-      // Move cursor para o fim
       widget.controller.selection = TextSelection.collapsed(
         offset: widget.controller.text.length,
       );
@@ -55,37 +52,44 @@ class _DatePickerFieldState extends State<DatePickerField> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.strokeLight),
+    final colorScheme = Theme.of(context).colorScheme;
+    return TextFormField(
+      controller: widget.controller,
+      validator: widget.validator,
+      keyboardType: TextInputType.number,
+      inputFormatters: [_DateMaskFormatter()],
+      style: TextStyle(
+        color: colorScheme.onSurface,
+        fontSize: 16,
       ),
-      child: TextFormField(
-        controller: widget.controller,
-        validator: widget.validator,
-        keyboardType: TextInputType.number,
-        inputFormatters: [_DateMaskFormatter()],
-        style: const TextStyle(
-          color: AppColors.primary,
+      decoration: InputDecoration(
+        hintText: 'dd/mm/aaaa',
+        hintStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant,
           fontSize: 16,
         ),
-        decoration: InputDecoration(
-          hintText: 'dd/mm/aaaa',
-          hintStyle: const TextStyle(
-            color: AppColors.greyText,
-            fontSize: 16,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-          border: InputBorder.none,
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.calendar_today_outlined, size: 20),
-            color: AppColors.greyText,
-            onPressed: _openCalendar,
-          ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        filled: true,
+        fillColor: colorScheme.surfaceContainer,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+        ),
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.calendar_today_outlined, size: 20),
+          color: colorScheme.onSurfaceVariant,
+          onPressed: _openCalendar,
         ),
       ),
     );

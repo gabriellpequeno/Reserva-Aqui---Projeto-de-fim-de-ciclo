@@ -89,12 +89,16 @@ class _HomePageState extends ConsumerState<HomePage> {
     final size = MediaQuery.of(context).size;
     final bool isWeb = size.width > 900;
 
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final String bgImage = isDark
+        ? "lib/assets/images/home_dark.png"
+        : "lib/assets/images/home_page.jpeg";
+
     return Stack(
       children: [
-        // Background Header Image 
         Positioned.fill(
           child: Image.asset(
-            "lib/assets/images/home_page.jpeg",
+            bgImage,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) => Container(
               color: Colors.black,
@@ -135,11 +139,13 @@ class _HomePageState extends ConsumerState<HomePage> {
           child: IgnorePointer(
             child: Column(
               children: [
-                const Text(
+                Text(
                   'SE VOCÊ QUER CONFORTO',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : AppColors.primary,
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                     letterSpacing: 4.34,
@@ -147,8 +153,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 const SizedBox(height: 15),
                 SvgPicture.asset(
-                  "lib/assets/icons/logo/logo.svg",
-                  width: 260, // Aumentado para coincidir com a largura do texto acima
+                  Theme.of(context).brightness == Brightness.dark
+                      ? "lib/assets/icons/logo/logoDark.svg"
+                      : "lib/assets/icons/logo/logo.svg",
+                  width: 260,
                 ),
               ],
             ),
@@ -206,11 +214,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _buildContentScreen(Size size, bool isWeb) {
     final homeState = ref.watch(homeNotifierProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(30),
           topRight: Radius.circular(30),
         ),
@@ -221,10 +230,10 @@ class _HomePageState extends ConsumerState<HomePage> {
           const SizedBox(height: 40),
           _buildSearchSection(),
           const SizedBox(height: 30),
-          const Text(
+          Text(
             'Quartos Recomendados',
             style: TextStyle(
-              color: AppColors.primary,
+              color: colorScheme.onSurface,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -245,10 +254,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: colorScheme.surface.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.chevron_right, color: AppColors.primary, size: 30),
+                    child: Icon(Icons.chevron_right, color: colorScheme.primary, size: 30),
                   ),
                 ),
               ),
@@ -284,17 +293,18 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildEmptyState() {
+    final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
       height: 200,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.hotel, size: 48, color: Colors.grey[400]),
+            Icon(Icons.hotel, size: 48, color: colorScheme.onSurfaceVariant),
             const SizedBox(height: 12),
             Text(
               'Nenhum quarto disponível no momento',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16),
             ),
           ],
         ),
@@ -303,7 +313,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildSearchSection() {
-    // Ajusta o border radius da barra quando o dropdown está aberto para parecer conectado
+    final colorScheme = Theme.of(context).colorScheme;
     final barRadius = _isFilterOpen
         ? const BorderRadius.only(
             topLeft: Radius.circular(15),
@@ -314,13 +324,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text.rich(
+        Text.rich(
           TextSpan(
             children: [
               TextSpan(
                 text: 'Descubra \nsua',
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: colorScheme.onSurface,
                   fontSize: 28,
                   fontWeight: FontWeight.w400,
                 ),
@@ -337,41 +347,40 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ),
         const SizedBox(height: 20),
-        // Barra de busca: toque no campo navega para search_page
         Container(
           height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
-            color: AppColors.bgSecondary,
+            color: colorScheme.surfaceContainer,
             borderRadius: barRadius,
-            border: Border.all(color: Colors.black12),
+            border: Border.all(color: colorScheme.outline),
           ),
           child: Row(
             children: [
-              // Campo de busca: digitável, submeter navega para search_page com query
               Expanded(
                 child: TextField(
                   controller: _searchController,
                   textAlignVertical: TextAlignVertical.center,
                   textInputAction: TextInputAction.search,
                   onSubmitted: _submitSearch,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Para onde você vai?',
-                    hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                    prefixIcon: Icon(Icons.search, color: AppColors.primary),
+                    hintStyle: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
+                    prefixIcon: Icon(Icons.search, color: colorScheme.primary),
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
               ),
-              // Ícone de filtro: abre dropdown de comodidades sem sair da home
               IconButton(
                 icon: Icon(
                   Icons.tune,
-                  // Indica visualmente que há filtros ativos
                   color: _selectedFilters.isNotEmpty
                       ? AppColors.secondary
-                      : AppColors.primary,
+                      : colorScheme.primary,
                 ),
                 onPressed: () => setState(() => _isFilterOpen = !_isFilterOpen),
               ),
@@ -388,34 +397,34 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  // Painel de filtros com chips de seleção múltipla
   Widget _buildFilterPanel() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: BoxDecoration(
-        color: AppColors.bgSecondary,
+        color: colorScheme.surfaceContainer,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(15),
           bottomRight: Radius.circular(15),
         ),
-        border: const Border(
-          left: BorderSide(color: Colors.black12),
-          right: BorderSide(color: Colors.black12),
-          bottom: BorderSide(color: Colors.black12),
+        border: Border(
+          left: BorderSide(color: colorScheme.outline),
+          right: BorderSide(color: colorScheme.outline),
+          bottom: BorderSide(color: colorScheme.outline),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(height: 1, color: Colors.black12),
+          Divider(height: 1, color: colorScheme.outline),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Comodidades',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.grey,
+              color: colorScheme.onSurfaceVariant,
               letterSpacing: 0.8,
             ),
           ),
@@ -438,16 +447,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                   });
                   debugPrint('[home] Filtros ativos: $_selectedFilters');
                 },
-                selectedColor: AppColors.primary.withValues(alpha: 0.15),
-                checkmarkColor: AppColors.primary,
+                selectedColor: colorScheme.primary.withValues(alpha: 0.15),
+                checkmarkColor: colorScheme.primary,
                 labelStyle: TextStyle(
                   fontSize: 13,
-                  color: isSelected ? AppColors.primary : Colors.grey[700],
+                  color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
-                backgroundColor: Colors.white,
+                backgroundColor: colorScheme.surface,
                 side: BorderSide(
-                  color: isSelected ? AppColors.primary : Colors.black12,
+                  color: isSelected ? colorScheme.primary : colorScheme.outline,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -457,10 +466,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
           if (_selectedFilters.isNotEmpty) ...[
             const SizedBox(height: 8),
-            // Botão para limpar todos os filtros selecionados
             GestureDetector(
               onTap: () => setState(() => _selectedFilters.clear()),
-              child: Text(
+              child: const Text(
                 'Limpar filtros',
                 style: TextStyle(
                   fontSize: 12,

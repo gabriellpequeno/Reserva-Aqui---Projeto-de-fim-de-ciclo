@@ -33,7 +33,6 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   void initState() {
     super.initState();
     _photoController = PageController();
-    // Gatilho de carregamento: dispara loadRoom ao montar a tela com hotelId e roomId
     Future.microtask(() {
       ref
           .read(roomDetailsNotifierProvider.notifier)
@@ -59,9 +58,9 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final roomState = ref.watch(roomDetailsNotifierProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: roomState.isLoading
           ? const Center(child: CircularProgressIndicator())
           : roomState.hasError
@@ -69,11 +68,11 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error, size: 48, color: Colors.grey[400]),
+                      Icon(Icons.error, size: 48, color: colorScheme.onSurfaceVariant),
                       const SizedBox(height: 12),
                       Text(
                         'Erro ao carregar detalhes do quarto',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(color: colorScheme.onSurfaceVariant),
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton(
@@ -91,41 +90,34 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Top Image Section
                           _buildImageSection(roomState.room!),
-
                           Padding(
                             padding: const EdgeInsets.fromLTRB(24, 58, 24, 24),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Title — toque navega para hotel_details
                                 GestureDetector(
                                   onTap: () => context.push('/hotel_details/${widget.hotelId}'),
                                   child: Text(
                                     roomState.room!.hotelName,
-                                    style: const TextStyle(
-                                      color: AppColors.primary,
+                                    style: TextStyle(
+                                      color: colorScheme.onSurface,
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ),
                                 const SizedBox(height: 24),
-
-                                // Amenities Section
-                                const Text(
+                                Text(
                                   'Comodidades',
                                   style: TextStyle(
-                                    color: AppColors.primary,
+                                    color: colorScheme.onSurface,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 const SizedBox(height: 12),
                                 _buildAmenitiesGrid(roomState.room!.amenities),
-
-                                // Availability Checker
                                 if (roomState.categoriaId > 0)
                                   AvailabilityChecker(
                                     hotelId: widget.hotelId,
@@ -135,14 +127,11 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                                       _checkOutDate = co;
                                     }),
                                   ),
-
                                 const SizedBox(height: 32),
-
-                                // Details Section
-                                const Text(
+                                Text(
                                   'Detalhes',
                                   style: TextStyle(
-                                    color: AppColors.primary,
+                                    color: colorScheme.onSurface,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -150,27 +139,21 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                                 const SizedBox(height: 12),
                                 Text(
                                   roomState.room!.description,
-                                  style: const TextStyle(
-                                    color: AppColors.primary,
+                                  style: TextStyle(
+                                    color: colorScheme.onSurface,
                                     fontSize: 14,
                                     height: 1.5,
                                   ),
                                 ),
-
                                 const SizedBox(height: 32),
-
-                                // Host Section
                                 _buildHostSection(context, roomState.room!.host),
-
-                                const SizedBox(height: 100), // Space for bottom bar
+                                const SizedBox(height: 100),
                               ],
                             ),
                           ),
                         ],
                       ),
                     ),
-
-                    // Bottom Reservation Bar
                     _buildBottomBar(context, roomState.room!),
                   ],
                 ),
@@ -185,7 +168,6 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // Main Image — atualizada conforme thumbnail selecionada
         Container(
           height: 400,
           decoration: BoxDecoration(
@@ -200,8 +182,6 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
             ),
           ),
         ),
-
-        // Gradient Top Overlay
         Positioned(
           top: 0,
           left: 0,
@@ -220,8 +200,6 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
             ),
           ),
         ),
-
-        // Back Button
         Positioned(
           top: 50,
           left: 20,
@@ -230,8 +208,6 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
             onTap: () => context.pop(),
           ),
         ),
-
-        // Floating Price Tag — sangra à esquerda, centro vertical na borda da imagem
         Positioned(
           bottom: 0,
           left: 0,
@@ -276,10 +252,10 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                         ),
                       ],
                     ),
-                    FittedBox(
+                    const FittedBox(
                       fit: BoxFit.fitWidth,
                       alignment: Alignment.centerLeft,
-                      child: const Text(
+                      child: Text(
                         'por dia',
                         style: TextStyle(
                           color: AppColors.secondary,
@@ -295,8 +271,6 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
             ),
           ),
         ),
-
-        // Carrossel de fotos — centro vertical alinhado à borda inferior da imagem
         if (room.imageUrls.length > 1)
           Positioned(
             bottom: 0,
@@ -353,6 +327,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   }
 
   Widget _buildAmenitiesGrid(List<Amenity> amenities) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -360,18 +335,18 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F5),
+            color: colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(amenity.icon, size: 18, color: AppColors.primary),
+              Icon(amenity.icon, size: 18, color: colorScheme.onSurface),
               const SizedBox(width: 6),
               Text(
                 amenity.label,
-                style: const TextStyle(
-                  color: AppColors.primary,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
                   fontSize: 12,
                 ),
               ),
@@ -383,17 +358,17 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   }
 
   Widget _buildHostSection(BuildContext context, Host host) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Toque no avatar ou no nome do hotel navega para hotel_details
         GestureDetector(
           onTap: () => context.push('/hotel_details/${widget.hotelId}'),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: const Color(0xFFD9D9D9),
+                backgroundColor: colorScheme.surfaceContainerHigh,
                 backgroundImage: host.imageUrl.isNotEmpty
                     ? NetworkImage(host.imageUrl)
                     : null,
@@ -405,8 +380,8 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                   children: [
                     Text(
                       host.name,
-                      style: const TextStyle(
-                        color: AppColors.primary,
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -417,7 +392,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                         const SizedBox(width: 4),
                         Text(
                           host.rating,
-                          style: const TextStyle(color: AppColors.greyText, fontSize: 12),
+                          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
                         ),
                       ],
                     ),
@@ -430,8 +405,8 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
         const SizedBox(height: 12),
         Text(
           host.bio,
-          style: const TextStyle(
-            color: AppColors.primary,
+          style: TextStyle(
+            color: colorScheme.onSurface,
             fontSize: 14,
             height: 1.4,
           ),
@@ -460,6 +435,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   }
 
   Widget _buildBottomBar(BuildContext context, Room room) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Positioned(
       bottom: 0,
       left: 0,
@@ -467,7 +443,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -478,23 +454,21 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
         ),
         child: Row(
           children: [
-            // Share Button
             GestureDetector(
               onTap: () => _handleShareTap(room),
               child: Container(
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.1)),
+                      color: colorScheme.primary.withValues(alpha: 0.1)),
                 ),
-                child: const Icon(Icons.share_outlined, color: AppColors.primary),
+                child: Icon(Icons.share_outlined, color: colorScheme.primary),
               ),
             ),
             const SizedBox(width: 16),
-            // Reservation Button
             Expanded(
               child: ElevatedButton(
                 onPressed: () {

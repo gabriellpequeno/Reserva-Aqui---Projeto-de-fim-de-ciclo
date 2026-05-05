@@ -53,14 +53,12 @@ class _AvailabilityCheckerState extends ConsumerState<AvailabilityChecker> {
     }
   }
 
-  // Botão de verificação: chama GET /:hotel_id/disponibilidade e filtra pelo categoriaId do quarto
   Future<void> _checkAvailability() async {
     if (_checkInDate == null || _checkOutDate == null) return;
 
     setState(() => _isLoading = true);
 
     try {
-      // Usa dioProvider centralizado — resolve IP e prefixo por plataforma
       final dio = ref.read(dioProvider);
 
       final response = await dio.get<Map<String, dynamic>>(
@@ -74,7 +72,6 @@ class _AvailabilityCheckerState extends ConsumerState<AvailabilityChecker> {
       final disponibilidades =
           (response.data!['data'] as List<dynamic>? ?? []);
 
-      // Filtragem: busca a entrada da categoria do quarto atual no array de disponibilidade retornado
       final categoriaDisp = disponibilidades.firstWhere(
         (item) => (item as Map<String, dynamic>)['id'] == widget.categoriaId,
         orElse: () => null,
@@ -89,7 +86,6 @@ class _AvailabilityCheckerState extends ConsumerState<AvailabilityChecker> {
         return;
       }
 
-      // Exibição do resultado: mensagem de disponível ou indisponível abaixo do botão
       final disponivel = categoriaDisp['disponivel'] as bool? ?? false;
       final proximaData = categoriaDisp['proxima_disponibilidade'] as String?;
 
@@ -112,14 +108,15 @@ class _AvailabilityCheckerState extends ConsumerState<AvailabilityChecker> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 32),
-        const Text(
+        Text(
           'Verificar Disponibilidade',
           style: TextStyle(
-            color: AppColors.primary,
+            color: colorScheme.onSurface,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -133,29 +130,29 @@ class _AvailabilityCheckerState extends ConsumerState<AvailabilityChecker> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: colorScheme.surfaceContainer,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.black12),
+                    border: Border.all(color: colorScheme.outline),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.primary),
+                      Icon(Icons.calendar_today_outlined, size: 14, color: colorScheme.onSurface),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Check-in',
-                              style: TextStyle(color: Colors.grey, fontSize: 10),
+                              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 10),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               _checkInDate != null
                                   ? '${_checkInDate!.day}/${_checkInDate!.month}/${_checkInDate!.year}'
                                   : 'Selecionar',
-                              style: const TextStyle(
-                                color: AppColors.primary,
+                              style: TextStyle(
+                                color: colorScheme.onSurface,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -175,29 +172,29 @@ class _AvailabilityCheckerState extends ConsumerState<AvailabilityChecker> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: colorScheme.surfaceContainer,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.black12),
+                    border: Border.all(color: colorScheme.outline),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.primary),
+                      Icon(Icons.calendar_today_outlined, size: 14, color: colorScheme.onSurface),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Check-out',
-                              style: TextStyle(color: Colors.grey, fontSize: 10),
+                              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 10),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               _checkOutDate != null
                                   ? '${_checkOutDate!.day}/${_checkOutDate!.month}/${_checkOutDate!.year}'
                                   : 'Selecionar',
-                              style: const TextStyle(
-                                color: AppColors.primary,
+                              style: TextStyle(
+                                color: colorScheme.onSurface,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -223,7 +220,7 @@ class _AvailabilityCheckerState extends ConsumerState<AvailabilityChecker> {
                 : _checkAvailability,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.secondary,
-              disabledBackgroundColor: Colors.grey[400],
+              disabledBackgroundColor: colorScheme.surfaceContainerHigh,
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 36),
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -257,7 +254,7 @@ class _AvailabilityCheckerState extends ConsumerState<AvailabilityChecker> {
             child: Text(
               _resultMessage!,
               style: TextStyle(
-                color: _isAvailable ? Colors.green[700] : Colors.red[700],
+                color: _isAvailable ? Colors.green[400] : Colors.red[400],
                 fontSize: 14,
               ),
             ),

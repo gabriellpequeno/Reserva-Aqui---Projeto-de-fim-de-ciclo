@@ -17,6 +17,8 @@ import '../../features/profile/presentation/pages/settings_page.dart';
 import '../../features/profile/presentation/pages/edit_user_profile_page.dart';
 import '../../features/profile/presentation/pages/edit_host_profile_page.dart';
 import '../../features/profile/presentation/pages/edit_admin_profile_page.dart';
+import '../../features/profile/presentation/pages/host_dashboard_page.dart';
+import '../../features/profile/presentation/pages/admin_dashboard_page.dart';
 import '../../features/chat/presentation/pages/chat_page.dart';
 import '../../features/favorites/presentation/pages/favorites_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
@@ -79,6 +81,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (needsAdmin) {
         if (!isAuthenticated) return '/auth/login';
         if (auth?.role != AuthRole.admin) return '/home';
+      }
+
+      // Rotas host — exigem papel 'host'. Mesmo raciocínio: autoridade real é o
+      // hotelGuard do backend (403 em /api/v1/host/*); esta camada é só UX.
+      final needsHost = path.startsWith('/host/');
+      if (needsHost) {
+        if (!isAuthenticated) return '/auth/login';
+        if (auth?.role != AuthRole.host) return '/home';
       }
 
       return null;
@@ -255,15 +265,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: '/host/dashboard',
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: Text('Página: Host Dashboard'))),
+        builder: (context, state) => const HostDashboardPage(),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: '/admin/dashboard',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Página: Admin Dashboard')),
-        ),
+        builder: (context, state) => const AdminDashboardPage(),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

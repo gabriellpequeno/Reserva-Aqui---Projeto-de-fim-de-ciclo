@@ -70,6 +70,14 @@ class TicketsNotifier extends AsyncNotifier<List<Ticket>> {
   /// Atalho: negar/cancelar reserva (status → CANCELADA).
   Future<String?> negarReserva(int reservaId) =>
       mudarStatusReserva(reservaId, 'CANCELADA');
+  Future<void> cancelarReserva(String codigoPublico) async {
+    await ref.read(ticketsServiceProvider).cancelarReserva(codigoPublico);
+    state = state.whenData(
+      (tickets) => tickets
+          .map((t) => t.codigoPublico == codigoPublico ? t.copyWith(status: TicketStatus.cancelado) : t)
+          .toList(),
+    );
+  }
 }
 
 final ticketsNotifierProvider =

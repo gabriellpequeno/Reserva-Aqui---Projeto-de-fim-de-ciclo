@@ -14,13 +14,13 @@ class HostProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(hostProfileProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: profileState.when(
           loading: () => const Center(
-            child: CircularProgressIndicator(color: AppColors.primary),
+            child: CircularProgressIndicator(),
           ),
           error: (error, stack) => Center(
             child: Padding(
@@ -28,16 +28,16 @@ class HostProfilePage extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.error_outline,
-                    color: AppColors.primary,
+                    color: colorScheme.onSurface,
                     size: 48,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Erro ao carregar perfil:\n$error',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.primary),
+                    style: TextStyle(color: colorScheme.onSurface),
                   ),
                   const SizedBox(height: 24),
                   PrimaryButton(

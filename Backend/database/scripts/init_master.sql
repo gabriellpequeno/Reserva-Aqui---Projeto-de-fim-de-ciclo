@@ -144,6 +144,7 @@ CREATE TABLE IF NOT EXISTS historico_reserva_global (
     criado_em           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     atualizado_em       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
+    codigo_publico      UUID,                                    -- Chave pública da reserva no tenant (preenchida no upsert)
     UNIQUE (hotel_id, reserva_tenant_id)                        -- Previne a duplicação do log da mesma reserva
 );
 

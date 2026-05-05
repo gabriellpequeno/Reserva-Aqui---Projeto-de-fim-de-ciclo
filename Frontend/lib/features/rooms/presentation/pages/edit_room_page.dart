@@ -143,7 +143,6 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: Column(
           children: [
@@ -323,12 +322,13 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
         .toList();
     final totalFotos = fotosVisiveis.length + _fotosNovas.length;
 
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.bgSecondary,
+        color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.strokeLight),
+        border: Border.all(color: colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,8 +338,8 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
             children: [
               Text(
                 'Fotos do Quarto ($totalFotos)',
-                style: const TextStyle(
-                  color: AppColors.primary,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
@@ -410,7 +410,7 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
               errorBuilder: (_, __, ___) => Container(
                 width: 100,
                 height: 100,
-                color: AppColors.strokeLight,
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
                 child: const Icon(Icons.broken_image_outlined),
               ),
             ),
@@ -601,20 +601,21 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
   // ── Status toggle ──────────────────────────────────────────────────────────
 
   Widget _buildStatusToggle() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.bgSecondary,
+        color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.strokeLight),
+        border: Border.all(color: colorScheme.outline),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             'Status do Quarto',
             style: TextStyle(
-              color: AppColors.primary,
+              color: colorScheme.onSurface,
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -733,10 +734,10 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
   Widget _buildSectionLabel(String label) {
     return Text(
       label,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w500,
-        color: Color(0xFF666666),
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
     );
   }
@@ -750,6 +751,7 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
     int maxLines = 1,
     String? Function(String?)? validator,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -757,21 +759,21 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
       maxLines: maxLines,
       minLines: maxLines == 1 ? 1 : maxLines,
       validator: validator,
-      style: const TextStyle(color: AppColors.primary, fontSize: 16),
+      style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: Icon(icon, color: AppColors.secondary),
         hintStyle:
-            const TextStyle(color: AppColors.greyText, fontSize: 14),
+            TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
         filled: true,
-        fillColor: AppColors.bgSecondary,
+        fillColor: colorScheme.surfaceContainer,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.strokeLight),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.strokeLight),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -780,7 +782,7 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red),
+          borderSide: BorderSide(color: colorScheme.error),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -792,10 +794,11 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
     required int value,
     required void Function(int) onChanged,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.bgSecondary,
-        border: Border.all(color: AppColors.strokeLight),
+        color: colorScheme.surfaceContainer,
+        border: Border.all(color: colorScheme.outline),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -808,10 +811,10 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
           ),
           Text(
             value.toString(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: AppColors.primary,
+              color: colorScheme.onSurface,
             ),
           ),
           IconButton(

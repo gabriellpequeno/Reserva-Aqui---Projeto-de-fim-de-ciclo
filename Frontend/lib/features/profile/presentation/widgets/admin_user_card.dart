@@ -20,17 +20,18 @@ class AdminUserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: const Color(0x3F182541)),
+        border: Border.all(color: colorScheme.outline),
       ),
       child: Row(
         children: [
-          _buildAvatar(),
+          _buildAvatar(context),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -38,8 +39,8 @@ class AdminUserCard extends StatelessWidget {
               children: [
                 Text(
                   user.nome.isEmpty ? '(sem nome)' : user.nome,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
@@ -49,8 +50,8 @@ class AdminUserCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   user.email,
-                  style: const TextStyle(
-                    color: AppColors.greyText,
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 12,
                   ),
                   maxLines: 1,
@@ -71,7 +72,7 @@ class AdminUserCard extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEE8DB),
+                  color: AppColors.secondary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.secondary),
                 ),
@@ -88,10 +89,11 @@ class AdminUserCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildAvatar(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final url = user.fotoUrl;
     final decoration = BoxDecoration(
-      color: AppColors.primary.withValues(alpha: 0.1),
+      color: colorScheme.surfaceContainerHigh,
       shape: BoxShape.circle,
       image: url != null
           ? DecorationImage(image: NetworkImage(url), fit: BoxFit.cover)
@@ -105,8 +107,8 @@ class AdminUserCard extends StatelessWidget {
       child: url == null
           ? Text(
               _initials(user.nome),
-              style: const TextStyle(
-                color: AppColors.primary,
+              style: TextStyle(
+                color: colorScheme.onSurface,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),

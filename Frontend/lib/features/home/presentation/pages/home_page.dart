@@ -8,7 +8,6 @@ import '../notifiers/home_notifier.dart';
 import '../notifiers/home_state.dart';
 import '../widgets/room_card.dart';
 import '../widgets/home_shimmer.dart';
-import '../../../search/presentation/providers/search_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -25,8 +24,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   final Set<String> _selectedFilters = {};
 
   static const _filterOptions = [
-    'Wi-Fi', 'Piscina', 'Ar-condicionado',
-    'Estacionamento', 'Restaurante', 'Spa', 'Fitness',
+    'Wi-Fi', 'Ar-condicionado', 'TV a cabo', 'Piscina', 'Academia',
+    'Spa', 'Restaurante', 'Bar', 'Cama king-size', 'Cama queen-size',
+    'Varanda', 'Banheira', 'Frigobar', 'Salão de eventos',
   ];
 
   @override
@@ -54,22 +54,19 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
-  // Submete a busca: atualiza destination no provider e navega para search_page
   void _submitSearch(String query) {
     final trimmed = query.trim();
-    if (trimmed.isEmpty) {
-      context.push('/search');
-      return;
-    }
-    ref.read(searchProvider.notifier).updateDestination(trimmed);
     if (_isFilterOpen) setState(() => _isFilterOpen = false);
-    context.push('/search');
+    context.push('/search', extra: <String, dynamic>{
+      'query': trimmed,
+      'amenities': _selectedFilters.toList(),
+    });
   }
 
   void _scrollListener() {
     if (_pageController.hasClients) {
       final double page = _pageController.page ?? 0;
-      final bool isVisible = page > 0.3; // Threshold to show navbar
+      final bool isVisible = page > 0.3;
       if (ref.read(navbarVisibleProvider) != isVisible) {
         ref.read(navbarVisibleProvider.notifier).setVisible(isVisible);
       }
@@ -131,27 +128,30 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget _buildIntroScreen(Size size, bool isWeb) {
     return Stack(
       children: [
-        // FIXED TEXT - Only visible here
+        // Logo + tagline
         Positioned(
-          top: 60,
+          top: MediaQuery.of(context).padding.top + 24,
           left: 0,
           right: 0,
           child: IgnorePointer(
             child: Column(
               children: [
-                Text(
-                  'SE VOCÊ QUER CONFORTO',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : AppColors.primary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 4.34,
+                SizedBox(
+                  width: 260,
+                  child: Text(
+                    'SE VOCÊ QUER CONFORTO',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : AppColors.primary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 4.34,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 6),
                 SvgPicture.asset(
                   Theme.of(context).brightness == Brightness.dark
                       ? "lib/assets/icons/logo/logoDark.svg"
@@ -192,15 +192,15 @@ class _HomePageState extends ConsumerState<HomePage> {
               Text(
                 'EXPLORAR',
                 style: TextStyle(
-                  color: Colors.white, 
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: isWeb ? 18 : 14,
                 ),
               ),
               IconButton(
                 icon: Icon(
-                  Icons.keyboard_arrow_down, 
-                  color: Colors.white, 
+                  Icons.keyboard_arrow_down,
+                  color: Colors.white,
                   size: isWeb ? 60 : 40,
                 ),
                 onPressed: _scrollToContent,
@@ -227,7 +227,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: ListView(
         children: [
-          const SizedBox(height: 40),
+          const SizedBox(height: 60),
           _buildSearchSection(),
           const SizedBox(height: 30),
           Text(
@@ -239,30 +239,12 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
           const SizedBox(height: 20),
-          Stack(
-            children: [
-              if (homeState.isLoading)
-                const HomeShimmer()
-              else if (homeState.rooms.isEmpty)
-                _buildEmptyState()
-              else
-                _buildRoomCards(homeState),
-              Positioned(
-                right: 0,
-                top: 180,
-                child: IgnorePointer(
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface.withValues(alpha: 0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.chevron_right, color: colorScheme.primary, size: 30),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          if (homeState.isLoading)
+            const HomeShimmer()
+          else if (homeState.rooms.isEmpty)
+            _buildEmptyState()
+          else
+            _buildRoomCards(homeState),
           const SizedBox(height: 40),
         ],
       ),
@@ -286,6 +268,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             imageUrl: room.imageUrls.isNotEmpty ? room.imageUrls.first : '',
             rating: room.rating,
             amenities: room.amenities.map((a) => a.icon).toList(),
+            price: room.price > 0 ? room.price : null,
           );
         },
       ),
@@ -387,7 +370,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             ],
           ),
         ),
-        // Dropdown de filtros: abre abaixo da barra com mesma largura
         AnimatedSize(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
@@ -445,7 +427,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                       _selectedFilters.remove(option);
                     }
                   });
-                  debugPrint('[home] Filtros ativos: $_selectedFilters');
                 },
                 selectedColor: colorScheme.primary.withValues(alpha: 0.15),
                 checkmarkColor: colorScheme.primary,

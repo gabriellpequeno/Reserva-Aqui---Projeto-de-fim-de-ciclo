@@ -102,7 +102,7 @@
 
 ---
 
-## Fase P4-B — Search Page Integration [EM ANDAMENTO]
+## Fase P4-B — Search Page Integration [CONCLUÍDO]
 
 > Spec: `specs/search-page-integration.spec.md`
 > Plan detalhado: `plans/search-page-integration.plan.md`
@@ -112,7 +112,7 @@
 - [x] Atualizar `SearchNotifier.performSearch()` — trocar mock por chamada real + mapping → `FavoriteRoom`
 - [x] Implementar `onTap` de datas (`showDateRangePicker`) e hóspedes (`showModalBottomSheet`) em `search_page.dart`
 - [x] Substituir `Image.asset` hardcoded por `Image.network` com fallback em `_buildHotelCard`
-- [ ] Validar fluxo ponta a ponta (busca, pickers, loading, vazio, imagens, navegação)
+- [x] Validar fluxo ponta a ponta (busca, pickers, loading, vazio, imagens, navegação) — fotos reais de `quarto_foto`, nome via `categoria_quarto.nome`, ícones de comodidades, filtro AND wired end-to-end
 
 ---
 

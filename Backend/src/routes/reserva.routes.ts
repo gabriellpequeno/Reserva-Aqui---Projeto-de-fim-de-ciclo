@@ -12,6 +12,7 @@ import {
   atribuirQuartoController,
   registrarCheckinController,
   registrarCheckoutController,
+  getReservasAtivasByCategoriaController,
   // Usuário
   createReservaUsuarioController,
   listReservasUsuarioController,
@@ -25,6 +26,7 @@ import {
 export const hotelReservaRouter = Router();
 
 hotelReservaRouter.get('/',    hotelGuard, listReservasController);
+hotelReservaRouter.get('/categorias/:categoria_id/reservas-ativas', hotelGuard, getReservasAtivasByCategoriaController);
 hotelReservaRouter.get('/:id', hotelGuard, getReservaByIdController);
 
 hotelReservaRouter.post(

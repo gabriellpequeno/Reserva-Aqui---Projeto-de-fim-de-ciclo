@@ -14,6 +14,7 @@ export interface UpdateCategoriaQuartoInput {
   nome?:               string;
   valor_diaria?:       number;
   capacidade_pessoas?: number;
+  ativo?:              boolean;
 }
 
 export interface AddCategoriaItemInput {
@@ -76,6 +77,7 @@ export class CategoriaQuarto {
     if (data.nome               !== undefined) result.nome               = this.validateNome(data.nome);
     if (data.valor_diaria       !== undefined) result.valor_diaria       = this.validateValorDiaria(data.valor_diaria);
     if (data.capacidade_pessoas !== undefined) result.capacidade_pessoas = this.validateCapacidade(data.capacidade_pessoas);
+    if (data.ativo              !== undefined) result.ativo              = Boolean(data.ativo);
 
     if (!Object.keys(result).length)
       throw new Error('Nenhum campo para atualizar');

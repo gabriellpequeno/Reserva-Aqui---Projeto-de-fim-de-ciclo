@@ -117,6 +117,19 @@ export async function cancelarReservaUsuario(
   return _cancelarReservaUsuario(userId, codigoPublico);
 }
 
+export interface ReservasAtivasByCategoria {
+  categoria_id:    number;
+  reservas_ativas: number;
+  total_unidades:  number;
+}
+
+export async function getReservasAtivasByCategoria(
+  hotelId:     string,
+  categoriaId: number,
+): Promise<ReservasAtivasByCategoria> {
+  return _getReservasAtivasByCategoria(hotelId, categoriaId);
+}
+
 // ── Helpers Privados ──────────────────────────────────────────────────────────
 
 function calcDiarias(checkin: string, checkout: string): number {
@@ -685,9 +698,9 @@ async function _updateStatus(
       Promise.all([
         getUserTokens(atualizada.user_id).then(tokens =>
           sendPush(tokens, {
-            title: 'Reserva aprovada!',
-            body:  `Sua reserva em ${nome_hotel} foi aprovada. Em breve você receberá o link de pagamento.`,
-            data:  { codigo_publico: atualizada.codigo_publico, tipo: 'APROVACAO_RESERVA' },
+            title: 'Reserva confirmada!',
+            body:  `Sua reserva em ${nome_hotel} foi confirmada pelo hotel.`,
+            data:  { codigo_publico: atualizada.codigo_publico, reserva_id: String(atualizada.id), tipo: 'APROVACAO_RESERVA' },
           }),
         ),
         insertNotificacao(hotelId, {
@@ -697,6 +710,16 @@ async function _updateStatus(
           payload:  { reserva_id: atualizada.id, codigo_publico: atualizada.codigo_publico },
         }),
       ]).catch(() => {});
+    }
+
+    if (input.status === 'CANCELADA' && atualizada.user_id) {
+      getUserTokens(atualizada.user_id).then(tokens =>
+        sendPush(tokens, {
+          title: 'Reserva cancelada',
+          body:  `Sua reserva em ${nome_hotel} foi cancelada.`,
+          data:  { codigo_publico: atualizada.codigo_publico, reserva_id: String(atualizada.id), tipo: 'CANCELAMENTO_RESERVA' },
+        }),
+      ).catch(() => {});
     }
 
     if (input.status === 'APROVADA' && reserva.status !== 'APROVADA') {
@@ -896,5 +919,39 @@ async function _cancelarReservaUsuario(userId: string, codigoPublico: string): P
         }),
       ),
     ]).catch(() => {});
+  });
+}
+
+async function _getReservasAtivasByCategoria(
+  hotelId:     string,
+  categoriaId: number,
+): Promise<ReservasAtivasByCategoria> {
+  const { schema_name } = await _getHotelInfo(hotelId);
+
+  return withTenant(schema_name, async (client) => {
+    const { rows } = await client.query<{ reservas_ativas: string; total_unidades: string }>(
+      `SELECT
+         (
+           SELECT COUNT(DISTINCT r.id)
+           FROM reserva r
+           WHERE r.status IN ('SOLICITADA', 'APROVADA')
+             AND (
+               r.quarto_id IN (
+                 SELECT id FROM quarto WHERE categoria_quarto_id = $1 AND deleted_at IS NULL
+               )
+               OR (
+                 r.quarto_id IS NULL
+                 AND r.tipo_quarto = (SELECT nome FROM categoria_quarto WHERE id = $1)
+               )
+             )
+         ) AS reservas_ativas,
+         (SELECT COUNT(*) FROM quarto WHERE categoria_quarto_id = $1 AND deleted_at IS NULL) AS total_unidades`,
+      [categoriaId],
+    );
+    return {
+      categoria_id:    categoriaId,
+      reservas_ativas: Number(rows[0].reservas_ativas),
+      total_unidades:  Number(rows[0].total_unidades),
+    };
   });
 }

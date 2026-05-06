@@ -80,6 +80,7 @@ export interface CreateReservaChatInput {
   user_id?:        string | null;
   nome_hospede?:   string | null;
   email_hospede?:  string | null;
+  telefone_contato?: string | null;
 }
 
 export async function createReservaChat(input: CreateReservaChatInput): Promise<ReservaSafe> {
@@ -520,16 +521,17 @@ async function _createReservaChat(input: CreateReservaChatInput): Promise<Reserv
 
     const { rows } = await client.query<ReservaSafe>(
       `INSERT INTO reserva
-         (user_id, nome_hospede, email_hospede,
+         (user_id, nome_hospede, email_hospede, telefone_contato,
           quarto_id, canal_origem, sessao_chat_id,
           num_hospedes, data_checkin, data_checkout,
           valor_total, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'SOLICITADA')
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'SOLICITADA')
        RETURNING *`,
       [
         input.user_id       ?? null,
         input.nome_hospede  ?? null,
         input.email_hospede ?? null,
+        input.telefone_contato ?? null,
         input.quarto_id,
         input.canal_origem,
         input.sessao_chat_id,

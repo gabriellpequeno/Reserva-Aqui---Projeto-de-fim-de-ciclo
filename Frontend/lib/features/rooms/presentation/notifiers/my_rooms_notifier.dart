@@ -176,6 +176,41 @@ class MyRoomsNotifier extends Notifier<MyRoomsState> {
     return null;
   }
 
+  /// Consulta o backend para saber se a exclusão está bloqueada.
+  /// Retorna `{reservas_ativas, total_unidades}` se bloqueada, `null` se permitida.
+  Future<Map<String, int>?> verificarBloqueioExclusaoApi(int categoriaId) async {
+    try {
+      final dio = ref.read(dioProvider);
+      final response = await dio.get<Map<String, dynamic>>(
+        '/hotel/reservas/categorias/$categoriaId/reservas-ativas',
+      );
+      final data = response.data!['data'] as Map<String, dynamic>;
+      final reservasAtivas = (data['reservas_ativas'] as num).toInt();
+      final totalUnidades = (data['total_unidades'] as num).toInt();
+      if (reservasAtivas >= totalUnidades) {
+        return {'reservas_ativas': reservasAtivas, 'total_unidades': totalUnidades};
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[myRoomsNotifier] Erro ao verificar bloqueio de exclusão: $e');
+      return null;
+    }
+  }
+
+  /// Desativa a categoria de quarto (ativo=false). Ela some das buscas públicas
+  /// mas as reservas existentes são mantidas.
+  Future<String?> desativarCategoria(int categoriaId) async {
+    try {
+      final dio = ref.read(dioProvider);
+      await dio.patch<void>('/hotel/categorias/$categoriaId', data: {'ativo': false});
+      await load();
+      return null;
+    } catch (e) {
+      debugPrint('[myRoomsNotifier] Erro ao desativar categoria $categoriaId: $e');
+      return 'Não foi possível desativar o quarto. Tente novamente.';
+    }
+  }
+
   Future<Map<String, int>> excluirUnidadesInativas(int categoriaId) async {
     final card = state.cards.firstWhere(
         (c) => c.categoriaId == categoriaId && !c.disponivel);

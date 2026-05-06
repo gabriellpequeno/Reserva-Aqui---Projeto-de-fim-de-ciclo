@@ -22,7 +22,7 @@ class TicketStatusTheme {
         return const TicketStatusTheme(
           cardBackground: Color(0xFFFDDBB4),
           badgeColor: AppColors.secondary,
-          label: 'Em Breve',
+          label: 'Aguardando',
         );
       case TicketStatus.aprovado:
         return const TicketStatusTheme(

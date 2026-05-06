@@ -14,6 +14,7 @@ import {
   registrarCheckin,
   registrarCheckout,
   cancelarReservaUsuario,
+  getReservasAtivasByCategoria,
   ListReservasFilters,
   HistoricoReservaSafe,
 } from '../services/reserva.service';
@@ -156,6 +157,24 @@ export async function registrarCheckoutController(
       return;
     }
     const result = await registrarCheckout(req.hotelId!, reservaId);
+    res.status(200).json({ data: result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Erro interno';
+    res.status(mapError(message)).json({ error: message });
+  }
+}
+
+export async function getReservasAtivasByCategoriaController(
+  req: HotelRequest,
+  res: Response,
+): Promise<void> {
+  try {
+    const categoriaId = parseInt(req.params.categoria_id, 10);
+    if (isNaN(categoriaId) || categoriaId <= 0) {
+      res.status(400).json({ error: 'ID de categoria inválido' });
+      return;
+    }
+    const result = await getReservasAtivasByCategoria(req.hotelId!, categoriaId);
     res.status(200).json({ data: result });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erro interno';

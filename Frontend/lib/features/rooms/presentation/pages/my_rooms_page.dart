@@ -791,15 +791,19 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
     });
   }
 
-  void _abrirRemoverInativo(RoomCategoryCardModel card) {
+  Future<void> _abrirRemoverInativo(RoomCategoryCardModel card) async {
     final notifier = ref.read(myRoomsNotifierProvider.notifier);
-    final bloqueio = notifier.verificarBloqueioExclusao(card.categoriaId);
     final colorScheme = Theme.of(context).colorScheme;
 
+    final bloqueio = await notifier.verificarBloqueioExclusaoApi(card.categoriaId);
+
+    if (!mounted) return;
+
     if (bloqueio != null) {
+      final reservasAtivas = bloqueio['reservas_ativas']!;
       showDialog<void>(
         context: context,
-        builder: (_) => Dialog(
+        builder: (ctx) => Dialog(
           backgroundColor: colorScheme.surface,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16)),
@@ -817,30 +821,46 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                         fontSize: 20,
                         fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
-                Text(bloqueio,
+                Text(
+                    'Este quarto possui $reservasAtivas reserva${reservasAtivas != 1 ? 's' : ''} ativa${reservasAtivas != 1 ? 's' : ''}. Desative-o para que não receba novas reservas.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         color: colorScheme.onSurfaceVariant,
                         fontSize: 14,
                         height: 1.5)),
                 const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(11)),
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 13),
-                      elevation: 0,
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: const Text('Fechar'),
+                      ),
                     ),
-                    child: const Text('Entendido',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700)),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          Navigator.of(ctx).pop();
+                          final err = await notifier.desativarCategoria(card.categoriaId);
+                          if (!mounted) return;
+                          if (err != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(err), backgroundColor: Colors.red[700]),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange[700],
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Desativar'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

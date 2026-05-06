@@ -58,13 +58,14 @@ const ARGON2_OPTIONS: argon2.Options = {
 // 1. ADMIN
 // Admin bypassa registerUsuario — insere via SQL direto (igual ao seed.admin.ts)
 // data_nascimento em yyyy-mm-dd pois vai direto ao banco sem parseDataBrToEn
+// Credenciais lidas do .env (ADMIN_SEED_*)
 // ─────────────────────────────────────────────────────────────────────────────
 const ADMIN = {
-  nome_completo:   'Admin ReservaAqui',
-  email:           'admin@reservaqui.dev',
-  senha:           'Admin@2026',
-  cpf:             '00000000000',
-  data_nascimento: '1985-06-15',
+  nome_completo:   process.env.ADMIN_SEED_NOME  ?? 'Admin ReservaAqui',
+  email:           process.env.ADMIN_SEED_EMAIL ?? 'admin@reservaqui.dev',
+  senha:           process.env.ADMIN_SEED_SENHA ?? 'Admin@2026',
+  cpf:             process.env.ADMIN_SEED_CPF   ?? '00000000000',
+  data_nascimento: process.env.ADMIN_SEED_NASC  ?? '1990-01-01',
   numero_celular:  '(11) 99999-0000',
 };
 
@@ -944,25 +945,12 @@ export async function seedCompleto(): Promise<void> {
   // ── RESUMO FINAL ──────────────────────────────────────────────────────────
   console.log(`
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║               SEED COMPLETO — CREDENCIAIS E ESTRUTURA                      ║
+║               SEED COMPLETO — ESTRUTURA CRIADA                             ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║  ADMIN                                                                     ║
-║    admin@reservaqui.dev                /  Admin@2026                       ║
+║  Admin           → credenciais definidas em ADMIN_SEED_* no .env           ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║  HOTÉIS  (senha: Hotel@2026 para todos)                                    ║
-║    grandpaulista@reservaqui.com        São Paulo      / SP  5 categorias   ║
-║    copacabanavistamar@reservaqui.com   Rio de Janeiro / RJ  5 categorias   ║
-║    pelourinhoppalace@reservaqui.com    Salvador       / BA  5 categorias   ║
-║    serragaucha@reservaqui.com          Bento Gonçalves/ RS  5 categorias   ║
-║    amazonjunglelodge@reservaqui.com    Manaus         / AM  5 categorias   ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║  USUÁRIOS HÓSPEDES                                                         ║
-║    carlos.mendes@gmail.com            /  Carlos@2026                       ║
-║    ana.ferreira@hotmail.com           /  AnaP@2026                         ║
-║    roberto.lima@outlook.com           /  Roberto@2026                      ║
-║    fernanda.oliveira@gmail.com        /  Fer@2026                          ║
-║    marcos.pereira@yahoo.com.br        /  Marcos@2026                       ║
-║    juliana.barbosa@gmail.com          /  Juli@2026                         ║
+║  Hotéis criados: 5 (SP · RJ · BA · RS · AM) — cada um com 5 categorias    ║
+║  Usuários hóspedes: 6                                                      ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║  FOTOS MOCKADAS — paths relativos ao UPLOAD_DIR (padrão: Backend/storage/) ║
 ║                                                                            ║

@@ -14,6 +14,7 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
       POSTGRES_DB: ${DB_MASTER_NAME:-reservaqui_master}
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:

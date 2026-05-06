@@ -157,33 +157,16 @@ npm run db:seed
 
 Após executar, os seguintes acessos estarão disponíveis:
 
-### Admin
-
-| Campo | Valor |
-|-------|-------|
-| Email | `admin@reservaqui.dev` |
-| Senha | `Admin@2026` |
-
-### Usuários (hóspedes)
-
-| Nome | Email | Senha |
-|------|-------|-------|
-| Carlos Mendes | `carlos.mendes@email.com` | `Carlos@2026` |
-| Ana Paula | `ana.paula@email.com` | `AnaP@2026` |
-| Roberto Ferreira | `roberto.ferreira@email.com` | `Roberto@2026` |
-| Fernanda | `fernanda.oliveira@email.com` | `Fer@2026` |
-| Marcos | `marcos.souza@email.com` | `Marcos@2026` |
-| Juliana | `juliana.costa@email.com` | `Juli@2026` |
-
 ### Hotéis
 
-| Hotel | Cidade/UF | Email | Senha |
-|-------|-----------|-------|-------|
-| Grand Hotel Paulista | São Paulo/SP | `contato@grandpaulista.com.br` | `Hotel@2026` |
-| Atlântico Palace | Rio de Janeiro/RJ | `reservas@atlanticopalace.com.br` | `Hotel@2026` |
-| Solar da Bahia | Salvador/BA | `contato@solardabahia.com.br` | `Hotel@2026` |
-| Vinícola Boutique Hotel | Bento Gonçalves/RS | `reservas@vinicolaboutique.com.br` | `Hotel@2026` |
-| Amazon Jungle Lodge | Manaus/AM | `contato@amazonjunglelodge.com.br` | `Hotel@2026` |
+| Hotel | Cidade/UF |
+|-------|-----------|
+| Grand Hotel Paulista | São Paulo/SP |
+| Atlântico Palace | Rio de Janeiro/RJ |
+| Solar da Bahia | Salvador/BA |
+| Vinícola Boutique Hotel | Bento Gonçalves/RS |
+| Amazon Jungle Lodge | Manaus/AM | 
+
 
 ### Imagens mock
 
@@ -274,6 +257,6 @@ FIREBASE_SERVICE_ACCOUNT=
 |------|--------|
 | Gabriel Pequeno Saraiva Tavares | [@gabriellpequeno](https://github.com/gabriellpequeno) |
 | Lucas Gomes | [@fcolucascosta](https://github.com/fcolucascosta) |
-| Bianca G | [@bia-g](https://github.com/bia-g) |
+| Bianca G | [@bia-g](https://github.com/biagonzag-hue) |
 | Kellvin Correia Alves | [@kellvin-correia](https://github.com/kellvin-correia) |
 | Levi Matias | [@Levi-Matias](https://github.com/Levi-Matias) |

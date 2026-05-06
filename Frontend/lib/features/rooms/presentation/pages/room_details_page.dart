@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/room.dart';
 import '../notifiers/room_details_notifier.dart';
 import '../widgets/availability_checker.dart';
+import '../../../favorites/presentation/providers/favorites_provider.dart';
 
 class RoomDetailsPage extends ConsumerStatefulWidget {
   final String hotelId;
@@ -28,6 +30,9 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   // Datas escolhidas no AvailabilityChecker — propagadas ao checkout via queryParam
   DateTime? _checkInDate;
   DateTime? _checkOutDate;
+
+  // null = usa estado do provider; true/false = override otimista local do favorito
+  bool? _favoriteOptimistic;
 
   @override
   void initState() {
@@ -58,6 +63,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final roomState = ref.watch(roomDetailsNotifierProvider);
+    ref.watch(favoritesProvider); // garante rebuild quando favoritos mudam
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -90,7 +96,11 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildImageSection(roomState.room!),
+                          _buildImageSection(
+                              roomState.room!,
+                              isFavorite: _favoriteOptimistic ??
+                                  ref.read(favoritesProvider.notifier).isFavorite(widget.hotelId),
+                            ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(24, 58, 24, 24),
                             child: Column(
@@ -98,13 +108,27 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                               children: [
                                 GestureDetector(
                                   onTap: () => context.push('/hotel_details/${widget.hotelId}'),
-                                  child: Text(
-                                    roomState.room!.hotelName,
-                                    style: TextStyle(
-                                      color: colorScheme.onSurface,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        roomState.room!.hotelName,
+                                        style: TextStyle(
+                                          color: colorScheme.onSurface,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        roomState.room!.title,
+                                        style: TextStyle(
+                                          color: colorScheme.onSurfaceVariant,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w300,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(height: 24),
@@ -160,7 +184,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
     );
   }
 
-  Widget _buildImageSection(Room room) {
+  Widget _buildImageSection(Room room, {required bool isFavorite}) {
     final mainImageUrl = room.imageUrls.isNotEmpty
         ? room.imageUrls[_currentPhotoIndex]
         : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800';
@@ -206,6 +230,15 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
           child: _buildCircularButton(
             icon: Icons.arrow_back_ios_new,
             onTap: () => context.pop(),
+          ),
+        ),
+        Positioned(
+          top: 50,
+          right: 20,
+          child: _buildCircularButton(
+            icon: isFavorite ? Icons.favorite : Icons.favorite_border,
+            iconColor: isFavorite ? Colors.redAccent : Colors.white,
+            onTap: _toggleFavorite,
           ),
         ),
         Positioned(
@@ -310,7 +343,11 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
     );
   }
 
-  Widget _buildCircularButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _buildCircularButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    Color iconColor = Colors.white,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -321,9 +358,41 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         ),
-        child: Icon(icon, color: Colors.white, size: 20),
+        child: Icon(icon, color: iconColor, size: 20),
       ),
     );
+  }
+
+  Future<void> _toggleFavorite() async {
+    final authValue = ref.read(authProvider).value;
+    if (!(authValue?.isAuthenticated ?? false)) {
+      context.go('/auth/login');
+      return;
+    }
+
+    final notifier = ref.read(favoritesProvider.notifier);
+    final wasFavorite = notifier.isFavorite(widget.hotelId);
+    setState(() => _favoriteOptimistic = !wasFavorite);
+
+    try {
+      if (wasFavorite) {
+        await notifier.removeFavorite(widget.hotelId);
+      } else {
+        await notifier.addFavorite(widget.hotelId);
+      }
+      if (mounted) setState(() => _favoriteOptimistic = null);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _favoriteOptimistic = null);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              wasFavorite ? 'Erro ao remover dos favoritos' : 'Erro ao adicionar aos favoritos',
+            ),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildAmenitiesGrid(List<Amenity> amenities) {

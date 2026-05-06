@@ -93,7 +93,7 @@ class _AvailabilityCheckerState extends ConsumerState<AvailabilityChecker> {
         _isAvailable = disponivel;
         _resultMessage = disponivel
             ? 'Disponível'
-            : 'Indisponível — próxima disponibilidade em ${proximaData ?? 'data desconhecida'}';
+            : 'Indisponível — próxima disponibilidade em ${_fmtDataBr(proximaData)}';
         _isLoading = false;
       });
     } catch (error) {
@@ -104,6 +104,13 @@ class _AvailabilityCheckerState extends ConsumerState<AvailabilityChecker> {
       });
       debugPrint('[availabilityChecker] Erro: $error');
     }
+  }
+
+  String _fmtDataBr(String? isoDate) {
+    if (isoDate == null) return 'data desconhecida';
+    final parts = isoDate.split('T').first.split('-');
+    if (parts.length != 3) return isoDate;
+    return '${parts[2]}/${parts[1]}/${parts[0]}';
   }
 
   @override

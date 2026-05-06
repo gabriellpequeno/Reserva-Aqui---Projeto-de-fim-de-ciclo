@@ -2,7 +2,8 @@ import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { masterPool } from '../../database/masterDb';
 import { ChatContext, ContextResolverService } from './contextResolver.service';
-import { sendPaymentLinkViaWhatsApp } from '../whatsappReservation.service';
+import { createReservaChat } from '../reserva.service';
+import { getReservaByCodigoPublico } from '../reserva.service';
 
 /**
  * Cria e retorna as Tools (ferramentas) com o contexto de sessão acoplado.
@@ -86,87 +87,37 @@ export const buildAgentTools = (context: ChatContext | null) => {
   );
 
   const criarReservaTool = tool(
-    async ({ quartoId, numHospedes, dataCheckin, dataCheckout, walkInNome, walkInCpf }) => {
+    async ({ quartoId, numHospedes, dataCheckin, dataCheckout, walkInNome, walkInEmail }) => {
       if (!context?.hotelId || !context?.schemaName) {
         return 'ERRO: Nenhum hotel selecionado no contexto atual.';
       }
 
-      // Se não houver userId na sessão, exige Nome e CPF (Walk-In)
-      if (!context.userId && (!walkInNome || !walkInCpf)) {
-        return "ERRO DE VALIDAÇÃO: O usuário não está autenticado. Você DEVE obrigatoriamente perguntar o NOME COMPLETO e CPF do usuário antes de chamar essa ferramenta novamente.";
+      // Se não houver userId na sessão, exige Nome e Email
+      if (!context.userId && (!walkInNome || !walkInEmail)) {
+        return "ERRO DE VALIDAÇÃO: O usuário não está autenticado. Você DEVE obrigatoriamente perguntar o NOME COMPLETO e EMAIL do usuário antes de chamar essa ferramenta novamente.";
       }
 
-      const client = await masterPool.connect();
       try {
-        await client.query('BEGIN');
-        await client.query(`SET search_path TO "${context.schemaName}", public`);
+        const reserva = await createReservaChat({
+          hotel_id:       context.hotelId,
+          quarto_id:      quartoId,
+          num_hospedes:   numHospedes,
+          data_checkin:   dataCheckin,
+          data_checkout:  dataCheckout,
+          canal_origem:   context.canal,
+          sessao_chat_id: context.sessionId,
+          user_id:        context.userId ?? null,
+          nome_hospede:   walkInNome ?? null,
+          email_hospede:  walkInEmail ?? null,
+        });
 
-        // 1. Validar quarto e calcular preço
-        const { rows: quartoRows } = await client.query(`
-          SELECT c.preco_base, q.valor_override 
-          FROM quarto q
-          JOIN categoria_quarto c ON q.categoria_quarto_id = c.id
-          WHERE q.id = $1 AND q.deleted_at IS NULL
-        `, [quartoId]);
-
-        if (quartoRows.length === 0) {
-          throw new Error('Quarto não encontrado ou indisponível.');
-        }
-
-        const diaria = parseFloat(quartoRows[0].valor_override || quartoRows[0].preco_base);
-        const dias = Math.ceil((new Date(dataCheckout).getTime() - new Date(dataCheckin).getTime()) / (1000 * 3600 * 24));
-        if (dias <= 0) throw new Error('A data de check-out deve ser posterior à de check-in.');
-        
-        const valorTotal = diaria * dias;
-
-        // 2. Criar a Reserva
-        const { rows: reservaRows } = await client.query(`
-          INSERT INTO reserva (
-            user_id, nome_hospede, cpf_hospede, canal_origem, sessao_chat_id,
-            quarto_id, num_hospedes, data_checkin, data_checkout, valor_total
-          ) VALUES (
-            $1, $2, $3, 'WHATSAPP', $4, $5, $6, $7, $8, $9
-          ) RETURNING id, codigo_publico, status
-        `, [
-          context.userId || null,
-          walkInNome || null,
-          walkInCpf || null,
-          context.sessionId,
-          quartoId,
-          numHospedes,
-          dataCheckin,
-          dataCheckout,
-          valorTotal
-        ]);
-
-        const novaReserva = reservaRows[0];
-
-        // 3. Cadastrar Roteamento Público no Master (para links e pagamentos)
-        await client.query('SET search_path TO public');
-        await client.query(`
-          INSERT INTO reserva_routing (codigo_publico, hotel_id, schema_name)
-          VALUES ($1, $2, $3)
-        `, [novaReserva.codigo_publico, context.hotelId, context.schemaName]);
-
-        await client.query('COMMIT');
-
-        // Gera pagamento fake + envia link via WhatsApp e email (fire-and-forget).
-        // Timer de 30 min é aplicado no backend (expires_at) e varrido pelo job.
-        sendPaymentLinkViaWhatsApp({
-          hotelId:   context.hotelId,
-          reservaId: novaReserva.id,
-        }).catch(() => {});
-
-        const resMsg = `SUCESSO! Reserva criada. ID: ${novaReserva.id}. Valor total: R$ ${valorTotal.toFixed(2)}.`
-          + ' [Aviso ao bot: informe ao usuário que já enviamos o link de pagamento por este chat e por email. O link expira em 30 minutos.]';
-
-        return resMsg;
+        return `SUCESSO! Reserva criada com código ${reserva.codigo_publico}. `
+          + `Status: ${reserva.status}. Valor total: R$ ${Number(reserva.valor_total).toFixed(2)}. `
+          + `Datas: ${dataCheckin} a ${dataCheckout}. `
+          + `[Aviso ao bot: informe o código ${reserva.codigo_publico} ao usuário. `
+          + `Já enviamos o link de pagamento por este chat e por email. O link expira em 30 minutos.]`;
       } catch (error) {
-        await client.query('ROLLBACK');
-        return `Erro crítico ao criar reserva: ${(error as Error).message}`;
-      } finally {
-        await client.query('RESET search_path');
-        client.release();
+        return `ERRO CRÍTICO ao criar reserva: ${(error as Error).message}. NÃO informe ao usuário que a reserva foi criada.`;
       }
     },
     {
@@ -177,8 +128,36 @@ export const buildAgentTools = (context: ChatContext | null) => {
         numHospedes: z.number().describe('Quantidade de hóspedes para a estadia.'),
         dataCheckin: z.string().describe('Data de check-in (formato YYYY-MM-DD).'),
         dataCheckout: z.string().describe('Data de check-out (formato YYYY-MM-DD).'),
-        walkInNome: z.string().optional().describe('Se o usuário não for cadastrado, passe o nome completo aqui.'),
-        walkInCpf: z.string().optional().describe('Se o usuário não for cadastrado, passe o CPF aqui.'),
+        walkInNome: z.string().optional().describe('Nome completo do hóspede. OBRIGATÓRIO se o usuário não estiver logado.'),
+        walkInEmail: z.string().optional().describe('Email do hóspede. OBRIGATÓRIO se o usuário não estiver logado. Será usado para enviar a confirmação e o link de pagamento.'),
+      }),
+    }
+  );
+
+  const consultarReservaTool = tool(
+    async ({ codigoPublico }) => {
+      try {
+        const reserva = await getReservaByCodigoPublico(codigoPublico);
+
+        return JSON.stringify({
+          codigo_publico:  reserva.codigo_publico,
+          status:          reserva.status,
+          data_checkin:    reserva.data_checkin,
+          data_checkout:   reserva.data_checkout,
+          num_hospedes:    reserva.num_hospedes,
+          valor_total:     reserva.valor_total,
+          tipo_quarto:     reserva.tipo_quarto,
+          nome_hospede:    reserva.nome_hospede,
+        });
+      } catch (error) {
+        return `Reserva com código "${codigoPublico}" não encontrada. Verifique se o código está correto.`;
+      }
+    },
+    {
+      name: 'consultar_reserva',
+      description: 'Consulta o status de uma reserva existente pelo código público (ex: formato UUID). Antes de revelar os detalhes ao usuário, peça a confirmação do NOME do hóspede para garantir segurança.',
+      schema: z.object({
+        codigoPublico: z.string().describe('O código público da reserva informado pelo usuário.'),
       }),
     }
   );
@@ -201,5 +180,5 @@ export const buildAgentTools = (context: ChatContext | null) => {
     }
   );
 
-  return [buscarHoteisTool, selecionarHotelTool, checarDisponibilidadeTool, criarReservaTool];
+  return [buscarHoteisTool, selecionarHotelTool, checarDisponibilidadeTool, criarReservaTool, consultarReservaTool];
 };

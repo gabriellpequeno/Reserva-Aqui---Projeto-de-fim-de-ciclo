@@ -29,7 +29,14 @@ export const buildAgentTools = (context: ChatContext | null) => {
         const { rows } = await masterPool.query(query, params);
         if (rows.length === 0) return 'Nenhum hotel encontrado com esses critérios.';
         
-        return JSON.stringify(rows);
+        // Explicit label so LLM knows to use hotel_id (UUID) — not the name — in selecionar_hotel
+        return JSON.stringify(rows.map(r => ({
+          hotel_id:  r.hotel_id,   // <- use this UUID in selecionar_hotel
+          nome_hotel: r.nome_hotel,
+          cidade:    r.cidade,
+          uf:        r.uf,
+          descricao: r.descricao,
+        })));
       } catch (error) {
         return `Erro ao buscar hotéis: ${(error as Error).message}`;
       }
@@ -87,14 +94,14 @@ export const buildAgentTools = (context: ChatContext | null) => {
   );
 
   const criarReservaTool = tool(
-    async ({ quartoId, numHospedes, dataCheckin, dataCheckout, walkInNome, walkInEmail }) => {
+    async ({ quartoId, numHospedes, dataCheckin, dataCheckout, walkInNome, walkInEmail, walkInTelefone }) => {
       if (!context?.hotelId || !context?.schemaName) {
         return 'ERRO: Nenhum hotel selecionado no contexto atual.';
       }
 
-      // Se não houver userId na sessão, exige Nome e Email
-      if (!context.userId && (!walkInNome || !walkInEmail)) {
-        return "ERRO DE VALIDAÇÃO: O usuário não está autenticado. Você DEVE obrigatoriamente perguntar o NOME COMPLETO e EMAIL do usuário antes de chamar essa ferramenta novamente.";
+      // Se não houver userId na sessão, exige Nome, Email e Telefone
+      if (!context.userId && (!walkInNome || !walkInEmail || !walkInTelefone)) {
+        return "ERRO DE VALIDAÇÃO: O usuário não está autenticado. Você DEVE obrigatoriamente perguntar o NOME COMPLETO, EMAIL e TELEFONE (WhatsApp) do usuário antes de chamar essa ferramenta novamente.";
       }
 
       try {
@@ -109,6 +116,7 @@ export const buildAgentTools = (context: ChatContext | null) => {
           user_id:        context.userId ?? null,
           nome_hospede:   walkInNome ?? null,
           email_hospede:  walkInEmail ?? null,
+          telefone_contato: walkInTelefone ?? null,
         });
 
         return `SUCESSO! Reserva criada com código ${reserva.codigo_publico}. `
@@ -130,6 +138,7 @@ export const buildAgentTools = (context: ChatContext | null) => {
         dataCheckout: z.string().describe('Data de check-out (formato YYYY-MM-DD).'),
         walkInNome: z.string().optional().describe('Nome completo do hóspede. OBRIGATÓRIO se o usuário não estiver logado.'),
         walkInEmail: z.string().optional().describe('Email do hóspede. OBRIGATÓRIO se o usuário não estiver logado. Será usado para enviar a confirmação e o link de pagamento.'),
+        walkInTelefone: z.string().optional().describe('Telefone ou WhatsApp do hóspede (apenas números). OBRIGATÓRIO se o usuário não estiver logado.'),
       }),
     }
   );
@@ -162,8 +171,16 @@ export const buildAgentTools = (context: ChatContext | null) => {
     }
   );
 
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   const selecionarHotelTool = tool(
     async ({ hotelIdSelecionado }) => {
+      // Guard: LLM sometimes passes the hotel name instead of the UUID.
+      // Return a clear error so it corrects itself without crashing Postgres.
+      if (!UUID_REGEX.test(hotelIdSelecionado)) {
+        return `ERRO: "${hotelIdSelecionado}" não é um hotel_id válido. Use o campo hotel_id (UUID) retornado pela ferramenta buscar_hoteis, não o nome do hotel.`;
+      }
+
       try {
         await ContextResolverService.setHotelContext(context?.sessionId || '', hotelIdSelecionado);
         return 'Hotel selecionado com sucesso! A partir de agora, as próximas perguntas e checagens de disponibilidade serão limitadas a este hotel.';
@@ -173,9 +190,9 @@ export const buildAgentTools = (context: ChatContext | null) => {
     },
     {
       name: 'selecionar_hotel',
-      description: 'Seleciona e "trava" o contexto do chat em um hotel específico. Chame esta ferramenta APÓS o usuário confirmar o hotel que deseja ver ou reservar.',
+      description: 'Seleciona e "trava" o contexto do chat em um hotel específico. Chame esta ferramenta APÓS o usuário confirmar o hotel que deseja ver ou reservar. IMPORTANTE: use o campo hotel_id (UUID, ex: "a1b2c3d4-...") retornado por buscar_hoteis — NUNCA o nome do hotel.',
       schema: z.object({
-        hotelIdSelecionado: z.string().describe('O ID do hotel escolhido pelo usuário.'),
+        hotelIdSelecionado: z.string().describe('O hotel_id UUID retornado por buscar_hoteis (ex: "a1b2c3d4-e5f6-..."). NUNCA use o nome do hotel aqui.'),
       }),
     }
   );

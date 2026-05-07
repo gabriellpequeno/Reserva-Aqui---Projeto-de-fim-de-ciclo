@@ -80,7 +80,9 @@ class MainLayout extends ConsumerWidget {
         return Scaffold(
           extendBody: true,
           extendBodyBehindAppBar: true,
-          appBar: hideAppBar ? null : const CustomAppBar(),
+          appBar: hideAppBar ? null : CustomAppBar(
+            fallbackRoute: location.startsWith('/profile') ? '/home' : null,
+          ),
           drawer: isMobile ? null : _buildDrawer(context, ref),
           body: child,
           bottomNavigationBar: hideBottomNav

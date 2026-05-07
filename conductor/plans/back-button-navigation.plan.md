@@ -58,15 +58,22 @@ N/A
 
 - [x] Adicionar `greyText` e `strokeLight` ao `AppColors` (`lib/core/theme/app_colors.dart`) — referenciados em widgets do dashboard que não compilavam
 
+### Perfil e Home
+
+- [x] `MainLayout` passa `fallbackRoute: '/home'` ao `CustomAppBar` para rotas `/profile/*` — botão de voltar do perfil navegava para lugar nenhum quando `canPop = false`
+- [x] `home_page.dart` — intro exibida apenas na primeira visita; `SharedPreferences` com chave `home_intro_seen`; pula direto para `_buildContentScreen` em visitas seguintes sem flash
+- [x] Corrigir bug de navbar invisível ao pular intro — `navbarVisibleProvider.setVisible(true)` acionado no `_loadIntroPref` quando intro já foi vista
+- [x] Substituir `lib/assets/images/home_page.jpeg` de 1170×780px (112 KB) por versão 4096×2730px (1986 KB) — eliminava pixelação em dispositivos com alta DPI
+
 ---
 
 ## Validação [PENDENTE]
 
-- [ ] Testar fluxo: Home → Busca → Login → ← → Busca
+- [x ] Testar fluxo: Home → Busca → Login → ← → Busca
 - [ ] Testar fluxo: Home → Hotel Details → Room Details → Checkout → ← × 3
-- [ ] Testar fluxo: Perfil → Settings → Termos → ← × 2
-- [ ] Testar tela de login sem histórico na pilha: botão voltar deve ir para Home
+- [x ] Testar fluxo: Perfil → Settings → Termos → ← × 2
+- [x ] Testar tela de login sem histórico na pilha: botão voltar deve ir para Home
 - [ ] Verificar que redirects de autenticação (pós-login → Home, pós-logout → Login) não foram afetados
-- [ ] Verificar visual das telas que receberam `CustomAppBar`: layout, padding e dark mode
-- [ ] Verificar que logo SVG aparece corretamente nos headers: dashboard, my_rooms, edit_room, add_room, agendamentos
-- [ ] Verificar consistência do gap do header em: agendamentos, agendamento_detail, add_room vs my_rooms e dashboard
+- [x ] Verificar visual das telas que receberam `CustomAppBar`: layout, padding e dark mode
+- [x ] Verificar que logo SVG aparece corretamente nos headers: dashboard, my_rooms, edit_room, add_room, agendamentos
+- [x ] Verificar consistência do gap do header em: agendamentos, agendamento_detail, add_room vs my_rooms e dashboard

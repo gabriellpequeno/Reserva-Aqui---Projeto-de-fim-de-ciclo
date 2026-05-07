@@ -13,7 +13,7 @@ N/A
 
 ### Frontend
 - **Modificado:** `CustomAppBar` (`lib/core/widgets/custom_app_bar.dart`) — parâmetro `fallbackRoute: String?`; quando `canPop = false`, navega para `fallbackRoute` antes do fallback por role
-- **Modificado:** `MainLayout` (`lib/core/layouts/main_layout.dart`) — `/auth/login` adicionado ao `hideAppBar` para login gerenciar o próprio AppBar com `fallbackRoute`
+- **Modificado:** `MainLayout` (`lib/core/layouts/main_layout.dart`) — `/auth/login` adicionado ao `hideAppBar` para login gerenciar o próprio AppBar com `fallbackRoute`; `CustomAppBar` passa `fallbackRoute: '/home'` para rotas `/profile/*`
 - **Modificado:** `login_page.dart` — `CustomAppBar(fallbackRoute: '/home')` próprio; `SizedBox(height: 120)` reduzido para 24
 - **Modificado:** `hotel_details_page.dart` — `context.go('/auth/login')` → `context.push('/auth/login')`
 - **Modificado:** `settings_page.dart` — `Navigator.push(MaterialPageRoute(...))` → `context.push('/profile/terms|privacy|about')` (eliminava freeze)
@@ -31,6 +31,8 @@ N/A
 - **Modificado:** `tickets_page.dart` — removeu `SafeArea + fromLTRB(17,8,...)` → `padding: only(top:60,...)`
 - **Modificado:** `checkout_page.dart` — mesma correção de padding
 - **Sem alteração (já corretos):** `edit_room_page`, `my_rooms_page`, `dashboard_header` — padding já em `top: 60`; `admin_account_management_page` — padding já em `top: 60`
+- **Modificado:** `home_page.dart` — intro exibida apenas na primeira visita via `SharedPreferences` (`home_intro_seen`); visitas seguintes pulam direto para `_buildContentScreen`; `navbarVisibleProvider` ativado manualmente quando intro é ignorada; corrigido bug de navbar invisível ao renderizar conteúdo sem `PageView`
+- **Substituído:** `lib/assets/images/home_page.jpeg` — de 1170×780px (112 KB) para 4096×2730px (1986 KB) para eliminar pixelação em dispositivos com alta DPI
 
 ## Decisões de Arquitetura
 | Decisão | Justificativa |
@@ -43,6 +45,9 @@ N/A
 | `top: 60` como padrão de padding nos headers dark | Alinha visualmente com `my_rooms` e `dashboard_header` já existentes; substitui SafeArea inconsistente |
 | Logo SVG em vez de texto `'RESERVAQUI'` | Consistência com a identidade visual do app; texto não refletia a logomarca real |
 | Manter `context.go()` nos redirects de autenticação | Esses redirecionamentos devem resetar a pilha intencionalmente |
+| Intro da Home controlada por `SharedPreferences` | Evita re-exibição a cada navegação; sem PageView quando intro já vista elimina necessidade de `jumpToPage` e o flash associado |
+| `navbarVisibleProvider.setVisible(true)` ao pular intro | Sem PageView, o `_scrollListener` nunca dispara — navbar ficaria invisível sem ativação manual |
+| `fallbackRoute: '/home'` para rotas `/profile/*` no MainLayout | Botão de voltar do perfil não fazia nada quando acessado pelo bottom nav (`canPop = false`); ir para Home é o comportamento esperado |
 
 ## Contratos de API
 N/A

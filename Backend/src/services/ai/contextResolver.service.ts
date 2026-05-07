@@ -1,10 +1,13 @@
 import { masterPool } from '../../database/masterDb';
 
+export type CanalChat = 'APP' | 'WHATSAPP';
+
 export interface ChatContext {
   sessionId: string;
   userId: string | null;
   hotelId: string | null;
   schemaName: string | null; // Necessário para acessar o banco de dados do Tenant (ex: quartos, disponibilidade)
+  canal: CanalChat;
 }
 
 export class ContextResolverService {
@@ -17,7 +20,8 @@ export class ContextResolverService {
         s.id as "sessionId",
         s.user_id as "userId",
         s.hotel_id as "hotelId",
-        a.schema_name as "schemaName"
+        a.schema_name as "schemaName",
+        s.canal as "canal"
       FROM sessao_chat s
       LEFT JOIN anfitriao a ON s.hotel_id = a.hotel_id
       WHERE s.id = $1
@@ -32,6 +36,7 @@ export class ContextResolverService {
       userId: rows[0].userId,
       hotelId: rows[0].hotelId,
       schemaName: rows[0].schemaName,
+      canal: rows[0].canal ?? 'WHATSAPP',
     };
   }
 

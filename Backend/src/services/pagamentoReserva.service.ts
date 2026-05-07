@@ -715,7 +715,6 @@ async function _confirmarPagamentoFake(
 
   const { schema_name, hotel_id, nome_hotel } = await _resolveTenantByCodigoPublico(codigoPublico);
 
-  let reservaAprovada: ReservaSafe | null = null;
   let resumo: PagamentoFakeResumo | null = null;
 
   await withTenant(schema_name, async (client) => {
@@ -755,27 +754,25 @@ async function _confirmarPagamentoFake(
     );
     if (!upd[0]) throw new Error('Pagamento já processado');
 
-    await client.query(
-      `UPDATE reserva SET status = 'APROVADA' WHERE id = $1`,
-      [reserva.id],
-    );
-
-    reservaAprovada = { ...reserva, status: 'APROVADA' };
     resumo = _toResumo(upd[0], reserva.codigo_publico, reserva.valor_total);
   });
 
-  // Efeitos colaterais NÃO podem derrubar a confirmação — o UPDATE do pagamento
-  // e da reserva já foram commitados dentro do withTenant. Se FCM/email/historico
-  // falharem, só loga warn e segue.
-  if (reservaAprovada) {
-    try {
-      await _aplicarAprovacao(hotel_id, nome_hotel, reservaAprovada, formaPagamento, {
-        capture_method: formaPagamento.toLowerCase(),
-      });
-    } catch (err) {
-      console.warn('[confirmarPagamentoFake] _aplicarAprovacao falhou (não fatal):', err);
-    }
-  }
+  // Notifica o hotel que há uma nova reserva aguardando aprovação — fire-and-forget
+  Promise.all([
+    getHotelTokens(hotel_id).then((tokens) =>
+      sendPush(tokens, {
+        title: 'Nova reserva!',
+        body:  `Reserva #${resumo!.reserva_id} aguardando sua aprovação.`,
+        data:  { tipo: 'NOVA_RESERVA', reserva_id: String(resumo!.reserva_id), codigo_publico: codigoPublico },
+      }),
+    ),
+    insertNotificacao(hotel_id, {
+      titulo:   'Nova reserva',
+      mensagem: `Reserva #${resumo!.reserva_id} aguardando aprovação.`,
+      tipo:     'NOVA_RESERVA',
+      payload:  { reserva_id: resumo!.reserva_id, codigo_publico: codigoPublico },
+    }),
+  ]).catch(() => {});
 
   if (!resumo) throw new Error('Pagamento não confirmado');
   return resumo;

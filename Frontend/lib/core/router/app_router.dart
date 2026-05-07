@@ -37,6 +37,8 @@ import '../../features/booking/presentation/pages/reservation_success_page.dart'
 import '../../features/booking/presentation/pages/whatsapp_payment_page.dart';
 import '../../features/tickets/presentation/pages/tickets_page.dart';
 import '../../features/tickets/presentation/pages/ticket_details_page.dart';
+import '../../features/bookings/presentation/pages/agendamentos_page.dart';
+import '../../features/bookings/presentation/pages/agendamento_detail_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -279,6 +281,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         path: '/profile/about',
         builder: (context, state) => const AboutPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/host/agendamentos',
+        builder: (context, state) => const AgendamentosPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/host/agendamentos/:reservaId',
+        builder: (context, state) {
+          final reservaId = int.tryParse(state.pathParameters['reservaId'] ?? '') ?? 0;
+          return AgendamentoDetailPage(reservaId: reservaId);
+        },
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

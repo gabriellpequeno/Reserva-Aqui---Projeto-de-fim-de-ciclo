@@ -65,7 +65,7 @@ class ProfileHeader extends StatelessWidget {
               border: Border.all(color: AppColors.secondary),
             ),
             child: Text(
-              'Editar perfil',
+              'Editar Perfil',
               style: TextStyle(
                 color: colorScheme.onSurface,
                 fontSize: 13,

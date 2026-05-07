@@ -119,38 +119,35 @@ class _AgendamentoDetailPageState extends ConsumerState<AgendamentoDetailPage> {
           bottomRight: Radius.circular(27),
         ),
       ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(17, 8, 17, 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              GestureDetector(
-                onTap: () => context.canPop() ? context.pop() : context.go('/host/agendamentos'),
-                child: Container(
-                  width: 45.79,
-                  height: 45.79,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.37),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.17), width: 0.62),
-                  ),
-                  child: const Icon(Icons.chevron_left, color: Colors.white, size: 22),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 24),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            GestureDetector(
+              onTap: () => context.canPop() ? context.pop() : context.go('/host/agendamentos'),
+              child: Container(
+                width: 45.79,
+                height: 45.79,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.37),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.17), width: 0.62),
                 ),
+                child: const Icon(Icons.chevron_left, color: Colors.white, size: 22),
               ),
-              const Text(
-                'Detalhe do Agendamento',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontFamily: 'Stack Sans Headline',
-                  fontWeight: FontWeight.w700,
-                ),
+            ),
+            const Text(
+              'Detalhe do Agendamento',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontFamily: 'Stack Sans Headline',
+                fontWeight: FontWeight.w700,
               ),
-              const SizedBox(width: 45.79),
-            ],
-          ),
+            ),
+            const SizedBox(width: 45.79),
+          ],
         ),
       ),
     );

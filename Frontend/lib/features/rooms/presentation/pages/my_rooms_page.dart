@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/room_category_card.dart';
@@ -88,15 +89,11 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
                   ),
                 ),
               ),
-              const Column(
+              Column(
                 children: [
-                  Text('RESERVAQUI',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700)),
-                  SizedBox(height: 4),
-                  Text('Meus Quartos',
+                  SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 28),
+                  const SizedBox(height: 4),
+                  const Text('Meus Quartos',
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,

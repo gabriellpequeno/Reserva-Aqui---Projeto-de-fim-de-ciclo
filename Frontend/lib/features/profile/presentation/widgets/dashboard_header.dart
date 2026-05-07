@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 
 /// Header curvo reutilizado pelos dashboards Host e Admin.
@@ -41,14 +42,7 @@ class DashboardHeader extends StatelessWidget {
           ),
           Column(
             children: [
-              const Text(
-                'RESERVAQUI',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 28),
               const SizedBox(height: 4),
               Text(
                 title,

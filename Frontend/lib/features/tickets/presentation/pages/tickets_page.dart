@@ -106,11 +106,9 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
           bottomRight: Radius.circular(27),
         ),
       ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(17, 8, 17, 20),
-          child: Column(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 20),
+        child: Column(
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -145,7 +143,6 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
             ],
           ),
         ),
-      ),
     );
   }
 

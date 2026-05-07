@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -684,18 +685,11 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
                 ? context.pop()
                 : context.go('/my_rooms'),
           ),
-          const Column(
+          Column(
             children: [
-              Text(
-                'RESERVAQUI',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
+              SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 28),
+              const SizedBox(height: 4),
+              const Text(
                 'Editar Quarto',
                 style: TextStyle(
                   color: Colors.white,

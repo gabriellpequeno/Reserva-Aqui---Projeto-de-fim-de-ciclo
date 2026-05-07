@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
@@ -214,7 +215,7 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
   Widget _buildCustomAppBar() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 24),
       decoration: const BoxDecoration(
         color: Color(0xFF182541),
         borderRadius: BorderRadius.only(
@@ -238,16 +239,9 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
             ),
           ),
           Column(
-            children: const [
-              Text(
-                'RESERVAQUI',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
+            children: [
+              SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 28),
+              const Text(
                 'Novo Quarto',
                 style: TextStyle(
                   color: Colors.white,

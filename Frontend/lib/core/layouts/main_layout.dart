@@ -69,7 +69,8 @@ class MainLayout extends ConsumerWidget {
         location == '/notifications' ||
         location == '/search' ||
         location.startsWith('/tickets') ||
-        location.startsWith('/room_details');
+        location.startsWith('/room_details') ||
+        location.startsWith('/auth/login');
     final bool hideBottomNav = location.startsWith('/room_details');
 
     return LayoutBuilder(

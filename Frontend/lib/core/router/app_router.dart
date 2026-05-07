@@ -18,6 +18,9 @@ import '../../features/profile/presentation/pages/edit_user_profile_page.dart';
 import '../../features/profile/presentation/pages/edit_host_profile_page.dart';
 import '../../features/profile/presentation/pages/edit_admin_profile_page.dart';
 import '../../features/profile/presentation/pages/host_dashboard_page.dart';
+import '../../features/profile/presentation/pages/terms_page.dart';
+import '../../features/profile/presentation/pages/privacy_page.dart';
+import '../../features/profile/presentation/pages/about_page.dart';
 import '../../features/profile/presentation/pages/admin_dashboard_page.dart';
 import '../../features/chat/presentation/pages/chat_page.dart';
 import '../../features/favorites/presentation/pages/favorites_page.dart';
@@ -261,6 +264,21 @@ final routerProvider = Provider<GoRouter>((ref) {
           final mode = state.uri.queryParameters['mode'] ?? 'user';
           return ReservationSuccessPage(codigoPublico: cp, mode: mode);
         },
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/profile/terms',
+        builder: (context, state) => const TermsPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/profile/privacy',
+        builder: (context, state) => const PrivacyPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/profile/about',
+        builder: (context, state) => const AboutPage(),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

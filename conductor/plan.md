@@ -286,6 +286,20 @@
 
 ---
 
+## RES-82 — Back Button Navigation [PENDENTE]
+
+> Spec: `specs/back-button-navigation.spec.md`
+> Plan detalhado: `plans/back-button-navigation.plan.md`
+
+- [ ] Auditar todos os `context.go()` do app e separar empilháveis dos intencionais
+- [ ] Adicionar parâmetro `fallbackRoute` ao `CustomAppBar`
+- [ ] Corrigir `context.go()` → `context.push()` nas navegações empilháveis do fluxo principal
+- [ ] Corrigir botões de voltar hardcoded → `context.pop()` em about, privacy, terms
+- [ ] Aplicar `CustomAppBar` em: login, settings, about, privacy, terms, edit-user-profile, edit-host-profile, edit-admin-profile, ticket-details
+- [ ] Validar fluxos de navegação e visual das telas afetadas
+
+---
+
 ## Nice to Have — Se Sobrar Tempo
 
 - [ ] Tela de roteiro turístico com aba dedicada (cards por dia)

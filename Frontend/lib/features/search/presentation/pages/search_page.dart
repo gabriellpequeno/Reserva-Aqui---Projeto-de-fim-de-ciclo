@@ -372,17 +372,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   ),
                 ),
               ),
-              GestureDetector(
-                onTap: () =>
-                    ref.read(searchProvider.notifier).fetchSuggestions(),
-                behavior: HitTestBehavior.opaque,
-                child: Icon(
-                  state.showSuggestions
-                      ? Icons.arrow_drop_up
-                      : Icons.arrow_drop_down,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
             ],
           ),
         ),

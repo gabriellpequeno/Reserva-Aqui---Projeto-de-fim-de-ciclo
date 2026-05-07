@@ -130,33 +130,32 @@ class _HomePageState extends ConsumerState<HomePage> {
       children: [
         // Logo + tagline
         Positioned(
-          top: MediaQuery.of(context).padding.top + 24,
+          top: MediaQuery.of(context).padding.top + 104,
           left: 0,
           right: 0,
           child: IgnorePointer(
             child: Column(
               children: [
-                SizedBox(
-                  width: 260,
-                  child: Text(
-                    'SE VOCÊ QUER CONFORTO',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : AppColors.primary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 4.34,
-                    ),
+                Text(
+                  'SE VOCÊ QUER CONFORTO',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : AppColors.primary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 4.36,
                   ),
                 ),
-                const SizedBox(height: 6),
-                SvgPicture.asset(
-                  Theme.of(context).brightness == Brightness.dark
-                      ? "lib/assets/icons/logo/logoDark.svg"
-                      : "lib/assets/icons/logo/logo.svg",
-                  width: 260,
+                Transform.translate(
+                  offset: const Offset(0, -3),
+                  child: SvgPicture.asset(
+                    Theme.of(context).brightness == Brightness.dark
+                        ? "lib/assets/icons/logo/logoDark.svg"
+                        : "lib/assets/icons/logo/logo.svg",
+                    width: 280,
+                  ),
                 ),
               ],
             ),

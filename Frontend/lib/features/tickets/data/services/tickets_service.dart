@@ -59,6 +59,47 @@ class TicketsService {
     }
   }
 
+  /// GET /hotel/reservas com filtros — exclusivo para o perfil host.
+  Future<void> fetchReservasHost({
+    required void Function(List<Ticket>) onSuccess,
+    required void Function(String) onError,
+    String? status,
+    String? dataCheckinFrom,
+    String? dataCheckinTo,
+  }) async {
+    final queryParams = <String, dynamic>{};
+    if (status != null) queryParams['status'] = status;
+    if (dataCheckinFrom != null) queryParams['data_checkin_from'] = dataCheckinFrom;
+    if (dataCheckinTo != null) queryParams['data_checkin_to'] = dataCheckinTo;
+
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/hotel/reservas',
+        queryParameters: queryParams.isEmpty ? null : queryParams,
+      );
+      final data = response.data!['data'] as List<dynamic>;
+      final tickets = data.cast<Map<String, dynamic>>().map(Ticket.fromJson).toList();
+      onSuccess(tickets);
+    } on DioException catch (e) {
+      onError(_handleError(e, {401: 'Sessão expirada. Faça login novamente.'}));
+    } catch (_) {
+      onError('Erro inesperado ao buscar agendamentos.');
+    }
+  }
+
+  /// GET /hotel/reservas/:id — detalhes de uma reserva pelo ID (tenant).
+  Future<Map<String, dynamic>> fetchReservaById(int reservaId) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>('/hotel/reservas/$reservaId');
+      return response.data!['data'] as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw Exception(_handleError(e, {
+        401: 'Sessão expirada. Faça login novamente.',
+        404: 'Reserva não encontrada.',
+      }));
+    }
+  }
+
   Future<String?> fetchFotoQuarto({
     required String hotelId,
     required int quartoId,

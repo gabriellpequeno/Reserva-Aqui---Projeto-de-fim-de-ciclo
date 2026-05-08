@@ -216,6 +216,7 @@ async function _updateCategoriaQuarto(
     if (input.nome               != null) { fields.push(`nome = $${idx++}`);               values.push(input.nome); }
     if (input.valor_diaria       != null) { fields.push(`preco_base = $${idx++}`);         values.push(input.valor_diaria); }
     if (input.capacidade_pessoas != null) { fields.push(`capacidade_pessoas = $${idx++}`); values.push(input.capacidade_pessoas); }
+    if (input.ativo              != null) { fields.push(`ativo = $${idx++}`);              values.push(input.ativo); }
 
     values.push(categoriaId);
 

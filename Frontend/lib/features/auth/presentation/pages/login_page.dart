@@ -135,7 +135,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               children: [
                 const SizedBox(height: 120),
                 Text(
-                  _role == 'host' ? 'Acesso Anfitrião' : 'Acesse agora',
+                  _role == 'host' ? 'Acesso Anfitrião' : 'Acesse Agora',
                   style: TextStyle(
                     color: colorScheme.onSurface,
                     fontSize: 24,
@@ -175,7 +175,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     : PrimaryButton(text: 'Login', onPressed: _submit),
                 const SizedBox(height: 48),
                 PrimaryButton(
-                  text: 'cadastre-se agora',
+                  text: 'Cadastre-se Agora',
                   color: AppColors.primary,
                   textColor: Colors.white,
                   onPressed: () {

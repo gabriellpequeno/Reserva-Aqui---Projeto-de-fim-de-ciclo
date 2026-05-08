@@ -23,7 +23,17 @@ export function ensureDir(dirPath: string): void {
  */
 export function moveFile(tempPath: string, destPath: string): void {
   ensureDir(path.dirname(destPath));
-  fs.renameSync(tempPath, destPath);
+  try {
+    fs.renameSync(tempPath, destPath);
+  } catch (err: unknown) {
+    // Fallback para renomeação entre dispositivos diferentes (EXDEV)
+    if ((err as NodeJS.ErrnoException).code === 'EXDEV') {
+      fs.copyFileSync(tempPath, destPath);
+      fs.unlinkSync(tempPath);
+    } else {
+      throw err;
+    }
+  }
 }
 
 /**

@@ -58,7 +58,7 @@ function buildLLM(provider: LLMProvider, opts: InvokeOptions) {
   if (provider === 'gemini') {
     const llm = new ChatGoogleGenerativeAI({
       apiKey,
-      model: 'gemini-2.5-flash-lite',
+      model: 'gemini-2.5-flash',
       temperature: opts.temperature ?? 0.1,
       maxRetries: 0,
     });

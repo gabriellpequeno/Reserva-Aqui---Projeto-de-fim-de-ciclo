@@ -38,6 +38,8 @@ import '../../features/profile/presentation/pages/terms_page.dart';
 import '../../features/profile/presentation/pages/privacy_page.dart';
 import '../../features/profile/presentation/pages/about_page.dart';
 import '../../features/profile/presentation/pages/support_page.dart';
+import '../../features/bookings/presentation/pages/agendamentos_page.dart';
+import '../../features/bookings/presentation/pages/agendamento_detail_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -104,7 +106,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/search',
-            builder: (context, state) => const SearchPage(),
+            builder: (context, state) {
+              final raw = state.extra;
+              String? query;
+              Set<String>? amenities;
+              if (raw is String) {
+                query = raw;
+              } else if (raw is Map) {
+                query = raw['query'] as String?;
+                final a = raw['amenities'];
+                if (a is List) amenities = a.cast<String>().toSet();
+              }
+              return SearchPage(initialQuery: query, initialAmenities: amenities);
+            },
           ),
           GoRoute(
             path: '/chat',
@@ -285,6 +299,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         path: '/profile/settings/support',
         builder: (context, state) => const SupportPage(),
+        path: '/host/agendamentos',
+        builder: (context, state) => const AgendamentosPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/host/agendamentos/:reservaId',
+        builder: (context, state) {
+          final reservaId = int.tryParse(state.pathParameters['reservaId'] ?? '') ?? 0;
+          return AgendamentoDetailPage(reservaId: reservaId);
+        },
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

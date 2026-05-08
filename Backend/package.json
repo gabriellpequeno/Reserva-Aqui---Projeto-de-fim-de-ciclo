@@ -17,6 +17,7 @@
     "db:seed:reservas": "ts-node --transpile-only src/database/seeds/seed.reservas.ts",
     "db:seed:push": "ts-node --transpile-only src/database/seeds/seed.push-fcm.ts",
     "db:seed:catalogo": "ts-node --transpile-only src/database/seeds/seed.catalogo-default.ts",
+    "db:seed:completo": "ts-node --transpile-only src/database/seeds/seed.completo.ts",
     "db:migrate:cleanup-categorias": "ts-node --transpile-only src/database/seeds/migrate.cleanup-empty-categorias.ts",
     "test": "jest",
     "test:watch": "jest --watch",

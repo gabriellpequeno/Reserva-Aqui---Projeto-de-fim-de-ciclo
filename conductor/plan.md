@@ -47,6 +47,16 @@
 - [ ] Sessão persistente no app (armazenar token localmente)
 - [ ] Tela de perfil do hóspede (P3-A) — plan: plans/user-profile-page.plan.md
 
+### BUG-10 — Cadastro de Usuário: Campos e Validações [PENDENTE]
+> Plan detalhado: `plans/user-registration-field-standards.plan.md`
+> Spec: `specs/user-registration-field-standards.spec.md`
+
+- [ ] Converter `AuthTextField` para `StatefulWidget` com toggle de senha, label/icon opcionais, errorBorder e focusedBorder padronizados
+- [ ] Atualizar `DatePickerField` com param `lastDate` e estilo padronizado
+- [ ] Criar `terms_modal.dart` com bottom sheet scrollável e texto mockado
+- [ ] Corrigir `user_signup_page.dart`: validação de idade ≥ 18, erros granulares de senha, labels/icons, checkbox de Termos, capitalização
+- [ ] Corrigir `login_page.dart`: capitalização de título e botão
+
 ---
 
 ## Fase P3-B — Host Profile Page [EM ANDAMENTO]
@@ -283,6 +293,25 @@
 - [ ] Revisão de responsividade (mobile, web, tablet, portrait, landscape)
 - [ ] Revisão de dark/light mode em todas as telas
 - [ ] Revisão do fluxo completo de demonstração ponta a ponta
+
+---
+
+## BUG — Gestão de Agendamentos do Host [PENDENTE]
+
+> Spec: `specs/gestao-agendamentos-host.spec.md`
+> Plan detalhado: `plans/gestao-agendamentos-host.plan.md`
+
+- [x] Backend: push FCM para CANCELADA + `reserva_id` no payload
+- [x] Backend: `GET /hotel/reservas/categorias/:categoria_id/reservas-ativas`
+- [x] Backend: suporte a `{ ativo: false }` em `PATCH categorias/:id`
+- [x] Frontend: `AuthNotifier.clear()` invalida providers de perfil (fix troca de conta)
+- [x] Frontend: `AgendamentosNotifier` com filtros de status e data
+- [x] Frontend: `AgendamentosPage` — lista + chips + calendário
+- [x] Frontend: `CalendarFilterWidget` com dots nos dias com reservas
+- [x] Frontend: `AgendamentoDetailPage` — Confirmar / Cancelar com alerta
+- [x] Frontend: rotas `/host/agendamentos` e `/host/agendamentos/:reservaId`
+- [ ] Frontend: deep-link FCM → `AgendamentoDetailPage` (requer Firebase configurado — ver INFRA-1)
+- [x] Frontend: `MyRoomsPage` — guard de exclusão + ação Desativar
 
 ---
 

@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS categoria_quarto (
     nome                VARCHAR(50)     NOT NULL,
     preco_base          DECIMAL(10, 2)  NOT NULL,
     capacidade_pessoas  INT             NOT NULL,
+    ativo               BOOLEAN         NOT NULL DEFAULT TRUE,
     deleted_at          TIMESTAMPTZ,
     CONSTRAINT chk_preco    CHECK (preco_base > 0),
     CONSTRAINT chk_cap      CHECK (capacidade_pessoas > 0)

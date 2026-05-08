@@ -79,7 +79,7 @@ class HostProfilePage extends ConsumerWidget {
                       ProfileMenuItem(
                         title: 'Agendamentos',
                         icon: Icons.calendar_today_outlined,
-                        onTap: () {},
+                        onTap: () => context.push('/host/agendamentos'),
                       ),
                       ProfileMenuItem(
                         title: 'Dashboard',

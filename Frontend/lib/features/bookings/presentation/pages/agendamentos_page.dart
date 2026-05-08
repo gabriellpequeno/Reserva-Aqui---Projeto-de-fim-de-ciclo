@@ -82,7 +82,12 @@ class _AgendamentosPageState extends ConsumerState<AgendamentosPage> {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 24),
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 50,
+          left: 24,
+          right: 24,
+          bottom: 24,
+        ),
         child: Column(
           children: [
             Row(
@@ -92,7 +97,7 @@ class _AgendamentosPageState extends ConsumerState<AgendamentosPage> {
                   icon: Icons.chevron_left,
                   onTap: () => context.canPop() ? context.pop() : context.go('/host/dashboard'),
                 ),
-                SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 28),
+                SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 32),
                 _headerButton(
                   icon: Icons.notifications_none,
                   onTap: () => context.go('/notifications'),

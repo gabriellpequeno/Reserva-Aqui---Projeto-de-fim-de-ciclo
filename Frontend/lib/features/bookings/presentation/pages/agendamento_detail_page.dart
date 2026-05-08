@@ -120,7 +120,12 @@ class _AgendamentoDetailPageState extends ConsumerState<AgendamentoDetailPage> {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 24),
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 50,
+          left: 24,
+          right: 24,
+          bottom: 24,
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

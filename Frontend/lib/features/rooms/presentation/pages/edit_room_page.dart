@@ -674,8 +674,12 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
           bottomRight: Radius.circular(27),
         ),
       ),
-      padding:
-          const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 24),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 50,
+        left: 24,
+        right: 24,
+        bottom: 24,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -687,7 +691,7 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
           ),
           Column(
             children: [
-              SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 28),
+              SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 32),
               const SizedBox(height: 4),
               const Text(
                 'Editar Quarto',

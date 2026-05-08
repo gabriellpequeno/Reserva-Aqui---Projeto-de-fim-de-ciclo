@@ -215,7 +215,12 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
   Widget _buildCustomAppBar() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 24),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 50,
+        left: 24,
+        right: 24,
+        bottom: 24,
+      ),
       decoration: const BoxDecoration(
         color: Color(0xFF182541),
         borderRadius: BorderRadius.only(
@@ -240,7 +245,7 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
           ),
           Column(
             children: [
-              SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 28),
+              SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 32),
               const Text(
                 'Novo Quarto',
                 style: TextStyle(

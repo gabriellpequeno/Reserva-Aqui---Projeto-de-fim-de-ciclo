@@ -80,7 +80,12 @@ class FavoritesPage extends ConsumerWidget {
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 50, 16, 24),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        MediaQuery.of(context).padding.top + 50,
+        16,
+        24,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.only(
@@ -100,15 +105,21 @@ class FavoritesPage extends ConsumerWidget {
                   height: 32,
                 ),
               ),
-              GestureDetector(
-                onTap: () => context.push('/notifications'),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
+              SizedBox(
+                width: 48,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () => context.push('/notifications'),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.notifications_none, color: Colors.white, size: 20),
+                    ),
                   ),
-                  child: const Icon(Icons.notifications_none, color: Colors.white, size: 20),
                 ),
               ),
             ],

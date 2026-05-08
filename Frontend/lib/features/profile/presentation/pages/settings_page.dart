@@ -50,18 +50,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 60),
-              Text(
-                'Configurações',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 22,
-                ),
-              ),
-              const SizedBox(height: 32),
-
               Text(
                 'Preferencias',
                 style: TextStyle(
@@ -122,28 +110,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       context: context,
                       icon: Icons.list_alt,
                       title: 'Termos De Uso',
-                      onTap: () => context.push('/profile/settings/terms'),
+                      onTap: () => context.push('/profile/terms'),
                     ),
                     Divider(color: colorScheme.outline, height: 1, indent: 16, endIndent: 16),
                     _buildActionTile(
                       context: context,
                       icon: Icons.privacy_tip_outlined,
                       title: 'Privacidade',
-                      onTap: () => context.push('/profile/settings/privacy'),
+                      onTap: () => context.push('/profile/privacy'),
                     ),
                     Divider(color: colorScheme.outline, height: 1, indent: 16, endIndent: 16),
                     _buildActionTile(
                       context: context,
                       icon: Icons.info_outline,
                       title: 'Sobre O App',
-                      onTap: () => context.push('/profile/settings/about'),
-                    ),
-                    Divider(color: colorScheme.outline, height: 1, indent: 16, endIndent: 16),
-                    _buildActionTile(
-                      context: context,
-                      icon: Icons.support_agent_outlined,
-                      title: 'Suporte',
-                      onTap: () => context.push('/profile/settings/support'),
+                      onTap: () => context.push('/profile/about'),
                     ),
                   ],
                 ),

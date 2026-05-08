@@ -6,16 +6,16 @@ import '../auth/auth_notifier.dart';
 import '../auth/auth_state.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
-  const CustomAppBar({super.key, this.showBackButton = true});
+  const CustomAppBar({super.key, this.showBackButton = true, this.fallbackRoute});
 
   final bool showBackButton;
+  final String? fallbackRoute;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bool canPop = context.canPop();
     final String location = GoRouterState.of(context).uri.path;
     final bool isHome = location == '/' || location == '/home';
-    final bool isProfile = location.startsWith('/profile');
     final colorScheme = Theme.of(context).colorScheme;
 
     return AppBar(
@@ -35,8 +35,8 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 onPressed: () {
                   if (canPop) {
                     context.pop();
-                  } else if (isProfile) {
-                    context.go('/home');
+                  } else if (fallbackRoute != null) {
+                    context.go(fallbackRoute!);
                   } else {
                     final auth = ref.read(authProvider).asData?.value;
                     if (auth?.role == AuthRole.host) {

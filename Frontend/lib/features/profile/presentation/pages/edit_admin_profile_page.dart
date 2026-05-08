@@ -161,16 +161,6 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 24),
-            Text(
-              'Editar Perfil Admin',
-              style: TextStyle(
-                color: colorScheme.onSurface,
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 32),
             ProfileFormSection(
               title: 'Informações Pessoais',
               children: [

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/providers/ui_providers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../notifiers/home_notifier.dart';
@@ -21,8 +22,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   bool _hasLoadedRecommendations = false;
   bool _isFilterOpen = false;
+  bool _introSeen = false;
+  bool _prefLoaded = false;
   final Set<String> _selectedFilters = {};
 
+  static const _introSeenKey = 'home_intro_seen';
   static const _filterOptions = [
     'Wi-Fi', 'Ar-condicionado', 'TV a cabo', 'Piscina', 'Academia',
     'Spa', 'Restaurante', 'Bar', 'Cama king-size', 'Cama queen-size',
@@ -33,6 +37,20 @@ class _HomePageState extends ConsumerState<HomePage> {
   void initState() {
     super.initState();
     _pageController.addListener(_scrollListener);
+    _loadIntroPref();
+  }
+
+  Future<void> _loadIntroPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool(_introSeenKey) ?? false;
+    if (!mounted) return;
+    setState(() {
+      _introSeen = seen;
+      _prefLoaded = true;
+    });
+    if (seen) {
+      ref.read(navbarVisibleProvider.notifier).setVisible(true);
+    }
   }
 
   @override
@@ -69,6 +87,12 @@ class _HomePageState extends ConsumerState<HomePage> {
       final bool isVisible = page > 0.3;
       if (ref.read(navbarVisibleProvider) != isVisible) {
         ref.read(navbarVisibleProvider.notifier).setVisible(isVisible);
+      }
+      if (!_introSeen && page > 0.8) {
+        setState(() => _introSeen = true);
+        SharedPreferences.getInstance().then(
+          (prefs) => prefs.setBool(_introSeenKey, true),
+        );
       }
     }
   }
@@ -109,18 +133,19 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ),
 
-        // Main vertical navigation
-        PageView(
-          controller: _pageController,
-          scrollDirection: Axis.vertical,
-          children: [
-            // Screen 1: Splash/Intro
-            _buildIntroScreen(size, isWeb),
-
-            // Screen 2: Main Content
-            _buildContentScreen(size, isWeb),
-          ],
-        ),
+        if (_prefLoaded) ...[
+          if (_introSeen)
+            _buildContentScreen(size, isWeb)
+          else
+            PageView(
+              controller: _pageController,
+              scrollDirection: Axis.vertical,
+              children: [
+                _buildIntroScreen(size, isWeb),
+                _buildContentScreen(size, isWeb),
+              ],
+            ),
+        ],
       ],
     );
   }

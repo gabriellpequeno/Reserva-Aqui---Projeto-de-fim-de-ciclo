@@ -18,10 +18,10 @@ import '../../features/profile/presentation/pages/edit_user_profile_page.dart';
 import '../../features/profile/presentation/pages/edit_host_profile_page.dart';
 import '../../features/profile/presentation/pages/edit_admin_profile_page.dart';
 import '../../features/profile/presentation/pages/host_dashboard_page.dart';
-import '../../features/profile/presentation/pages/admin_dashboard_page.dart';
 import '../../features/profile/presentation/pages/terms_page.dart';
 import '../../features/profile/presentation/pages/privacy_page.dart';
 import '../../features/profile/presentation/pages/about_page.dart';
+import '../../features/profile/presentation/pages/admin_dashboard_page.dart';
 import '../../features/chat/presentation/pages/chat_page.dart';
 import '../../features/favorites/presentation/pages/favorites_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
@@ -37,7 +37,6 @@ import '../../features/booking/presentation/pages/reservation_success_page.dart'
 import '../../features/booking/presentation/pages/whatsapp_payment_page.dart';
 import '../../features/tickets/presentation/pages/tickets_page.dart';
 import '../../features/tickets/presentation/pages/ticket_details_page.dart';
-import '../../features/profile/presentation/pages/support_page.dart';
 import '../../features/bookings/presentation/pages/agendamentos_page.dart';
 import '../../features/bookings/presentation/pages/agendamento_detail_page.dart';
 
@@ -106,19 +105,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/search',
-            builder: (context, state) {
-              final raw = state.extra;
-              String? query;
-              Set<String>? amenities;
-              if (raw is String) {
-                query = raw;
-              } else if (raw is Map) {
-                query = raw['query'] as String?;
-                final a = raw['amenities'];
-                if (a is List) amenities = a.cast<String>().toSet();
-              }
-              return SearchPage(initialQuery: query, initialAmenities: amenities);
-            },
+            builder: (context, state) => const SearchPage(),
           ),
           GoRoute(
             path: '/chat',
@@ -294,11 +281,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         path: '/profile/about',
         builder: (context, state) => const AboutPage(),
-      ),
-      GoRoute(
-        parentNavigatorKey: _rootNavigatorKey,
-        path: '/profile/settings/support',
-        builder: (context, state) => const SupportPage(),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

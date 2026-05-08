@@ -48,7 +48,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
               child: const Text('Fechar'),
             ),
             ElevatedButton(
-              onPressed: () => context.go('/auth/login'),
+              onPressed: () => context.push('/auth/login'),
               style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.secondary),
               child: const Text('Fazer Login'),

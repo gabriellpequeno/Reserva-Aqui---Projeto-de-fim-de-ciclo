@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -673,8 +674,12 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
           bottomRight: Radius.circular(27),
         ),
       ),
-      padding:
-          const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 24),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 50,
+        left: 24,
+        right: 24,
+        bottom: 24,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -684,18 +689,11 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
                 ? context.pop()
                 : context.go('/my_rooms'),
           ),
-          const Column(
+          Column(
             children: [
-              Text(
-                'RESERVAQUI',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
+              SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 32),
+              const SizedBox(height: 4),
+              const Text(
                 'Editar Quarto',
                 style: TextStyle(
                   color: Colors.white,

@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/user_profile_provider.dart';
 import '../widgets/profile_form_section.dart';
+import '../widgets/user_avatar_widget.dart';
 import '../../../../utils/Usuario.dart';
 
 class EditUserProfilePage extends ConsumerStatefulWidget {
@@ -31,6 +35,10 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
+  String? _userId;
+  String? _currentAvatarUrl;
+  XFile? _selectedAvatarImage;
+  Uint8List? _selectedAvatarBytes;
 
   final _dateMask = MaskTextInputFormatter(
     mask: '##/##/####',
@@ -65,6 +73,8 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
       phone = '(${phone.substring(0, 2)}) ${phone.substring(2, 6)}-${phone.substring(6)}';
     }
 
+    _userId = profile?.id;
+    _currentAvatarUrl = profile?.fotoPerfil;
     _nameController = TextEditingController(text: profile?.nomeCompleto ?? '');
     _emailController = TextEditingController(text: profile?.email ?? '');
     _phoneController = TextEditingController(text: phone);
@@ -86,19 +96,52 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
     super.dispose();
   }
 
+  Future<void> _pickAvatarImage() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _selectedAvatarImage = picked;
+        _selectedAvatarBytes = bytes;
+      });
+    }
+  }
+
+  Future<void> _uploadAvatarIfNeeded() async {
+    if (_selectedAvatarBytes == null || (_userId ?? '').isEmpty) return;
+    final dio = ref.read(dioProvider);
+    final foto = MultipartFile.fromBytes(
+      _selectedAvatarBytes!,
+      filename: _selectedAvatarImage?.name ?? 'avatar.jpg',
+    );
+    await dio.post(
+      '/uploads/usuarios/$_userId/avatar',
+      data: FormData.fromMap({'foto': foto}),
+    );
+    ref.invalidate(userProfileProvider);
+  }
+
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Salvar dados pessoais
     final successPersonal = await _savePersonalData();
     if (!successPersonal) return;
 
-    // Se a senha estiver preenchida, tenta salvar a senha
+    if (_selectedAvatarBytes != null) {
+      try {
+        await _uploadAvatarIfNeeded();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao enviar foto de perfil: $e')),
+          );
+        }
+      }
+    }
+
     if (_passwordController.text.isNotEmpty) {
       await _savePassword();
-      // O pop() já acontece dentro do _savePassword em caso de sucesso
     } else {
-      // Se não tem senha pra mudar, e o personal deu certo, volta agora
       if (mounted) context.pop();
     }
   }
@@ -174,6 +217,43 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 24),
+                Text(
+                  'Editar Perfil',
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: GestureDetector(
+                    onTap: _pickAvatarImage,
+                    child: Stack(
+                      children: [
+                        UserAvatarWidget(
+                          photoUrl: _selectedAvatarBytes == null ? _currentAvatarUrl : null,
+                          localImageBytes: _selectedAvatarBytes,
+                          name: _nameController.text,
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.camera_alt, size: 14, color: colorScheme.onPrimary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 ProfileFormSection(
                   title: 'Informações Pessoais',
                   children: [

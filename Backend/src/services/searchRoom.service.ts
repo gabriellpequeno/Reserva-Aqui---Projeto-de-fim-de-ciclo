@@ -6,6 +6,7 @@ interface SearchRoomRefinos {
   checkin?: string;
   checkout?: string;
   hospedes?: number;
+  amenities?: string[];
 }
 
 interface QuartoItem {
@@ -20,11 +21,13 @@ export interface SearchRoomResult {
   hotel_id: string;
   numero: string;
   descricao: string | null;
+  nome_categoria: string | null;
   valor_diaria: string;
   itens: QuartoItem[];
   nome_hotel: string;
   cidade: string;
   uf: string;
+  foto_id: string | null;
 }
 
 interface HotelMatch {
@@ -163,10 +166,32 @@ export async function searchRooms(
             params.push(refinos!.hospedes);
           }
 
-          const quartoQuery = `
+          if (refinos?.amenities && refinos.amenities.length > 0) {
+            for (const amenity of refinos.amenities) {
+              whereClause += `
+                AND EXISTS (
+                  SELECT 1 FROM (
+                    SELECT catalogo_id FROM itens_do_quarto WHERE quarto_id = q.id
+                    UNION
+                    SELECT catalogo_id FROM categoria_item WHERE categoria_quarto_id = q.categoria_quarto_id
+                  ) AS room_items
+                  JOIN catalogo c ON c.id = room_items.catalogo_id AND c.deleted_at IS NULL
+                  WHERE LOWER(c.nome) = LOWER($${params.length + 1})
+                )
+              `;
+              params.push(amenity);
+            }
+          }
+
+          const innerQuery = `
             ${SELECT_QUARTO_COM_ITENS}
             ${whereClause}
-            GROUP BY q.id, q.numero, cq.preco_base, q.valor_override, q.categoria_quarto_id, q.disponivel, q.descricao
+            GROUP BY q.id, q.numero, cq.preco_base, q.valor_override, q.categoria_quarto_id, q.disponivel, q.descricao, cq.nome
+          `;
+          const quartoQuery = `
+            SELECT inner_q.*,
+              (SELECT id::text FROM quarto_foto WHERE quarto_id = inner_q.id ORDER BY ordem ASC, criado_em ASC LIMIT 1) AS foto_id
+            FROM (${innerQuery}) AS inner_q
           `;
 
           const tenantResults = await withTenant(hotel.schema_name, async client => {
@@ -174,8 +199,10 @@ export async function searchRooms(
               id: number;
               numero: string;
               descricao: string | null;
+              nome_categoria: string | null;
               valor_diaria: string;
               itens: QuartoItem[];
+              foto_id: string | null;
             }>(quartoQuery, params);
             return rows;
           });
@@ -186,11 +213,13 @@ export async function searchRooms(
               hotel_id: hotel.hotel_id,
               numero: row.numero,
               descricao: row.descricao,
+              nome_categoria: row.nome_categoria ?? null,
               valor_diaria: row.valor_diaria,
               itens: row.itens || [],
               nome_hotel: hotel.nome_hotel,
               cidade: hotel.cidade,
               uf: hotel.uf,
+              foto_id: row.foto_id ?? null,
             });
           }
         } catch (error) {

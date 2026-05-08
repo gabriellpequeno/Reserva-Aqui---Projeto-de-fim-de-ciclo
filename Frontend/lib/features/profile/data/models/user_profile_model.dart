@@ -19,7 +19,7 @@ class UserProfileModel {
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
     return UserProfileModel(
-      id: json['id'].toString(),
+      id: ((json['user_id'] ?? json['id']) ?? '').toString(),
       nomeCompleto: json['nome_completo'] as String,
       email: json['email'] as String,
       cpf: json['cpf'] as String?,

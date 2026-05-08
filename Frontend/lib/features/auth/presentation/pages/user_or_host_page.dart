@@ -64,7 +64,7 @@ class UserOrHostPage extends StatelessWidget {
                     style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
                     children: const [
                       TextSpan(
-                        text: 'acesse agora',
+                        text: 'Acesse Agora',
                         style: TextStyle(
                           color: AppColors.secondary,
                           fontWeight: FontWeight.bold,

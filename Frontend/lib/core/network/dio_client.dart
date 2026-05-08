@@ -1,13 +1,14 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/auth_notifier.dart';
 import '../auth/auth_state.dart';
 
-// Android emulator uses 10.0.2.2 to reach host; web/desktop use localhost
-final _baseUrl = kIsWeb
-    ? 'http://localhost:3000/api/v1'
-    : 'http://10.0.2.2:3000/api/v1';
+// kReleaseMode is true for both Web Production and APK Production.
+// Android emulator uses 10.0.2.2 to reach host; web/desktop use localhost in debug.
+final _baseUrl = kReleaseMode
+    ? 'https://lab.alphaedtech.org.br/server04/api/v1'
+    : (kIsWeb ? 'http://localhost:3000/api/v1' : 'http://10.0.2.2:3000/api/v1');
 
 // Dio separado exclusivamente para chamadas de refresh — evita loop de interceptor.
 final _refreshDio = Dio(

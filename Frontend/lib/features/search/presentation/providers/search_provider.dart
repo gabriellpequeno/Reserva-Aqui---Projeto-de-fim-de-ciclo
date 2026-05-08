@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../favorites/domain/models/favorite_room.dart';
@@ -150,9 +150,9 @@ class SearchNotifier extends Notifier<SearchState> {
         hospedes: state.guests > 0 ? state.guests : null,
       );
 
-      final baseUrl = kIsWeb
-          ? 'http://localhost:3000/api/v1'
-          : 'http://10.0.2.2:3000/api/v1';
+      final baseUrl = kReleaseMode
+          ? 'https://lab.alphaedtech.org.br/server04/api/v1'
+          : (kIsWeb ? 'http://localhost:3000/api/v1' : 'http://10.0.2.2:3000/api/v1');
 
       state = state.copyWith(
         isLoading: false,

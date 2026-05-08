@@ -34,6 +34,7 @@ import {
 } from './routes/dashboard.routes';
 import chatRoutes from './routes/chat.routes';
 import { startPaymentExpirationJob } from './services/paymentExpiration.job';
+import { UPLOAD_DIR, ensureDir } from './services/storage.service';
 
 const app = express();
 
@@ -77,6 +78,8 @@ app.use(`${API_PREFIX}/chat`,    chatRoutes);
 const PORT = process.env.PORT || 3000;
 
 if (require.main === module) {
+  ensureDir(UPLOAD_DIR);
+  console.log(`[storage] UPLOAD_DIR: ${UPLOAD_DIR}`);
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
     console.log(`Rota padrão (API_PREFIX): ${API_PREFIX}`);

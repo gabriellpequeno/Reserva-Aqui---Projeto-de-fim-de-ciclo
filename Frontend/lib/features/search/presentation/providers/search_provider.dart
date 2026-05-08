@@ -15,6 +15,7 @@ class SearchState {
   final List<String> suggestions;
   final bool showSuggestions;
   final bool showGuestsPicker;
+  final List<String> selectedAmenities;
 
   SearchState({
     this.destination = '',
@@ -26,6 +27,7 @@ class SearchState {
     this.suggestions = const [],
     this.showSuggestions = false,
     this.showGuestsPicker = false,
+    this.selectedAmenities = const [],
   });
 
   SearchState copyWith({
@@ -40,6 +42,7 @@ class SearchState {
     List<String>? suggestions,
     bool? showSuggestions,
     bool? showGuestsPicker,
+    List<String>? selectedAmenities,
   }) {
     return SearchState(
       destination: destination ?? this.destination,
@@ -51,6 +54,7 @@ class SearchState {
       suggestions: suggestions ?? this.suggestions,
       showSuggestions: showSuggestions ?? this.showSuggestions,
       showGuestsPicker: showGuestsPicker ?? this.showGuestsPicker,
+      selectedAmenities: selectedAmenities ?? this.selectedAmenities,
     );
   }
 }
@@ -118,6 +122,10 @@ class SearchNotifier extends Notifier<SearchState> {
     state = state.copyWith(guests: value);
   }
 
+  void updateAmenities(List<String> amenities) {
+    state = state.copyWith(selectedAmenities: amenities);
+  }
+
   void updateDateRange(DateTimeRange value) {
     state = state.copyWith(dateRange: value);
   }
@@ -148,15 +156,17 @@ class SearchNotifier extends Notifier<SearchState> {
         checkin: dateRange != null ? _formatIso(dateRange.start) : null,
         checkout: dateRange != null ? _formatIso(dateRange.end) : null,
         hospedes: state.guests > 0 ? state.guests : null,
+        amenities: state.selectedAmenities.isEmpty ? null : state.selectedAmenities,
       );
 
       final baseUrl = kReleaseMode
           ? 'https://lab.alphaedtech.org.br/server04/api/v1'
           : (kIsWeb ? 'http://localhost:3000/api/v1' : 'http://10.0.2.2:3000/api/v1');
 
+      final mapped = results.map((r) => _toFavoriteRoom(r, baseHost)).toList();
       state = state.copyWith(
         isLoading: false,
-        results: results.map((r) => _toFavoriteRoom(r, baseUrl)).toList(),
+        results: _numberDuplicates(mapped),
         clearError: true,
       );
     } catch (e) {
@@ -168,43 +178,86 @@ class SearchNotifier extends Notifier<SearchState> {
   }
 
   FavoriteRoom _toFavoriteRoom(SearchRoomResult r, String baseUrl) {
+    final imageUrl = r.fotoId != null && r.fotoId!.isNotEmpty
+        ? '$baseUrl/api/v1/uploads/hotels/${r.hotelId}/rooms/${r.quartoId}/${r.fotoId}'
+        : '';
     return FavoriteRoom(
       id: r.quartoId.toString(),
       hotelId: r.hotelId,
-      title: r.descricao?.isNotEmpty == true
-          ? r.descricao!
-          : 'Quarto #${r.quartoId}',
+      title: r.nomeCategoria?.isNotEmpty == true
+          ? r.nomeCategoria!
+          : (r.descricao?.isNotEmpty == true ? r.descricao! : 'Quarto ${r.quartoId}'),
       hotelName: r.nomeHotel,
       destination: '${r.cidade}, ${r.uf}',
-      imageUrl: '$baseUrl/uploads/hotels/${r.hotelId}/rooms/${r.quartoId}',
+      imageUrl: imageUrl,
       rating: '—',
       amenities: _mapItemsToIcons(r.itens),
       price: double.tryParse(r.valorDiaria) ?? 0.0,
     );
   }
 
+  List<FavoriteRoom> _numberDuplicates(List<FavoriteRoom> rooms) {
+    final counts = <String, int>{};
+    for (final r in rooms) {
+      final key = '${r.hotelId}:${r.title}';
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+    final indices = <String, int>{};
+    return rooms.map((r) {
+      final key = '${r.hotelId}:${r.title}';
+      if ((counts[key] ?? 0) <= 1) return r;
+      indices[key] = (indices[key] ?? 0) + 1;
+      return r.copyWith(title: '${r.title} #${indices[key]}');
+    }).toList();
+  }
+
   List<IconData> _mapItemsToIcons(List<QuartoItem> itens) {
     final icons = <IconData>[];
+    final seen = <IconData>{};
     for (final item in itens) {
       if (icons.length >= 4) break;
       final key = '${item.nome} ${item.categoria}'.toLowerCase();
-      if (_contains(key, ['wifi', 'internet'])) {
-        icons.add(Icons.wifi);
-      } else if (_contains(key, ['cama', 'bed'])) {
-        icons.add(Icons.king_bed);
-      } else if (_contains(key, ['cafe', 'café', 'manha', 'manhã'])) {
-        icons.add(Icons.free_breakfast);
-      } else if (_contains(key, ['ar', 'ac', 'condicionado'])) {
-        icons.add(Icons.ac_unit);
-      } else if (_contains(key, ['piscina', 'pool'])) {
-        icons.add(Icons.pool);
-      } else if (_contains(key, ['spa', 'massagem'])) {
-        icons.add(Icons.spa);
+      final IconData icon;
+      if (_contains(key, ['wifi', 'internet', 'wi-fi'])) {
+        icon = Icons.wifi;
+      } else if (_contains(key, ['ar', 'condicionado'])) {
+        icon = Icons.ac_unit;
       } else if (_contains(key, ['tv', 'televisao', 'televisão'])) {
-        icons.add(Icons.tv);
-      } else if (_contains(key, ['estacionamento', 'vaga', 'garagem'])) {
-        icons.add(Icons.local_parking);
+        icon = Icons.tv;
+      } else if (_contains(key, ['piscina', 'pool'])) {
+        icon = Icons.pool;
+      } else if (_contains(key, ['spa', 'massagem'])) {
+        icon = Icons.spa;
+      } else if (_contains(key, ['restaurante', 'restaurant'])) {
+        icon = Icons.restaurant;
+      } else if (_contains(key, ['academia', 'fitness', 'gym'])) {
+        icon = Icons.fitness_center;
+      } else if (_contains(key, ['cafe', 'café', 'manha', 'manhã', 'breakfast'])) {
+        icon = Icons.free_breakfast;
+      } else if (_contains(key, ['cama', 'bed'])) {
+        icon = Icons.king_bed;
+      } else if (_contains(key, ['estacionamento', 'vaga', 'garagem', 'parking'])) {
+        icon = Icons.local_parking;
+      } else if (_contains(key, ['bar'])) {
+        icon = Icons.local_bar;
+      } else if (_contains(key, ['frigobar'])) {
+        icon = Icons.kitchen;
+      } else if (_contains(key, ['banheira'])) {
+        icon = Icons.bathtub;
+      } else if (_contains(key, ['banheiro'])) {
+        icon = Icons.bathtub;
+      } else if (_contains(key, ['varanda', 'sacada'])) {
+        icon = Icons.deck;
+      } else if (_contains(key, ['cofre', 'safe'])) {
+        icon = Icons.lock;
+      } else if (_contains(key, ['secador'])) {
+        icon = Icons.air;
+      } else if (_contains(key, ['salao', 'salão', 'evento'])) {
+        icon = Icons.event;
+      } else {
+        icon = Icons.check_circle_outline;
       }
+      if (seen.add(icon)) icons.add(icon);
     }
     return icons;
   }

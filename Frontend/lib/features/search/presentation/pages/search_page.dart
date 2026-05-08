@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../favorites/domain/models/favorite_room.dart';
+import '../../../home/presentation/widgets/room_card.dart';
 import '../providers/search_provider.dart';
 
 class SearchPage extends ConsumerStatefulWidget {
-  const SearchPage({super.key});
+  final String? initialQuery;
+  final Set<String>? initialAmenities;
+
+  const SearchPage({super.key, this.initialQuery, this.initialAmenities});
 
   @override
   ConsumerState<SearchPage> createState() => _SearchPageState();
@@ -15,6 +18,33 @@ class SearchPage extends ConsumerStatefulWidget {
 
 class _SearchPageState extends ConsumerState<SearchPage> {
   final TextEditingController _destinationController = TextEditingController();
+  bool _isFilterOpen = false;
+  final Set<String> _selectedFilters = {};
+
+  static const _filterOptions = [
+    'Wi-Fi', 'Ar-condicionado', 'TV a cabo', 'Piscina', 'Academia',
+    'Spa', 'Restaurante', 'Bar', 'Cama king-size', 'Cama queen-size',
+    'Varanda', 'Banheira', 'Frigobar', 'Salão de eventos',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialAmenities != null && widget.initialAmenities!.isNotEmpty) {
+      _selectedFilters.addAll(widget.initialAmenities!);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_selectedFilters.isNotEmpty) {
+        ref.read(searchProvider.notifier).updateAmenities(_selectedFilters.toList());
+      }
+      final query = widget.initialQuery;
+      if (query != null && query.isNotEmpty) {
+        _destinationController.text = query;
+        ref.read(searchProvider.notifier).updateDestination(query);
+        ref.read(searchProvider.notifier).performSearch();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -62,28 +92,30 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       ? _buildInitialState()
                       : LayoutBuilder(
                           builder: (context, constraints) {
-                            if (constraints.maxWidth > 800) {
-                              return GridView.builder(
-                                padding: const EdgeInsets.all(24),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  childAspectRatio: 1.8,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
-                                ),
-                                itemCount: searchState.results.length,
-                                itemBuilder: (context, index) =>
-                                    _buildHotelCard(
-                                        context, searchState.results[index]),
-                              );
-                            }
+                            final cardWidth = constraints.maxWidth - 48.0;
+                            final bottomPad = MediaQuery.of(context).padding.bottom + 104;
                             return ListView.builder(
-                              padding: const EdgeInsets.all(24),
+                              padding: EdgeInsets.fromLTRB(24, 24, 24, bottomPad),
                               itemCount: searchState.results.length,
-                              itemBuilder: (context, index) =>
-                                  _buildHotelCard(
-                                      context, searchState.results[index]),
+                              itemBuilder: (context, index) {
+                                final hotel = searchState.results[index];
+                                final cardTitle = [
+                                  if (hotel.title.isNotEmpty) hotel.title,
+                                  if (hotel.hotelName.isNotEmpty) hotel.hotelName,
+                                ].join(' - ');
+                                return RoomCard(
+                                  roomId: hotel.id,
+                                  hotelId: hotel.hotelId,
+                                  title: cardTitle,
+                                  imageUrl: hotel.imageUrl,
+                                  rating: hotel.rating,
+                                  amenities: hotel.amenities,
+                                  price: hotel.price > 0 ? hotel.price : null,
+                                  cardWidth: cardWidth,
+                                  cardHeight: 220,
+                                  cardMargin: const EdgeInsets.only(bottom: 16),
+                                );
+                              },
                             );
                           },
                         ),
@@ -102,16 +134,16 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         : null;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 50, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
       color: colorScheme.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          // Logo centralizado com notificação à direita
+          Stack(
+            alignment: Alignment.center,
             children: [
-              const SizedBox(width: 48),
-              Expanded(
+              Center(
                 child: SvgPicture.asset(
                   Theme.of(context).brightness == Brightness.dark
                       ? 'lib/assets/icons/logo/logoDark.svg'
@@ -119,19 +151,21 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   height: 32,
                 ),
               ),
-              GestureDetector(
-                onTap: () => context.push('/notifications'),
-                child: Icon(
-                  Icons.notifications_none,
-                  color: colorScheme.onSurface,
-                  size: 28,
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () => context.push('/notifications'),
+                  child: Icon(
+                    Icons.notifications_none,
+                    color: colorScheme.onSurface,
+                    size: 28,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
 
-          // Campo destino + dropdown de sugestões
           _buildDestinationField(state),
 
           const SizedBox(height: 12),
@@ -139,13 +173,11 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Campo hóspedes com lista cascata
               Expanded(
                 flex: 2,
                 child: _buildGuestsField(state),
               ),
               const SizedBox(width: 12),
-              // Campo data único (check-in + check-out)
               Expanded(
                 flex: 3,
                 child: _buildDateField(context, state, dateLabel),
@@ -153,23 +185,148 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             ],
           ),
 
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () =>
-                ref.read(searchProvider.notifier).performSearch(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
-              minimumSize: const Size(double.infinity, 48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(11),
+          const SizedBox(height: 12),
+
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () =>
+                      ref.read(searchProvider.notifier).performSearch(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    minimumSize: const Size(double.infinity, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                  ),
+                  child: const Text(
+                    'Buscar',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ),
               ),
-            ),
-            child: const Text(
-              'Buscar',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              const SizedBox(width: 8),
+              Container(
+                height: 48,
+                width: 48,
+                decoration: BoxDecoration(
+                  color: _selectedFilters.isNotEmpty
+                      ? colorScheme.primary.withValues(alpha: 0.1)
+                      : colorScheme.surfaceContainer,
+                  border: Border.all(
+                    color: _selectedFilters.isNotEmpty
+                        ? colorScheme.primary
+                        : colorScheme.outline,
+                  ),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.tune,
+                    color: _selectedFilters.isNotEmpty
+                        ? colorScheme.primary
+                        : colorScheme.onSurface,
+                  ),
+                  onPressed: () =>
+                      setState(() => _isFilterOpen = !_isFilterOpen),
+                ),
+              ),
+            ],
+          ),
+
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: _isFilterOpen ? _buildFilterPanel() : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterPanel() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      margin: const EdgeInsets.only(top: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: colorScheme.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Comodidades',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurfaceVariant,
+              letterSpacing: 0.8,
             ),
           ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: _filterOptions.map((option) {
+              final isSelected = _selectedFilters.contains(option);
+              return FilterChip(
+                label: Text(option),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (selected) {
+                      _selectedFilters.add(option);
+                    } else {
+                      _selectedFilters.remove(option);
+                    }
+                  });
+                  ref.read(searchProvider.notifier).updateAmenities(_selectedFilters.toList());
+                },
+                selectedColor: colorScheme.primary.withValues(alpha: 0.15),
+                checkmarkColor: colorScheme.primary,
+                labelStyle: TextStyle(
+                  fontSize: 13,
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                  fontWeight:
+                      isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+                backgroundColor: colorScheme.surface,
+                side: BorderSide(
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.outline,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              );
+            }).toList(),
+          ),
+          if (_selectedFilters.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () {
+                setState(() => _selectedFilters.clear());
+                ref.read(searchProvider.notifier).updateAmenities([]);
+              },
+              child: const Text(
+                'Limpar filtros',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.secondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -213,17 +370,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     filled: false,
                     isDense: true,
                   ),
-                ),
-              ),
-              GestureDetector(
-                onTap: () =>
-                    ref.read(searchProvider.notifier).fetchSuggestions(),
-                behavior: HitTestBehavior.opaque,
-                child: Icon(
-                  state.showSuggestions
-                      ? Icons.arrow_drop_up
-                      : Icons.arrow_drop_down,
-                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -386,7 +532,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       style: TextStyle(
                         color: isSelected
                             ? colorScheme.primary
-                            : colorScheme.onSurface,
+                            : (colorScheme.onSurface),
                         fontWeight: isSelected
                             ? FontWeight.w600
                             : FontWeight.w400,
@@ -497,118 +643,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           offset: const Offset(0, 4),
         ),
       ],
-    );
-  }
-
-  // ── Resultado: card de hotel ──────────────────────────────────────────────
-
-  Widget _buildHotelCard(BuildContext context, FavoriteRoom hotel) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colorScheme.outline),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.network(
-                hotel.imageUrl,
-                width: 150,
-                height: 150,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Image.asset(
-                  'lib/assets/images/home_page.jpeg',
-                  width: 150,
-                  height: 150,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(4, 16, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    hotel.hotelName,
-                    style: TextStyle(
-                      color: colorScheme.onSurface,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      height: 1.2,
-                    ),
-                  ),
-                  if (hotel.destination.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      hotel.destination,
-                      style: TextStyle(
-                        color: colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  if (hotel.amenities.isNotEmpty)
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: hotel.amenities
-                          .map((icon) => _amenityTag(icon))
-                          .toList(),
-                    ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context
-                        .push('/room_details/${hotel.hotelId}/${hotel.id}'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      minimumSize: const Size(double.infinity, 40),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(11),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Ver Mais',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _amenityTag(IconData icon) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(
-        icon,
-        size: 16,
-        color: colorScheme.onSurface.withValues(alpha: 0.6),
-      ),
     );
   }
 

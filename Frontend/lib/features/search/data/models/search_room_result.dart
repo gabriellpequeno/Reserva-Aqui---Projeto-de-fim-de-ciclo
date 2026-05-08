@@ -26,22 +26,26 @@ class SearchRoomResult {
   final String hotelId;
   final String numero;
   final String? descricao;
+  final String? nomeCategoria;
   final String valorDiaria;
   final List<QuartoItem> itens;
   final String nomeHotel;
   final String cidade;
   final String uf;
+  final String? fotoId;
 
   const SearchRoomResult({
     required this.quartoId,
     required this.hotelId,
     required this.numero,
     this.descricao,
+    this.nomeCategoria,
     required this.valorDiaria,
     required this.itens,
     required this.nomeHotel,
     required this.cidade,
     required this.uf,
+    this.fotoId,
   });
 
   factory SearchRoomResult.fromJson(Map<String, dynamic> json) {
@@ -51,6 +55,7 @@ class SearchRoomResult {
       hotelId: json['hotel_id'] as String,
       numero: json['numero'] as String? ?? '',
       descricao: json['descricao'] as String?,
+      nomeCategoria: json['nome_categoria'] as String?,
       valorDiaria: json['valor_diaria']?.toString() ?? '0',
       itens: rawItens
           .map((e) => QuartoItem.fromJson(e as Map<String, dynamic>))
@@ -58,6 +63,7 @@ class SearchRoomResult {
       nomeHotel: json['nome_hotel'] as String? ?? '',
       cidade: json['cidade'] as String? ?? '',
       uf: json['uf'] as String? ?? '',
+      fotoId: json['foto_id'] as String?,
     );
   }
 }

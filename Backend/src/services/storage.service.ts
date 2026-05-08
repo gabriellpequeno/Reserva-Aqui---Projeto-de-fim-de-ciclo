@@ -110,3 +110,20 @@ export function resolveSafe(storagePath: string): string | null {
 export function toRelativePath(absolutePath: string): string {
   return path.relative(UPLOAD_DIR, absolutePath);
 }
+
+/**
+ * Constrói o path absoluto final do avatar de um usuário.
+ * Pattern: {UPLOAD_DIR}/avatars/usuarios/{user_id}/avatar.{ext}
+ * Um único arquivo por usuário — sobrescreve o anterior.
+ */
+export function buildUserAvatarPath(userId: string, ext: string): string {
+  return path.join(UPLOAD_DIR, 'avatars', 'usuarios', userId, `avatar${ext}`);
+}
+
+/**
+ * Constrói o path absoluto final do avatar de um hotel.
+ * Pattern: {UPLOAD_DIR}/avatars/hotels/{hotel_id}/avatar.{ext}
+ */
+export function buildHotelAvatarPath(hotelId: string, ext: string): string {
+  return path.join(UPLOAD_DIR, 'avatars', 'hotels', hotelId, `avatar${ext}`);
+}

@@ -3,9 +3,12 @@ import path from 'path';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { HotelRequest } from '../middlewares/hotelGuard';
+import { AuthRequest } from '../middlewares/authGuard';
 import {
+  buildHotelAvatarPath,
   buildHotelCoverPath,
   buildRoomPhotoPath,
+  buildUserAvatarPath,
   deleteFile,
   moveFile,
   streamFile,
@@ -40,6 +43,172 @@ async function validateMagicBytes(filePath: string): Promise<boolean> {
   const webpMark  = buffer.slice(8, 12).toString('ascii') === 'WEBP';
 
   return jpegMagic || pngMagic || (webpRiff && webpMark);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USUARIO AVATAR
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/uploads/usuarios/:id/avatar
+ * Faz upload ou atualiza o avatar do usuário autenticado. Uma imagem por usuário.
+ */
+export async function uploadUsuarioAvatar(req: AuthRequest, res: Response): Promise<void> {
+  const file = (req as Request & { file?: Express.Multer.File }).file;
+  if (!file) { res.status(400).json({ error: 'Nenhuma imagem enviada' }); return; }
+
+  const { id } = req.params;
+  if (req.userId !== id) {
+    fs.unlinkSync(file.path);
+    res.status(403).json({ error: 'Acesso negado' });
+    return;
+  }
+
+  const isValid = await validateMagicBytes(file.path);
+  if (!isValid) {
+    fs.unlinkSync(file.path);
+    res.status(422).json({ error: 'Arquivo inválido — conteúdo não é uma imagem reconhecida' });
+    return;
+  }
+
+  const oldResult = await masterPool.query<{ foto_perfil: string | null }>(
+    'SELECT foto_perfil FROM usuario WHERE user_id = $1',
+    [id],
+  );
+  if (oldResult.rows[0]?.foto_perfil) deleteFile(oldResult.rows[0].foto_perfil);
+
+  const ext  = path.extname(file.originalname).toLowerCase();
+  const dest = buildUserAvatarPath(id, ext);
+  moveFile(file.path, dest);
+
+  await masterPool.query(
+    'UPDATE usuario SET foto_perfil = $1 WHERE user_id = $2',
+    [toRelativePath(dest), id],
+  );
+
+  res.status(200).json({
+    message: 'Avatar atualizado com sucesso',
+    foto_perfil: `/api/uploads/usuarios/${id}/avatar`,
+  });
+}
+
+/**
+ * DELETE /api/uploads/usuarios/:id/avatar
+ * Remove o avatar do usuário autenticado.
+ */
+export async function deleteUsuarioAvatar(req: AuthRequest, res: Response): Promise<void> {
+  const { id } = req.params;
+  if (req.userId !== id) { res.status(403).json({ error: 'Acesso negado' }); return; }
+
+  const oldResult = await masterPool.query<{ foto_perfil: string | null }>(
+    'SELECT foto_perfil FROM usuario WHERE user_id = $1',
+    [id],
+  );
+  const oldPath = oldResult.rows[0]?.foto_perfil;
+
+  await masterPool.query('UPDATE usuario SET foto_perfil = NULL WHERE user_id = $1', [id]);
+  if (oldPath) deleteFile(oldPath);
+
+  res.status(200).json({ message: 'Avatar removido com sucesso' });
+}
+
+/**
+ * GET /api/uploads/usuarios/:id/avatar
+ * Serve o avatar de um usuário. Público-read.
+ */
+export async function serveUsuarioAvatar(req: Request, res: Response): Promise<void> {
+  const { id } = req.params;
+  const result = await masterPool.query<{ foto_perfil: string | null }>(
+    'SELECT foto_perfil FROM usuario WHERE user_id = $1 AND ativo = TRUE',
+    [id],
+  );
+  if (!result.rows[0]?.foto_perfil) { res.status(404).json({ error: 'Avatar não encontrado' }); return; }
+  const served = streamFile(result.rows[0].foto_perfil, res);
+  if (!served) res.status(404).json({ error: 'Arquivo não encontrado no servidor' });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HOTEL AVATAR
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/uploads/hotels/:hotel_id/avatar
+ * Faz upload ou atualiza o avatar do hotel autenticado. Uma imagem por hotel.
+ */
+export async function uploadHotelAvatar(req: HotelRequest, res: Response): Promise<void> {
+  const file = (req as Request & { file?: Express.Multer.File }).file;
+  if (!file) { res.status(400).json({ error: 'Nenhuma imagem enviada' }); return; }
+
+  const { hotel_id } = req.params;
+
+  const hotelCheck = await masterPool.query(
+    'SELECT hotel_id, foto_perfil FROM anfitriao WHERE hotel_id = $1 AND email = $2 AND ativo = TRUE',
+    [hotel_id, req.hotelEmail],
+  );
+  if (hotelCheck.rowCount === 0) {
+    fs.unlinkSync(file.path);
+    res.status(403).json({ error: 'Acesso negado — hotel não pertence ao anfitrião autenticado' });
+    return;
+  }
+
+  const isValid = await validateMagicBytes(file.path);
+  if (!isValid) {
+    fs.unlinkSync(file.path);
+    res.status(422).json({ error: 'Arquivo inválido — conteúdo não é uma imagem reconhecida' });
+    return;
+  }
+
+  const oldPath = hotelCheck.rows[0].foto_perfil as string | null;
+  if (oldPath) deleteFile(oldPath);
+
+  const ext  = path.extname(file.originalname).toLowerCase();
+  const dest = buildHotelAvatarPath(hotel_id, ext);
+  moveFile(file.path, dest);
+
+  await masterPool.query(
+    'UPDATE anfitriao SET foto_perfil = $1 WHERE hotel_id = $2',
+    [toRelativePath(dest), hotel_id],
+  );
+
+  res.status(200).json({
+    message: 'Avatar do hotel atualizado com sucesso',
+    foto_perfil: `/api/uploads/hotels/${hotel_id}/avatar`,
+  });
+}
+
+/**
+ * DELETE /api/uploads/hotels/:hotel_id/avatar
+ * Remove o avatar do hotel autenticado.
+ */
+export async function deleteHotelAvatar(req: HotelRequest, res: Response): Promise<void> {
+  const { hotel_id } = req.params;
+
+  const hotelCheck = await masterPool.query(
+    'SELECT foto_perfil FROM anfitriao WHERE hotel_id = $1 AND email = $2 AND ativo = TRUE',
+    [hotel_id, req.hotelEmail],
+  );
+  if (hotelCheck.rowCount === 0) { res.status(403).json({ error: 'Acesso negado' }); return; }
+
+  const oldPath = hotelCheck.rows[0].foto_perfil as string | null;
+  await masterPool.query('UPDATE anfitriao SET foto_perfil = NULL WHERE hotel_id = $1', [hotel_id]);
+  if (oldPath) deleteFile(oldPath);
+
+  res.status(200).json({ message: 'Avatar removido com sucesso' });
+}
+
+/**
+ * GET /api/uploads/hotels/:hotel_id/avatar
+ * Serve o avatar do hotel. Público-read.
+ */
+export async function serveHotelAvatar(req: Request, res: Response): Promise<void> {
+  const { hotel_id } = req.params;
+  const result = await masterPool.query<{ foto_perfil: string | null }>(
+    'SELECT foto_perfil FROM anfitriao WHERE hotel_id = $1 AND ativo = TRUE',
+    [hotel_id],
+  );
+  if (!result.rows[0]?.foto_perfil) { res.status(404).json({ error: 'Avatar não encontrado' }); return; }
+  const served = streamFile(result.rows[0].foto_perfil, res);
+  if (!served) res.status(404).json({ error: 'Arquivo não encontrado no servidor' });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

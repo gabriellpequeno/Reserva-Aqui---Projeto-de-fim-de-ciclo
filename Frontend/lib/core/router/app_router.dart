@@ -34,6 +34,10 @@ import '../../features/booking/presentation/pages/reservation_success_page.dart'
 import '../../features/booking/presentation/pages/whatsapp_payment_page.dart';
 import '../../features/tickets/presentation/pages/tickets_page.dart';
 import '../../features/tickets/presentation/pages/ticket_details_page.dart';
+import '../../features/profile/presentation/pages/terms_page.dart';
+import '../../features/profile/presentation/pages/privacy_page.dart';
+import '../../features/profile/presentation/pages/about_page.dart';
+import '../../features/profile/presentation/pages/support_page.dart';
 import '../../features/bookings/presentation/pages/agendamentos_page.dart';
 import '../../features/bookings/presentation/pages/agendamento_detail_page.dart';
 
@@ -278,6 +282,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
+        path: '/profile/settings/terms',
+        builder: (context, state) => const TermsPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/profile/settings/privacy',
+        builder: (context, state) => const PrivacyPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/profile/settings/about',
+        builder: (context, state) => const AboutPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/profile/settings/support',
+        builder: (context, state) => const SupportPage(),
         path: '/host/agendamentos',
         builder: (context, state) => const AgendamentosPage(),
       ),

@@ -31,6 +31,9 @@ async function _listFavoritos(userId: string): Promise<FavoritoComHotel[]> {
        a.bairro,
        a.descricao,
        a.cover_storage_path,
+       (SELECT fh.id::text FROM foto_hotel fh
+        WHERE fh.hotel_id = a.hotel_id
+        ORDER BY fh.criado_em ASC LIMIT 1) AS first_cover_foto_id,
        f.criado_em AS favoritado_em
      FROM hotel_favorito f
      JOIN anfitriao a ON a.hotel_id = f.hotel_id AND a.ativo = TRUE
@@ -76,6 +79,9 @@ async function _addFavorito(userId: string, hotelId: string): Promise<FavoritoCo
        a.bairro,
        a.descricao,
        a.cover_storage_path,
+       (SELECT fh.id::text FROM foto_hotel fh
+        WHERE fh.hotel_id = a.hotel_id
+        ORDER BY fh.criado_em ASC LIMIT 1) AS first_cover_foto_id,
        f.criado_em AS favoritado_em
      FROM hotel_favorito f
      JOIN anfitriao a ON a.hotel_id = f.hotel_id

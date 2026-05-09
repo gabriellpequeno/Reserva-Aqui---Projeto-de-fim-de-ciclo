@@ -9,8 +9,11 @@
  * 5. Limite: 5 resultados
  * 6. Fallback: se não houver avaliações, retorna 5 aleatórios
  */
+import fs from 'fs';
+import path from 'path';
 import { masterPool } from '../database/masterDb';
 import { withTenant } from '../database/schemaWrapper';
+import { UPLOAD_DIR } from './storage.service';
 
 const MAX_RESULTS = 5;
 
@@ -34,6 +37,7 @@ interface RawRoom {
   uf: string;
   nota_media: number | null;
   foto_id: string | null;
+  foto_storage_path: string | null;
   itens: string[];
 }
 
@@ -147,6 +151,7 @@ async function fetchRoomsWithRatings(): Promise<RawRoom[]> {
             valor_diaria: string;
             nota_media: number | null;
             foto_id: string | null;
+            foto_storage_path: string | null;
             itens: string[];
           }>(
             `SELECT
@@ -157,6 +162,7 @@ async function fetchRoomsWithRatings(): Promise<RawRoom[]> {
                COALESCE(q.valor_override, cq.preco_base::numeric) AS valor_diaria,
                ROUND(AVG(a.nota_total), 1) AS nota_media,
                (SELECT id::text FROM quarto_foto WHERE quarto_id = q.id ORDER BY ordem ASC, criado_em ASC LIMIT 1) AS foto_id,
+               (SELECT storage_path FROM quarto_foto WHERE quarto_id = q.id ORDER BY ordem ASC, criado_em ASC LIMIT 1) AS foto_storage_path,
                COALESCE(
                  (SELECT json_agg(c.nome ORDER BY c.nome)
                   FROM itens_do_quarto iq
@@ -192,6 +198,7 @@ async function fetchRoomsWithRatings(): Promise<RawRoom[]> {
             uf: hotel.uf,
             nota_media: row.nota_media,
             foto_id: row.foto_id ?? null,
+            foto_storage_path: row.foto_storage_path ?? null,
             itens: row.itens ?? [],
           });
         }
@@ -247,9 +254,14 @@ function getRandomFallback(rooms: RawRoom[], startTime: number): RecommendedRoom
   return numberDuplicateTitles(result);
 }
 
+function photoFileExists(storagePath: string | null): boolean {
+  if (!storagePath) return false;
+  return fs.existsSync(path.resolve(UPLOAD_DIR, storagePath));
+}
+
 // Enriquecimento: monta o shape final RecommendedRoom com imagem_url e comodidades
 function enrichRoom(room: RawRoom, hotel: HotelMatch): RecommendedRoom {
-  const imageUrl = room.foto_id
+  const imageUrl = room.foto_id && photoFileExists(room.foto_storage_path)
     ? `/api/v1/uploads/hotels/${room.hotel_id}/rooms/${room.quarto_id}/${room.foto_id}`
     : '';
   const roomName = room.nome_categoria?.trim() || room.descricao?.trim() || `Quarto ${room.numero}`;

@@ -12,14 +12,15 @@ export interface AddFavoritoInput {
 
 /** Dados do favorito com informações do hotel para exibição no app. */
 export interface FavoritoComHotel {
-  hotel_id:           string;
-  nome_hotel:         string;
-  cidade:             string;
-  uf:                 string;
-  bairro:             string;
-  descricao:          string | null;
-  cover_storage_path: string | null;
-  favoritado_em:      Date;
+  hotel_id:            string;
+  nome_hotel:          string;
+  cidade:              string;
+  uf:                  string;
+  bairro:              string;
+  descricao:           string | null;
+  cover_storage_path:  string | null;
+  first_cover_foto_id: string | null;
+  favoritado_em:       Date;
 }
 
 export class HotelFavorito {

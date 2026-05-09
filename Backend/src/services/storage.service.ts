@@ -112,6 +112,20 @@ export function toRelativePath(absolutePath: string): string {
 }
 
 /**
+ * Constrói o path absoluto final de um documento de política do hotel.
+ * Pattern: {UPLOAD_DIR}/hotels/{hotel_id}/policies/{uuid}.{ext}
+ * Os arquivos salvos aqui são indexados pelo RagService para responder
+ * perguntas sobre política do hotel no chatbot.
+ */
+export function buildHotelPolicyPath(
+  hotelId: string,
+  fileId: string,
+  ext: string
+): string {
+  return path.join(UPLOAD_DIR, 'hotels', hotelId, 'policies', `${fileId}${ext}`);
+}
+
+/**
  * Constrói o path absoluto final do avatar de um usuário.
  * Pattern: {UPLOAD_DIR}/avatars/usuarios/{user_id}/avatar.{ext}
  * Um único arquivo por usuário — sobrescreve o anterior.

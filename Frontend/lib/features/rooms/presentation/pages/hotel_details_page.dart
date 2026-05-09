@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../favorites/presentation/providers/favorites_provider.dart';
+import '../../../favorites/presentation/widgets/favorite_dialogs.dart';
 import '../../domain/models/hotel_details.dart';
 import '../notifiers/hotel_details_notifier.dart';
 import '../notifiers/hotel_details_state.dart';
@@ -32,7 +33,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
     });
   }
 
-  void _handleFavoriteTap(BuildContext context) {
+  Future<void> _handleFavoriteTap() async {
     final isAuth =
         ref.read(authProvider).asData?.value.isAuthenticated ?? false;
     if (!isAuth) {
@@ -66,9 +67,13 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
         false;
 
     if (isFav) {
-      ref.read(favoritesProvider.notifier).removeFavorite(widget.hotelId);
+      final confirmed = await showUnfavoriteConfirmationDialog(context);
+      if (!confirmed || !mounted) return;
+      await ref.read(favoritesProvider.notifier).removeFavorite(widget.hotelId);
+      if (mounted) await showFavoriteRemovedDialog(context);
     } else {
-      ref.read(favoritesProvider.notifier).addFavorite(widget.hotelId);
+      await ref.read(favoritesProvider.notifier).addFavorite(widget.hotelId);
+      if (mounted) await showFavoriteAddedDialog(context);
     }
   }
 
@@ -363,7 +368,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                 size: 20,
                 color: isFavorited ? Colors.red : Colors.white,
               ),
-              onPressed: () => _handleFavoriteTap(context),
+              onPressed: _handleFavoriteTap,
             ),
           ),
         ),

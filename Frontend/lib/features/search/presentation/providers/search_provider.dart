@@ -160,8 +160,8 @@ class SearchNotifier extends Notifier<SearchState> {
       );
 
       final baseUrl = kReleaseMode
-          ? 'https://lab.alphaedtech.org.br/server04/api/v1'
-          : (kIsWeb ? 'http://localhost:3000/api/v1' : 'http://10.0.2.2:3000/api/v1');
+          ? 'https://lab.alphaedtech.org.br/server04'
+          : (kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000');
 
       final mapped = results.map((r) => _toFavoriteRoom(r, baseUrl)).toList();
       state = state.copyWith(

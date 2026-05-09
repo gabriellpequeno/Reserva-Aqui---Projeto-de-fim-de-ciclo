@@ -5,6 +5,7 @@ class HotelDetailsState {
   final String? descricao;
   final String? cidade;
   final String? uf;
+  final String? avatarUrl;
   final List<String> coverUrls;
   final List<ComodidadeHotelModel> comodidades;
   final List<CategoriaHotelModel> categorias;
@@ -19,6 +20,7 @@ class HotelDetailsState {
     this.descricao,
     this.cidade,
     this.uf,
+    this.avatarUrl,
     this.coverUrls = const [],
     this.comodidades = const [],
     this.categorias = const [],
@@ -34,6 +36,7 @@ class HotelDetailsState {
     String? descricao,
     String? cidade,
     String? uf,
+    String? avatarUrl,
     List<String>? coverUrls,
     List<ComodidadeHotelModel>? comodidades,
     List<CategoriaHotelModel>? categorias,
@@ -48,6 +51,7 @@ class HotelDetailsState {
       descricao: descricao ?? this.descricao,
       cidade: cidade ?? this.cidade,
       uf: uf ?? this.uf,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
       coverUrls: coverUrls ?? this.coverUrls,
       comodidades: comodidades ?? this.comodidades,
       categorias: categorias ?? this.categorias,

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -299,11 +300,19 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
   Future<void> _uploadCoverIfNeeded() async {
     if (_selectedCoverBytes == null || (_hotelId ?? '').isEmpty) return;
     final dio = ref.read(dioProvider);
+
+    final codec = await ui.instantiateImageCodec(_selectedCoverBytes!);
+    final frame = await codec.getNextFrame();
+    final orientacao = frame.image.width >= frame.image.height ? 'landscape' : 'portrait';
+
     final foto = MultipartFile.fromBytes(
       _selectedCoverBytes!,
       filename: _selectedCoverImage?.name ?? 'cover.jpg',
     );
-    await dio.post('/uploads/hotels/$_hotelId/cover', data: FormData.fromMap({'foto': foto}));
+    await dio.post(
+      '/uploads/hotels/$_hotelId/cover',
+      data: FormData.fromMap({'foto': foto, 'orientacao': orientacao}),
+    );
     ref.invalidate(hostProfileProvider);
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/smart_network_image.dart';
 import '../../domain/models/room.dart';
 import '../notifiers/room_details_notifier.dart';
 import '../widgets/availability_checker.dart';
@@ -185,24 +186,30 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   }
 
   Widget _buildImageSection(Room room, {required bool isFavorite}) {
-    final mainImageUrl = room.imageUrls.isNotEmpty
-        ? room.imageUrls[_currentPhotoIndex]
-        : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800';
+    // When no real photos, fill gallery with 4 deterministic room mocks for this hotel
+    final galleryUrls = room.imageUrls.isNotEmpty
+        ? room.imageUrls
+        : fallbacksForRoom(room.title, widget.hotelId, 4);
+    final safeIndex = _currentPhotoIndex.clamp(0, galleryUrls.length - 1);
+    final mainImageUrl = galleryUrls[safeIndex];
 
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        Container(
-          height: 400,
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: NetworkImage(mainImageUrl),
+        ClipRRect(
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
+          child: SizedBox(
+            height: 400,
+            width: double.infinity,
+            child: SmartNetworkImage(
+              url: mainImageUrl.isNotEmpty ? mainImageUrl : null,
+              fallback: fallbackForRoom(room.title, hotelId: widget.hotelId),
+              width: double.infinity,
+              height: 400,
               fit: BoxFit.cover,
-              onError: (exception, stackTrace) {},
-            ),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(24),
-              bottomRight: Radius.circular(24),
             ),
           ),
         ),
@@ -304,17 +311,17 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
             ),
           ),
         ),
-        if (room.imageUrls.length > 1)
+        if (galleryUrls.length > 1)
           Positioned(
             bottom: 0,
             right: 24,
             child: FractionalTranslation(
               translation: const Offset(0, 0.5),
               child: Row(
-                children: room.imageUrls.asMap().entries.take(4).map((entry) {
+                children: galleryUrls.asMap().entries.take(4).map((entry) {
                   final index = entry.key;
                   final url = entry.value;
-                  final isSelected = _currentPhotoIndex == index;
+                  final isSelected = safeIndex == index;
                   return GestureDetector(
                     onTap: () => setState(() => _currentPhotoIndex = index),
                     child: Container(
@@ -327,10 +334,15 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                           color: isSelected ? AppColors.secondary : Colors.white,
                           width: isSelected ? 3 : 2,
                         ),
-                        image: DecorationImage(
-                          image: NetworkImage(url),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: SmartNetworkImage(
+                          url: url.isNotEmpty ? url : null,
+                          fallback: fallbackForRoom(room.title, hotelId: widget.hotelId),
+                          width: 50,
+                          height: 50,
                           fit: BoxFit.cover,
-                          onError: (exception, stackTrace) {},
                         ),
                       ),
                     ),
@@ -435,12 +447,22 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
           onTap: () => context.push('/hotel_details/${widget.hotelId}'),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: colorScheme.surfaceContainerHigh,
-                backgroundImage: host.imageUrl.isNotEmpty
-                    ? NetworkImage(host.imageUrl)
-                    : null,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colorScheme.surfaceContainerHigh,
+                ),
+                child: ClipOval(
+                  child: SmartNetworkImage(
+                    url: host.imageUrl.isNotEmpty ? host.imageUrl : null,
+                    fallback: fallbackForHotel(widget.hotelId),
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

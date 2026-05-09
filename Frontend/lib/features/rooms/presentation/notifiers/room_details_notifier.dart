@@ -25,12 +25,14 @@ class RoomDetailsNotifier extends Notifier<RoomDetailsState> {
         _loadHotelConfiguracao(dio, hotelId),
         _loadHotelRating(dio, hotelId),
         _loadHotelCoverUrl(dio, hotelId),
+        _loadRoomPhotoUrls(dio, hotelId, quartoId),
       ], eagerError: false);
 
       final roomResponse = results[0] as dynamic;
       final hotelConfig  = results[1] as Map<String, dynamic>?;
       final hotelRating  = results[2] as double;
       final hotelCover   = results[3] as String;
+      final roomPhotos   = results[4] as List<String>;
 
       final data      = roomResponse.data!['data'] as Map<String, dynamic>;
       final categoria = data['categoria'] as Map<String, dynamic>? ?? {};
@@ -39,7 +41,7 @@ class RoomDetailsNotifier extends Notifier<RoomDetailsState> {
 
       // Extrair categoriaId diretamente para incluir no mesmo copyWith
       final categoriaId = (categoria['id'] as int?) ?? 0;
-      final room        = _mapJsonToRoom(data, categoria, hotelConfig, hotelRating, hotelCover);
+      final room        = _mapJsonToRoom(data, categoria, hotelConfig, hotelRating, hotelCover, roomPhotos);
 
       state = state.copyWith(room: room, categoriaId: categoriaId, isLoading: false);
     } catch (error) {
@@ -75,21 +77,33 @@ class RoomDetailsNotifier extends Notifier<RoomDetailsState> {
     }
   }
 
-  // Busca a URL da primeira foto de capa do hotel
-  // Endpoint fora do prefixo /api/v1 — constrói URL absoluta a partir do serverRoot
   Future<String> _loadHotelCoverUrl(dynamic dio, String hotelId) async {
     try {
-      final baseUri    = Uri.parse(dio.options.baseUrl as String);
-      final serverRoot = '${baseUri.scheme}://${baseUri.host}:${baseUri.port}';
-      final response   = await dio.get<Map<String, dynamic>>(
-        '$serverRoot/api/uploads/hotels/$hotelId/cover',
+      final response = await dio.get<Map<String, dynamic>>(
+        '/uploads/hotels/$hotelId/cover',
       );
       final fotos = (response.data?['fotos'] as List<dynamic>?) ?? [];
       if (fotos.isEmpty) return '';
-      return '$serverRoot${(fotos.first as Map<String, dynamic>)['url'] as String}';
+      return '$backendHost${(fotos.first as Map<String, dynamic>)['url'] as String}';
     } catch (e) {
       debugPrint('[roomDetailsNotifier] Foto de capa do hotel indisponível: $e');
       return '';
+    }
+  }
+
+  Future<List<String>> _loadRoomPhotoUrls(dynamic dio, String hotelId, String quartoId) async {
+    try {
+      final response = await dio.get<Map<String, dynamic>>(
+        '/uploads/hotels/$hotelId/rooms/$quartoId',
+      );
+      final fotos = (response.data?['fotos'] as List<dynamic>?) ?? [];
+      return fotos.map((f) {
+        final fotoId = (f as Map<String, dynamic>)['id'] as String? ?? '';
+        return '$backendHost/api/v1/uploads/hotels/$hotelId/rooms/$quartoId/$fotoId';
+      }).where((url) => url.isNotEmpty).toList();
+    } catch (e) {
+      debugPrint('[roomDetailsNotifier] Fotos do quarto indisponíveis: $e');
+      return [];
     }
   }
 
@@ -99,6 +113,7 @@ class RoomDetailsNotifier extends Notifier<RoomDetailsState> {
     Map<String, dynamic>? hotelConfig,
     double hotelRating,
     String hotelCoverUrl,
+    List<String> roomPhotoUrls,
   ) {
     final itens      = (categoria['itens'] as List<dynamic>? ?? []);
     final ratingStr  = hotelRating > 0
@@ -113,7 +128,7 @@ class RoomDetailsNotifier extends Notifier<RoomDetailsState> {
       hotelName:   data['nome_hotel'] as String? ?? '',
       destination: '${data['cidade'] ?? ''}, ${data['uf'] ?? ''}',
       description: data['descricao'] as String? ?? categoria['nome'] as String? ?? '',
-      imageUrls:   _parseImageUrls(data),
+      imageUrls:   roomPhotoUrls,
       rating:      '5,0',
       amenities:   _parseAmenities(itens),
       price:       _parsePrice(data['valor_diaria']),
@@ -124,21 +139,6 @@ class RoomDetailsNotifier extends Notifier<RoomDetailsState> {
         rating:   ratingStr,
       ),
     );
-  }
-
-  // Monta lista de URLs de imagem com fotos placeholder para teste do carrossel
-  List<String> _parseImageUrls(Map<String, dynamic> data) {
-    final fotos = data['fotos'] as List<dynamic>?;
-    if (fotos != null && fotos.isNotEmpty) {
-      return fotos.map((f) => f as String).toList();
-    }
-    // Placeholder com 4 fotos variadas para validar funcionamento do carrossel
-    return [
-      'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800',
-      'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=800',
-      'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=800',
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=800',
-    ];
   }
 
   List<Amenity> _parseAmenities(List<dynamic> itens) {

@@ -3,7 +3,14 @@ import multer from 'multer';
 import { imageUpload } from '../middlewares/imageUpload';
 import { policyUpload, POLICY_ALLOWED_EXTENSIONS, POLICY_MAX_FILE_SIZE_BYTES } from '../middlewares/policyUpload';
 import { hotelGuard } from '../middlewares/hotelGuard';
+import { authGuard } from '../middlewares/authGuard';
 import {
+  uploadUsuarioAvatar,
+  deleteUsuarioAvatar,
+  serveUsuarioAvatar,
+  uploadHotelAvatar,
+  deleteHotelAvatar,
+  serveHotelAvatar,
   uploadHotelCover,
   deleteHotelCover,
   serveHotelCover,
@@ -42,6 +49,24 @@ function handlePolicyUpload(req: Request, res: Response, next: NextFunction): vo
     });
   });
 }
+
+// ── Avatars de Usuário ────────────────────────────────────────────────────────
+// GET    /usuarios/:id/avatar          → serve avatar (público)
+// POST   /usuarios/:id/avatar          → upload/atualiza avatar (requer auth usuario)
+// DELETE /usuarios/:id/avatar          → remove avatar (requer auth usuario)
+
+router.get('/usuarios/:id/avatar', serveUsuarioAvatar);
+router.post('/usuarios/:id/avatar', authGuard, imageUpload.single('foto'), uploadUsuarioAvatar);
+router.delete('/usuarios/:id/avatar', authGuard, deleteUsuarioAvatar);
+
+// ── Avatar de Hotel ───────────────────────────────────────────────────────────
+// GET    /hotels/:hotel_id/avatar      → serve avatar (público)
+// POST   /hotels/:hotel_id/avatar      → upload/atualiza avatar (requer auth anfitriao)
+// DELETE /hotels/:hotel_id/avatar      → remove avatar (requer auth anfitriao)
+
+router.get('/hotels/:hotel_id/avatar', serveHotelAvatar);
+router.post('/hotels/:hotel_id/avatar', hotelGuard, imageUpload.single('foto'), uploadHotelAvatar);
+router.delete('/hotels/:hotel_id/avatar', hotelGuard, deleteHotelAvatar);
 
 // ── Hotel Cover Photos ────────────────────────────────────────────────────────
 // GET    /hotels/:hotel_id/cover               → lista todas as fotos de capa (opcionalmente filtrar por ?orientacao=)

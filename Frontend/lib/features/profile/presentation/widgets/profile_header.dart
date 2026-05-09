@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'user_avatar_widget.dart';
 
 class ProfileHeader extends StatelessWidget {
   final String name;
@@ -20,23 +21,7 @@ class ProfileHeader extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
-        Container(
-          width: 96,
-          height: 96,
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHigh,
-            shape: BoxShape.circle,
-            image: avatarUrl != null
-                ? DecorationImage(
-                    image: NetworkImage(avatarUrl!),
-                    fit: BoxFit.cover,
-                  )
-                : null,
-          ),
-          child: avatarUrl == null
-              ? Icon(Icons.person, size: 50, color: colorScheme.onSurfaceVariant)
-              : null,
-        ),
+        UserAvatarWidget(photoUrl: avatarUrl, name: name),
         const SizedBox(height: 12),
         Text(
           name,
@@ -65,7 +50,7 @@ class ProfileHeader extends StatelessWidget {
               border: Border.all(color: AppColors.secondary),
             ),
             child: Text(
-              'Editar perfil',
+              'Editar Perfil',
               style: TextStyle(
                 color: colorScheme.onSurface,
                 fontSize: 13,

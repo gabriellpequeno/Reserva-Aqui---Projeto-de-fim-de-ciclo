@@ -48,7 +48,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
               child: const Text('Fechar'),
             ),
             ElevatedButton(
-              onPressed: () => context.go('/auth/login'),
+              onPressed: () => context.push('/auth/login'),
               style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.secondary),
               child: const Text('Fazer Login'),
@@ -530,9 +530,11 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
 
     if (capacidadesSorted.isEmpty) return const SizedBox.shrink();
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: capacidadesSorted.map((cap) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: capacidadesSorted.map((cap) {
         final isSelected = _selectedCapacidades.contains(cap);
         return GestureDetector(
           onTap: () {
@@ -572,6 +574,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
           ),
         );
       }).toList(),
+      ),
     );
   }
 

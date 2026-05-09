@@ -107,7 +107,12 @@ class _AdminAccountManagementPageState
           bottomRight: Radius.circular(27),
         ),
       ),
-      padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 24),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 50,
+        left: 24,
+        right: 24,
+        bottom: 24,
+      ),
       child: Column(
         children: [
           Row(
@@ -138,7 +143,7 @@ class _AdminAccountManagementPageState
                 children: [
                   SvgPicture.asset(
                     'lib/assets/icons/logo/logo.svg',
-                    height: 28,
+                    height: 32,
                     colorFilter: const ColorFilter.mode(
                       Colors.white,
                       BlendMode.srcIn,

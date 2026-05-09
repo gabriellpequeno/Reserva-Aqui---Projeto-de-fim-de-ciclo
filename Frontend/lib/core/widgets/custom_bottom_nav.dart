@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../theme/app_colors.dart';
 
 // ─── Ordem das abas conforme navbar.png ───────────────────────
 // 0: buscar | 1: curtidas | 2: início | 3: mensagens | 4: perfil

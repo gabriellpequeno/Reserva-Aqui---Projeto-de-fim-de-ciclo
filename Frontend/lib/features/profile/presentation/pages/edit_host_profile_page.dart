@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 import '../../../../core/auth/auth_notifier.dart';
@@ -13,6 +15,7 @@ import '../../../../core/utils/via_cep.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/host_profile_provider.dart';
 import '../widgets/profile_form_section.dart';
+import '../widgets/user_avatar_widget.dart';
 
 class EditHostProfilePage extends ConsumerStatefulWidget {
   const EditHostProfilePage({super.key});
@@ -56,6 +59,13 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
   bool _cepLookupLoading = false;
   String? _cepLookupError;
   Timer? _cepDebounce;
+
+  String? _currentCoverUrl;
+  XFile? _selectedCoverImage;
+  Uint8List? _selectedCoverBytes;
+  String? _currentAvatarUrl;
+  XFile? _selectedAvatarImage;
+  Uint8List? _selectedAvatarBytes;
 
   bool _obscureCurrentPassword = true;
   bool _obscurePassword = true;
@@ -102,6 +112,8 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
 
   void _populateFromHotel(Map<String, dynamic> hotel) {
     String s(dynamic v) => (v ?? '').toString();
+
+    _hotelId = (hotel['hotel_id'] ?? hotel['id'])?.toString();
 
     final cepRaw = s(hotel['cep']);
     final cepMasked = _formatCep(cepRaw);
@@ -245,17 +257,69 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
     setState(() => _pendingPolicy = file);
   }
 
+  Future<void> _pickAvatarImage() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _selectedAvatarImage = picked;
+        _selectedAvatarBytes = bytes;
+      });
+    }
+  }
+
+  Future<void> _uploadAvatarIfNeeded() async {
+    if (_selectedAvatarBytes == null || (_hotelId ?? '').isEmpty) return;
+    final dio = ref.read(dioProvider);
+    final foto = MultipartFile.fromBytes(
+      _selectedAvatarBytes!,
+      filename: _selectedAvatarImage?.name ?? 'avatar.jpg',
+    );
+    await dio.post(
+      '/uploads/hotels/$_hotelId/avatar',
+      data: FormData.fromMap({'foto': foto}),
+    );
+    ref.invalidate(hostProfileProvider);
+  }
+
+  Future<void> _pickCoverImage() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _selectedCoverImage = picked;
+        _selectedCoverBytes = bytes;
+      });
+    }
+  }
+
+  Future<void> _uploadCoverIfNeeded() async {
+    if (_selectedCoverBytes == null || (_hotelId ?? '').isEmpty) return;
+    final dio = ref.read(dioProvider);
+    final foto = MultipartFile.fromBytes(
+      _selectedCoverBytes!,
+      filename: _selectedCoverImage?.name ?? 'cover.jpg',
+    );
+    await dio.post('/uploads/hotels/$_hotelId/cover', data: FormData.fromMap({'foto': foto}));
+    ref.invalidate(hostProfileProvider);
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
     final wantsPasswordChange = _passwordController.text.isNotEmpty ||
         _currentPasswordController.text.isNotEmpty ||
         _confirmPasswordController.text.isNotEmpty;
+    final coverSelected = _selectedCoverBytes != null;
+    final avatarSelected = _selectedAvatarBytes != null;
 
     final diff = _buildDiff();
     final hasPolicyUpload = _pendingPolicy != null;
 
-    if (diff.isEmpty && !wantsPasswordChange && !hasPolicyUpload) {
+    if (diff.isEmpty && !wantsPasswordChange && !hasPolicyUpload && !coverSelected && !avatarSelected) {
       _showSnack('Nenhuma alteração a salvar.');
       return;
     }
@@ -270,6 +334,24 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
           if (!mounted) return;
           _showSnack(_messageFrom(e));
           return;
+        }
+      }
+
+      if (avatarSelected) {
+        try {
+          await _uploadAvatarIfNeeded();
+        } catch (e) {
+          if (!mounted) return;
+          _showSnack('Erro ao enviar foto de perfil: ${_messageFrom(e)}');
+        }
+      }
+
+      if (coverSelected) {
+        try {
+          await _uploadCoverIfNeeded();
+        } catch (e) {
+          if (!mounted) return;
+          _showSnack('Erro ao enviar foto de capa: ${_messageFrom(e)}');
         }
       }
 
@@ -331,7 +413,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
         }
       }
 
-      if (diff.isNotEmpty || hasPolicyUpload) {
+      if (diff.isNotEmpty || hasPolicyUpload || coverSelected || avatarSelected) {
         if (!mounted) return;
         _showSnack('Perfil atualizado com sucesso.');
         context.pop();
@@ -399,6 +481,10 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
                   (profile.hotel['hotel_id'] ?? profile.hotel['id'])
                       ?.toString();
               if (_hotelId != null) _fetchPolicy(_hotelId!);
+              _currentCoverUrl = profile.fotos.isNotEmpty
+                  ? profile.fotos.first['url'] as String?
+                  : null;
+              _currentAvatarUrl = profile.hotel['foto_perfil'] as String?;
               _initialized = true;
             }
             return _buildForm();
@@ -424,6 +510,57 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
                 color: colorScheme.onSurface,
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: GestureDetector(
+                onTap: _pickAvatarImage,
+                child: Stack(
+                  children: [
+                    UserAvatarWidget(
+                      photoUrl: _selectedAvatarBytes == null ? _currentAvatarUrl : null,
+                      localImageBytes: _selectedAvatarBytes,
+                      name: _nameController.text,
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.camera_alt, size: 14, color: colorScheme.onPrimary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Foto de Capa',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _pickCoverImage,
+              child: Container(
+                width: double.infinity,
+                height: 150,
+                clipBehavior: Clip.hardEdge,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: colorScheme.surfaceContainer,
+                  border: Border.all(color: colorScheme.outline),
+                ),
+                child: _buildCoverPreview(colorScheme),
               ),
             ),
             const SizedBox(height: 32),
@@ -800,6 +937,37 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
             fontSize: 12,
             height: 1.6,
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCoverPreview(ColorScheme colorScheme) {
+    if (_selectedCoverBytes != null) {
+      return Image.memory(
+        _selectedCoverBytes!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: 150,
+      );
+    }
+    if ((_currentCoverUrl ?? '').isNotEmpty) {
+      return Image.network(
+        _currentCoverUrl!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: 150,
+        key: ValueKey(_currentCoverUrl),
+      );
+    }
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.add_photo_alternate_outlined, size: 36, color: colorScheme.onSurfaceVariant),
+        const SizedBox(height: 8),
+        Text(
+          'Toque para adicionar foto de capa',
+          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
         ),
       ],
     );

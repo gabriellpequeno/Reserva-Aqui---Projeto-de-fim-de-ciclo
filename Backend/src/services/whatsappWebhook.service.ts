@@ -354,7 +354,7 @@ export async function processIncomingWhatsAppMessage(input: ProcessIncomingWhats
         // Roteia pelo agent como se fosse texto.
         let context = await ContextResolverService.getContext(sessionId);
         if (!context) {
-          context = { sessionId, userId, hotelId: null, schemaName: null };
+          context = { sessionId, userId, hotelId: null, schemaName: null, canal: 'WHATSAPP' };
         }
         const agentReply = await AgentOrchestratorService.processMessage(sessionId, interpretedText, context);
 
@@ -414,7 +414,7 @@ export async function processIncomingWhatsAppMessage(input: ProcessIncomingWhats
       try {
         let context = await ContextResolverService.getContext(sessionId);
         if (!context) {
-          context = { sessionId, userId, hotelId: null, schemaName: null };
+          context = { sessionId, userId, hotelId: null, schemaName: null, canal: 'WHATSAPP' };
         }
 
         const agentReply = await AgentOrchestratorService.processMessage(sessionId, userText, context);

@@ -53,6 +53,7 @@ export interface AnfitriaoSafe {
   complemento:  string | null;
   saldo:        string;
   descricao:    string | null;
+  foto_perfil:  string | null;
   schema_name:  string;
   criado_em:    Date;
   ativo:        boolean;
@@ -273,16 +274,23 @@ async function _logoutAnfitriao(refreshToken: string): Promise<void> {
  * Retorna o perfil do hotel autenticado (sem senha).
  */
 async function _getAnfitriaoById(hotelId: string): Promise<AnfitriaoSafe> {
-  const { rows } = await masterPool.query<AnfitriaoSafe>(
+  const { rows } = await masterPool.query<AnfitriaoSafe & { foto_perfil: string | null }>(
     `SELECT hotel_id, nome_hotel, cnpj, telefone, email, cep, uf, cidade, bairro, rua, numero,
-            complemento, saldo, descricao, schema_name, criado_em, ativo
+            complemento, saldo, descricao, schema_name, criado_em, ativo, foto_perfil
      FROM anfitriao
      WHERE hotel_id = $1 AND ativo = TRUE`,
     [hotelId],
   );
 
   if (!rows[0]) throw new Error('Hotel não encontrado');
-  return rows[0];
+
+  const prefix = process.env.API_PREFIX ?? '/api';
+  return {
+    ...rows[0],
+    foto_perfil: rows[0].foto_perfil
+      ? `${prefix}/uploads/hotels/${hotelId}/avatar`
+      : null,
+  };
 }
 
 /**

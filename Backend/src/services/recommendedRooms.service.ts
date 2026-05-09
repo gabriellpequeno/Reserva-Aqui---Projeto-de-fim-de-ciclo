@@ -26,11 +26,15 @@ interface RawRoom {
   quarto_id: number;
   hotel_id: string;
   numero: string;
+  descricao: string | null;
+  nome_categoria: string | null;
   valor_diaria: string;
   nome_hotel: string;
   cidade: string;
   uf: string;
   nota_media: number | null;
+  foto_id: string | null;
+  itens: string[];
 }
 
 interface RatingBlock {
@@ -109,7 +113,7 @@ export async function getRecommendedRooms(): Promise<RecommendedRoom[]> {
       `[recommendedRooms] Retornados: tempo_total_ms=${elapsedMs}, quantidade=${result.length}`
     );
 
-    return result.slice(0, MAX_RESULTS);
+    return numberDuplicateTitles(result.slice(0, MAX_RESULTS));
   } catch (error) {
     const elapsedMs = Date.now() - startTime;
     console.error(
@@ -138,21 +142,39 @@ async function fetchRoomsWithRatings(): Promise<RawRoom[]> {
           const { rows } = await client.query<{
             quarto_id: number;
             numero: string;
+            descricao: string | null;
+            nome_categoria: string | null;
             valor_diaria: string;
             nota_media: number | null;
+            foto_id: string | null;
+            itens: string[];
           }>(
             `SELECT
                q.id AS quarto_id,
                q.numero,
+               q.descricao,
+               cq.nome AS nome_categoria,
                COALESCE(q.valor_override, cq.preco_base::numeric) AS valor_diaria,
-               ROUND(AVG(a.nota_total), 1) AS nota_media
+               ROUND(AVG(a.nota_total), 1) AS nota_media,
+               (SELECT id::text FROM quarto_foto WHERE quarto_id = q.id ORDER BY ordem ASC, criado_em ASC LIMIT 1) AS foto_id,
+               COALESCE(
+                 (SELECT json_agg(c.nome ORDER BY c.nome)
+                  FROM itens_do_quarto iq
+                  JOIN catalogo c ON c.id = iq.catalogo_id AND c.deleted_at IS NULL
+                  WHERE iq.quarto_id = q.id),
+                 (SELECT json_agg(c.nome ORDER BY c.nome)
+                  FROM categoria_item ci
+                  JOIN catalogo c ON c.id = ci.catalogo_id AND c.deleted_at IS NULL
+                  WHERE ci.categoria_quarto_id = q.categoria_quarto_id),
+                 '[]'::json
+               ) AS itens
              FROM quarto q
              LEFT JOIN categoria_quarto cq ON cq.id = q.categoria_quarto_id
              LEFT JOIN avaliacao a ON a.reserva_id IN (
                SELECT id FROM reserva WHERE quarto_id = q.id AND status = 'CONCLUIDA'
              )
              WHERE q.deleted_at IS NULL AND q.disponivel = TRUE
-             GROUP BY q.id, q.numero, q.valor_override, cq.preco_base`
+             GROUP BY q.id, q.numero, q.descricao, q.valor_override, cq.preco_base, cq.nome`
           );
           return rows;
         });
@@ -162,11 +184,15 @@ async function fetchRoomsWithRatings(): Promise<RawRoom[]> {
             quarto_id: row.quarto_id,
             hotel_id: hotel.hotel_id,
             numero: row.numero,
+            descricao: row.descricao ?? null,
+            nome_categoria: row.nome_categoria ?? null,
             valor_diaria: row.valor_diaria,
             nome_hotel: hotel.nome_hotel,
             cidade: hotel.cidade,
             uf: hotel.uf,
             nota_media: row.nota_media,
+            foto_id: row.foto_id ?? null,
+            itens: row.itens ?? [],
           });
         }
       } catch (error) {
@@ -218,19 +244,42 @@ function getRandomFallback(rooms: RawRoom[], startTime: number): RecommendedRoom
     `[recommendedRooms] Fallback executado: tempo_total_ms=${elapsedMs}, quantidade=${result.length}`
   );
 
-  return result;
+  return numberDuplicateTitles(result);
 }
 
 // Enriquecimento: monta o shape final RecommendedRoom com imagem_url e comodidades
 function enrichRoom(room: RawRoom, hotel: HotelMatch): RecommendedRoom {
+  const imageUrl = room.foto_id
+    ? `/api/v1/uploads/hotels/${room.hotel_id}/rooms/${room.quarto_id}/${room.foto_id}`
+    : '';
+  const roomName = room.nome_categoria?.trim() || room.descricao?.trim() || `Quarto ${room.numero}`;
   return {
     roomId: String(room.quarto_id),
-    title: `${hotel.nome_hotel} - Quarto ${room.numero}`,
-    imageUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80',
+    title: `${roomName} - ${hotel.nome_hotel}`,
+    imageUrl,
     rating: room.nota_media ? String(room.nota_media).replace('.', ',') : '0,0',
     price: room.valor_diaria,
-    amenities: ['Wi-Fi', 'TV', 'Ar-condicionado'],
+    amenities: room.itens,
     hotelId: room.hotel_id,
     destination: `${hotel.cidade}, ${hotel.uf}`,
   };
+}
+
+// Numera quartos com mesmo nome dentro do mesmo hotel: "Suite - Hotel X" → "Suite #1 - Hotel X"
+function numberDuplicateTitles(rooms: RecommendedRoom[]): RecommendedRoom[] {
+  const counts: Record<string, number> = {};
+  for (const room of rooms) {
+    const key = `${room.hotelId}:${room.title}`;
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  const indices: Record<string, number> = {};
+  return rooms.map(room => {
+    const key = `${room.hotelId}:${room.title}`;
+    if ((counts[key] ?? 0) <= 1) return room;
+    indices[key] = (indices[key] ?? 0) + 1;
+    const sepIdx = room.title.indexOf(' - ');
+    const roomPart = sepIdx >= 0 ? room.title.slice(0, sepIdx) : room.title;
+    const hotelPart = sepIdx >= 0 ? room.title.slice(sepIdx) : '';
+    return { ...room, title: `${roomPart} #${indices[key]}${hotelPart}` };
+  });
 }

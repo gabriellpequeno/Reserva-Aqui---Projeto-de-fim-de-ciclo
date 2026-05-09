@@ -69,7 +69,8 @@ class MainLayout extends ConsumerWidget {
         location == '/notifications' ||
         location == '/search' ||
         location.startsWith('/tickets') ||
-        location.startsWith('/room_details');
+        location.startsWith('/room_details') ||
+        location.startsWith('/auth/login');
     final bool hideBottomNav = location.startsWith('/room_details');
 
     return LayoutBuilder(
@@ -79,7 +80,9 @@ class MainLayout extends ConsumerWidget {
         return Scaffold(
           extendBody: true,
           extendBodyBehindAppBar: true,
-          appBar: hideAppBar ? null : const CustomAppBar(),
+          appBar: hideAppBar ? null : CustomAppBar(
+            fallbackRoute: location.startsWith('/profile') ? '/home' : null,
+          ),
           drawer: isMobile ? null : _buildDrawer(context, ref),
           body: child,
           bottomNavigationBar: hideBottomNav

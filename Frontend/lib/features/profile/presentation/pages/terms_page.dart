@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 
 class TermsPage extends StatelessWidget {
   const TermsPage({super.key});
@@ -7,10 +7,7 @@ class TermsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Termos de Uso'),
-        foregroundColor: AppColors.primary,
-      ),
+      appBar: const CustomAppBar(),
       body: const SingleChildScrollView(
         padding: EdgeInsets.all(24),
         child: Text(

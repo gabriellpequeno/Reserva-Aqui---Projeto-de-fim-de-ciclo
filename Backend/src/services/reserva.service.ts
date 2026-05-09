@@ -4,11 +4,12 @@ import { setQuartoDisponivel } from './quarto.service';
 import { creditarCheckout, debitarTaxaWalkin } from './saldo.service';
 import { sendPush, getHotelTokens, getUserTokens } from './fcm.service';
 import { insertNotificacao } from './notificacaoHotel.service';
-import { sendApprovedReservationConfirmation } from './whatsappReservation.service';
+import { sendApprovedReservationConfirmation, sendPaymentLinkViaWhatsApp } from './whatsappReservation.service';
 import {
   Reserva,
   ReservaSafe,
   ReservaStatus,
+  CanalOrigem,
   CreateReservaUsuarioInput,
   CreateReservaWalkinInput,
   CreateReservaGuestInput,
@@ -65,6 +66,25 @@ export async function createReservaWalkin(
 
 export async function createReservaGuest(input: CreateReservaGuestInput): Promise<ReservaSafe> {
   return _createReservaGuest(input);
+}
+
+/** Input mínimo para reservas criadas pelo bot (chat APP ou WhatsApp). */
+export interface CreateReservaChatInput {
+  hotel_id:        string;
+  quarto_id:       number;
+  num_hospedes:    number;
+  data_checkin:    string;
+  data_checkout:   string;
+  canal_origem:    CanalOrigem;
+  sessao_chat_id:  string;
+  user_id?:        string | null;
+  nome_hospede?:   string | null;
+  email_hospede?:  string | null;
+  telefone_contato?: string | null;
+}
+
+export async function createReservaChat(input: CreateReservaChatInput): Promise<ReservaSafe> {
+  return _createReservaChat(input);
 }
 
 export async function listReservas(
@@ -456,6 +476,110 @@ async function _createReservaGuest(input: CreateReservaGuestInput): Promise<Rese
         payload:  { reserva_id: reserva.id, codigo_publico: reserva.codigo_publico },
       }),
     ]).catch(() => {});
+
+    return reserva;
+  });
+}
+
+async function _createReservaChat(input: CreateReservaChatInput): Promise<ReservaSafe> {
+  const { schema_name, nome_hotel } = await _getHotelInfo(input.hotel_id);
+
+  // Validações básicas
+  if (!input.quarto_id) throw new Error('quarto_id é obrigatório');
+  if (!input.num_hospedes || input.num_hospedes <= 0) throw new Error('num_hospedes inválido');
+  if (!input.data_checkin || !input.data_checkout) throw new Error('Datas de check-in/check-out são obrigatórias');
+  if (input.data_checkout <= input.data_checkin) throw new Error('data_checkout deve ser posterior à data_checkin');
+
+  // Para usuário não autenticado, nome e email são obrigatórios
+  if (!input.user_id && (!input.nome_hospede || !input.email_hospede)) {
+    throw new Error('Para hóspedes não autenticados, nome_hospede e email_hospede são obrigatórios');
+  }
+
+  return withTenant(schema_name, async (client) => {
+    await _ensureReservaFluxoColumns(client);
+
+    if (input.user_id) {
+      await _ensureHospede(client, input.user_id);
+    }
+
+    // Verifica disponibilidade
+    const { rows: dispRows } = await client.query<{ ocupado: boolean }>(
+      `SELECT EXISTS (
+         SELECT 1 FROM reserva
+         WHERE quarto_id    = $1
+           AND status       NOT IN ('CANCELADA')
+           AND data_checkin  < $3
+           AND data_checkout > $2
+       ) AS ocupado`,
+      [input.quarto_id, input.data_checkin, input.data_checkout],
+    );
+    if (dispRows[0]?.ocupado) {
+      throw new Error('Quarto indisponível nas datas selecionadas.');
+    }
+
+    const valorTotal = await _calcValorTotal(client, input.quarto_id, input.data_checkin, input.data_checkout);
+
+    const { rows } = await client.query<ReservaSafe>(
+      `INSERT INTO reserva
+         (user_id, nome_hospede, email_hospede, telefone_contato,
+          quarto_id, canal_origem, sessao_chat_id,
+          num_hospedes, data_checkin, data_checkout,
+          valor_total, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'SOLICITADA')
+       RETURNING *`,
+      [
+        input.user_id       ?? null,
+        input.nome_hospede  ?? null,
+        input.email_hospede ?? null,
+        input.telefone_contato ?? null,
+        input.quarto_id,
+        input.canal_origem,
+        input.sessao_chat_id,
+        input.num_hospedes,
+        input.data_checkin,
+        input.data_checkout,
+        valorTotal,
+      ],
+    );
+    const reserva = rows[0];
+
+    // Routing público
+    await _upsertReservaRouting(reserva.codigo_publico, input.hotel_id, schema_name);
+
+    // Histórico global (só se autenticado)
+    if (input.user_id) {
+      const tipoQuarto = await _resolveTipoQuarto(client, input.quarto_id, null);
+      await _upsertHistoricoGlobal(
+        input.user_id, input.hotel_id, nome_hotel, reserva.id,
+        tipoQuarto, input.data_checkin, input.data_checkout,
+        String(valorTotal), 'SOLICITADA', input.num_hospedes,
+        reserva.codigo_publico,
+      );
+    }
+
+    // Notificações ao hotel — fire-and-forget
+    const nomeDisplay = input.nome_hospede ?? 'Hóspede via chat';
+    Promise.all([
+      getHotelTokens(input.hotel_id).then(tokens =>
+        sendPush(tokens, {
+          title: 'Nova reserva recebida',
+          body:  `${nomeDisplay} — ${input.data_checkin} a ${input.data_checkout}.`,
+          data:  { reserva_id: String(reserva.id), tipo: 'NOVA_RESERVA', codigo_publico: reserva.codigo_publico },
+        }),
+      ),
+      insertNotificacao(input.hotel_id, {
+        titulo:   'Nova reserva recebida',
+        mensagem: `Solicitação de ${nomeDisplay} para ${input.data_checkin} a ${input.data_checkout}.`,
+        tipo:     'NOVA_RESERVA',
+        payload:  { reserva_id: reserva.id, codigo_publico: reserva.codigo_publico },
+      }),
+    ]).catch(() => {});
+
+    // Link de pagamento — fire-and-forget
+    sendPaymentLinkViaWhatsApp({
+      hotelId:   input.hotel_id,
+      reservaId: reserva.id,
+    }).catch(() => {});
 
     return reserva;
   });

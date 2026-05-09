@@ -81,29 +81,32 @@ class _AgendamentosPageState extends ConsumerState<AgendamentosPage> {
           bottomRight: Radius.circular(27),
         ),
       ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(17, 8, 17, 20),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _headerButton(
-                    icon: Icons.chevron_left,
-                    onTap: () => context.canPop() ? context.pop() : context.go('/host/dashboard'),
-                  ),
-                  SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 28),
-                  _headerButton(
-                    icon: Icons.notifications_none,
-                    onTap: () => context.go('/notifications'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Agendamentos',
+      child: Padding(
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 50,
+          left: 24,
+          right: 24,
+          bottom: 24,
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _headerButton(
+                  icon: Icons.chevron_left,
+                  onTap: () => context.canPop() ? context.pop() : context.go('/host/dashboard'),
+                ),
+                SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 32),
+                _headerButton(
+                  icon: Icons.notifications_none,
+                  onTap: () => context.go('/notifications'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Agendamentos',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 20,
@@ -115,7 +118,6 @@ class _AgendamentosPageState extends ConsumerState<AgendamentosPage> {
             ],
           ),
         ),
-      ),
     );
   }
 

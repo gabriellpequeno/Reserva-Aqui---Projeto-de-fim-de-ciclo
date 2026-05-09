@@ -5,7 +5,7 @@ class FavoriteHotel {
   final String uf;
   final String bairro;
   final String? descricao;
-  final String? coverStoragePath;
+  final String? firstCoverFotoId;
   final DateTime favoritadoEm;
 
   const FavoriteHotel({
@@ -15,7 +15,7 @@ class FavoriteHotel {
     required this.uf,
     required this.bairro,
     this.descricao,
-    this.coverStoragePath,
+    this.firstCoverFotoId,
     required this.favoritadoEm,
   });
 
@@ -27,7 +27,7 @@ class FavoriteHotel {
       uf: json['uf'] as String,
       bairro: json['bairro'] as String,
       descricao: json['descricao'] as String?,
-      coverStoragePath: json['cover_storage_path'] as String?,
+      firstCoverFotoId: json['first_cover_foto_id'] as String?,
       favoritadoEm: DateTime.parse(json['favoritado_em'] as String),
     );
   }

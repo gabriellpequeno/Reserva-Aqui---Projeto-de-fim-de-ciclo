@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/smart_network_image.dart';
 import 'package:go_router/go_router.dart';
 
 class RoomCard extends StatelessWidget {
@@ -13,6 +14,7 @@ class RoomCard extends StatelessWidget {
   final double? cardWidth;
   final double? cardHeight;
   final EdgeInsetsGeometry? cardMargin;
+  final String? categoria;
 
   const RoomCard({
     super.key,
@@ -26,6 +28,7 @@ class RoomCard extends StatelessWidget {
     this.cardWidth,
     this.cardHeight,
     this.cardMargin,
+    this.categoria,
   });
 
   String _formatRating(String raw) {
@@ -53,26 +56,12 @@ class RoomCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Imagem de fundo com fallback para quando falhar
-            Image.network(
-              imageUrl,
+            SmartNetworkImage(
+              url: imageUrl.isNotEmpty ? imageUrl : null,
+              fallback: fallbackForHotel(hotelId),
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AppColors.primary.withValues(alpha: 0.3),
-                      AppColors.primary.withValues(alpha: 0.7),
-                    ],
-                  ),
-                ),
-              ),
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(color: AppColors.primary.withValues(alpha: 0.1));
-              },
+              width: double.infinity,
+              height: double.infinity,
             ),
             // Gradient overlay
             Container(

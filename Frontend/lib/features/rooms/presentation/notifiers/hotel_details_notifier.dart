@@ -42,6 +42,7 @@ class HotelDetailsNotifier extends Notifier<HotelDetailsState> {
         descricao: configuracao?['descricao'] as String?,
         cidade: configuracao?['cidade'] as String?,
         uf: configuracao?['uf'] as String?,
+        avatarUrl: '$backendHost/api/v1/uploads/hotels/$hotelId/avatar',
         coverUrls: fotos,
         comodidades: comodidades,
         categorias: categorias,
@@ -142,23 +143,18 @@ class HotelDetailsNotifier extends Notifier<HotelDetailsState> {
     }
   }
 
-  // Endpoint: GET /api/uploads/hotels/:id/cover (prefixo /api, não /api/v1)
-  // Resposta: { fotos: [{ id, url: '/api/uploads/hotels/:id/cover/:fotoId', ... }] }
   Future<List<String>> _loadFotos(
     dynamic dio,
     String hotelId,
   ) async {
     try {
-      final baseUri = Uri.parse(dio.options.baseUrl as String);
-      final serverRoot = '${baseUri.scheme}://${baseUri.host}:${baseUri.port}';
-
       final response = await dio.get<Map<String, dynamic>>(
-        '$serverRoot/api/uploads/hotels/$hotelId/cover',
+        '/uploads/hotels/$hotelId/cover',
       );
 
       final fotos = (response.data?['fotos'] as List<dynamic>?) ?? [];
       final urls = fotos
-          .map((f) => '$serverRoot${(f as Map<String, dynamic>)['url'] as String}')
+          .map((f) => '$backendHost${(f as Map<String, dynamic>)['url'] as String}')
           .toList();
       debugPrint('[hotelDetailsNotifier] Fotos carregadas: ${urls.length}');
       return urls;

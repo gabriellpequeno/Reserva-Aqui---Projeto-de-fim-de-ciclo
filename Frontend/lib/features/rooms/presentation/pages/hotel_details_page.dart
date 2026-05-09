@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/smart_network_image.dart';
 import '../../../favorites/presentation/providers/favorites_provider.dart';
 import '../../../favorites/presentation/widgets/favorite_dialogs.dart';
 import '../../domain/models/hotel_details.dart';
@@ -127,16 +128,15 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(color: colorScheme.surface, width: 4),
-                                    color: colorScheme.surfaceContainerHigh,
-                                    image: state.coverUrls.isNotEmpty
-                                        ? DecorationImage(
-                                            image: NetworkImage(state.coverUrls[0]),
-                                            fit: BoxFit.cover,
-                                          )
-                                        : const DecorationImage(
-                                            image: AssetImage('lib/assets/images/home_page.jpeg'),
-                                            fit: BoxFit.cover,
-                                          ),
+                                  ),
+                                  child: ClipOval(
+                                    child: SmartNetworkImage(
+                                      url: state.avatarUrl,
+                                      fallback: fallbackForHotel(widget.hotelId),
+                                      width: 80,
+                                      height: 80,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -317,14 +317,13 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            imageUrl != null
-                ? Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Image.asset('lib/assets/images/home_page.jpeg', fit: BoxFit.cover),
-                  )
-                : Image.asset('lib/assets/images/home_page.jpeg', fit: BoxFit.cover),
+            SmartNetworkImage(
+              url: imageUrl,
+              fallback: fallbackForHotel(widget.hotelId),
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(

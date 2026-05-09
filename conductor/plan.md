@@ -99,6 +99,20 @@
 
 ---
 
+## BUG-3 — Room Details Fixes (Título, Disponibilidade, Favoritar) [CONCLUÍDO]
+
+> Spec: `specs/room-details-fixes.spec.md`
+> Plan detalhado: `plans/room-details-fixes.plan.md`
+
+- [x] Auditar `availability_checker.dart` e `checkout_page.dart` — parsing de `disponivel` é idêntico e correto em ambos
+- [x] Corrigir título hierárquico: `hotelName` + `room.title` (categoria) com hierarquia visual em `room_details_page.dart`
+- [x] Disponibilidade frontend: sem divergência — qualquer inconsistência é backend (lógica de unidades por dia)
+- [x] Datas propagadas ao checkout via queryParams — fluxo correto verificado
+- [x] Adicionar botão de favoritar (canto superior direito) integrado ao `favoritesProvider` com optimistic update
+- [x] Validar fluxo ponta a ponta: detalhes → checkout, favoritar/desfavoritar, acesso guest — bugs encontrados e corrigidos (rota login + formato de data)
+
+---
+
 ## Fase 2 — Gestão de Hotéis e Quartos [PENDENTE]
 
 > Spec: `specs/gestao-hotel.spec.md`

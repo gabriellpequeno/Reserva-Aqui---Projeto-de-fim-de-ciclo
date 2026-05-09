@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/widgets/smart_network_image.dart';
 import '../../domain/models/favorite_hotel.dart';
 import '../providers/favorites_provider.dart';
 import 'favorite_dialogs.dart';
@@ -43,12 +44,12 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
   }
 
   String? _buildCoverUrl() {
-    if (widget.hotel.coverStoragePath == null) return null;
+    if (widget.hotel.firstCoverFotoId == null) return null;
     final dio = ref.read(dioProvider);
     final baseUri = Uri.parse(dio.options.baseUrl);
     final serverRoot =
         '${baseUri.scheme}://${baseUri.host}${baseUri.hasPort ? ':${baseUri.port}' : ''}';
-    return '$serverRoot/api/uploads/hotels/${widget.hotel.hotelId}/cover';
+    return '$serverRoot/api/v1/uploads/hotels/${widget.hotel.hotelId}/cover/${widget.hotel.firstCoverFotoId}';
   }
 
   Future<void> _handleRemove() async {
@@ -88,22 +89,20 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
         ),
         child: IntrinsicHeight(
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   bottomLeft: Radius.circular(16),
                 ),
-                child: coverUrl != null
-                    ? Image.network(
-                        coverUrl,
-                        width: 120,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            _buildPlaceholder(context),
-                      )
-                    : _buildPlaceholder(context),
+                child: SmartNetworkImage(
+                  url: coverUrl,
+                  fallback: fallbackForHotel(widget.hotel.hotelId),
+                  width: 120,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                ),
               ),
               Expanded(
                 child: Padding(
@@ -125,8 +124,7 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
                       Row(
                         children: [
                           Icon(Icons.location_on,
-                              size: 12,
-                              color: colorScheme.onSurfaceVariant),
+                              size: 12, color: colorScheme.onSurfaceVariant),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
@@ -171,8 +169,7 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
                             scale: _heartScale,
                             child: IconButton(
                               onPressed: _handleRemove,
-                              icon:
-                                  const Icon(Icons.favorite, color: Colors.red),
+                              icon: const Icon(Icons.favorite, color: Colors.red),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                             ),
@@ -187,16 +184,6 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildPlaceholder(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      width: 120,
-      color: colorScheme.surfaceContainer,
-      child:
-          Icon(Icons.hotel, color: colorScheme.onSurfaceVariant, size: 36),
     );
   }
 }

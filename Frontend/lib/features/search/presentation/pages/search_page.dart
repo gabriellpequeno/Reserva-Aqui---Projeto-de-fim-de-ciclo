@@ -156,17 +156,14 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   height: 32,
                 ),
               ),
-              SizedBox(
-                width: 48,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: GestureDetector(
-                    onTap: () => context.push('/notifications'),
-                    child: Icon(
-                      Icons.notifications_none,
-                      color: colorScheme.onSurface,
-                      size: 28,
-                    ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () => context.push('/notifications'),
+                  child: Icon(
+                    Icons.notifications_none,
+                    color: colorScheme.onSurface,
+                    size: 28,
                   ),
                 ),
               ),

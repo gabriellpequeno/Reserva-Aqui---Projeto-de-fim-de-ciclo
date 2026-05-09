@@ -13,6 +13,7 @@ import {
   moveFile,
   streamFile,
   toRelativePath,
+  UPLOAD_DIR,
 } from '../services/storage.service';
 import { masterPool } from '../database/masterDb';
 import { withTenant } from '../database/schemaWrapper';
@@ -352,7 +353,7 @@ export async function listHotelCovers(req: Request, res: Response): Promise<void
   const { orientacao } = req.query;
 
   let query = `
-    SELECT id, orientacao, criado_em
+    SELECT id, storage_path, orientacao, criado_em
     FROM foto_hotel
     WHERE hotel_id = $1
   `;
@@ -367,10 +368,14 @@ export async function listHotelCovers(req: Request, res: Response): Promise<void
 
   const result = await masterPool.query(query, params);
 
-  const fotos = result.rows.map((row) => ({
-    ...row,
-    url: `/api/uploads/hotels/${hotel_id}/cover/${row.id}`,
-  }));
+  const fotos = result.rows
+    .filter((row) => fs.existsSync(path.resolve(UPLOAD_DIR, row.storage_path)))
+    .map((row) => ({
+      id: row.id,
+      orientacao: row.orientacao,
+      criado_em: row.criado_em,
+      url: `/api/v1/uploads/hotels/${hotel_id}/cover/${row.id}`,
+    }));
 
   res.status(200).json({ fotos });
 }
@@ -551,17 +556,21 @@ export async function listRoomPhotos(req: Request, res: Response): Promise<void>
 
   await withTenant(schemaName, async (client) => {
     const result = await client.query(
-      `SELECT id, ordem, criado_em
+      `SELECT id, storage_path, ordem, criado_em
        FROM quarto_foto
        WHERE quarto_id = $1
        ORDER BY ordem ASC, criado_em ASC`,
       [quarto_id]
     );
 
-    const fotos = result.rows.map((row) => ({
-      ...row,
-      url: `/api/uploads/hotels/${hotel_id}/rooms/${quarto_id}/${row.id}`,
-    }));
+    const fotos = result.rows
+      .filter((row) => fs.existsSync(path.resolve(UPLOAD_DIR, row.storage_path)))
+      .map((row) => ({
+        id: row.id,
+        ordem: row.ordem,
+        criado_em: row.criado_em,
+        url: `/api/v1/uploads/hotels/${hotel_id}/rooms/${quarto_id}/${row.id}`,
+      }));
 
     res.status(200).json({ fotos });
   });

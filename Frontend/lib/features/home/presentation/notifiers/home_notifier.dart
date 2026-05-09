@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/dio_client.dart';
@@ -18,17 +17,24 @@ class HomeNotifier extends Notifier<HomeState> {
       final dio = ref.read(dioProvider);
       final response = await dio.get<List<dynamic>>('/quartos/recomendados');
 
-      final baseHost = kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
-
-      final rooms = (response.data ?? []).map((json) {
+      final rooms = await Future.wait((response.data ?? []).map((json) async {
         final data = json as Map<String, dynamic>;
+        final hotelId = data['hotelId'] as String? ?? '';
+        final quartoId = data['roomId'] as String? ?? '';
         final rawImageUrl = data['imageUrl'] as String? ?? '';
-        final imageUrl = rawImageUrl.startsWith('/')
-            ? '$baseHost$rawImageUrl'
-            : rawImageUrl;
+
+        String imageUrl;
+        if (rawImageUrl.isNotEmpty) {
+          imageUrl = rawImageUrl.startsWith('/')
+              ? '$backendHost$rawImageUrl'
+              : rawImageUrl;
+        } else {
+          imageUrl = await _fetchFirstRoomPhotoUrl(hotelId, quartoId);
+        }
+
         return Room(
-          id: data['roomId'] as String? ?? '',
-          hotelId: data['hotelId'] as String? ?? '',
+          id: quartoId,
+          hotelId: hotelId,
           title: data['title'] as String? ?? '',
           hotelName: data['title'] as String? ?? '',
           destination: data['destination'] as String? ?? '',
@@ -39,13 +45,45 @@ class HomeNotifier extends Notifier<HomeState> {
           price: _parsePrice(data['price']),
           host: _dummyHost(),
         );
-      }).toList();
+      }));
 
       state = state.copyWith(rooms: rooms, isLoading: false);
     } catch (error) {
       debugPrint('[homeNotifier] Erro ao carregar recomendações: $error');
       state = state.copyWith(isLoading: false, hasError: true);
     }
+  }
+
+  static const _fallbackImages = [
+    'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80',
+    'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=800&q=80',
+    'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800&q=80',
+    'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&q=80',
+    'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80',
+    'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&q=80',
+    'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800&q=80',
+    'https://images.unsplash.com/photo-1596436889106-be35e843f974?w=800&q=80',
+  ];
+
+  Future<String> _fetchFirstRoomPhotoUrl(String hotelId, String quartoId) async {
+    if (hotelId.isEmpty || quartoId.isEmpty) return _fallbackFor(quartoId);
+    try {
+      final res = await ref.read(dioProvider).get<Map<String, dynamic>>(
+        '/uploads/hotels/$hotelId/rooms/$quartoId',
+      );
+      final fotos = res.data?['fotos'] as List<dynamic>? ?? [];
+      if (fotos.isEmpty) return _fallbackFor(quartoId);
+      final fotoId = (fotos.first as Map<String, dynamic>)['id'] as String? ?? '';
+      if (fotoId.isEmpty) return _fallbackFor(quartoId);
+      return '$backendHost/api/v1/uploads/hotels/$hotelId/rooms/$quartoId/$fotoId';
+    } catch (_) {
+      return _fallbackFor(quartoId);
+    }
+  }
+
+  String _fallbackFor(String quartoId) {
+    final index = quartoId.hashCode.abs() % _fallbackImages.length;
+    return _fallbackImages[index];
   }
 
   List<Amenity> _parseAmenities(List<dynamic>? amenities) {

@@ -12,6 +12,12 @@ const kBackendHost = String.fromEnvironment(
 // 1. BACKEND_HOST explícito sempre vence (staging, override manual)
 // 2. kReleaseMode sem override → produção hardcoded
 // 3. Fallback debug → emulador/web local
+final backendHost = kBackendHost.isNotEmpty
+    ? kBackendHost
+    : kReleaseMode
+        ? 'https://lab.alphaedtech.org.br/server04'
+        : (kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000');
+
 final _baseUrl = kBackendHost.isNotEmpty
     ? '$kBackendHost/api/v1'
     : kReleaseMode

@@ -36,6 +36,7 @@ export interface UsuarioSafe {
   cpf:             string;
   data_nascimento: Date;
   numero_celular:  string | null;
+  foto_perfil:     string | null;
   papel:           UsuarioPapel;
   criado_em:       Date;
   ativo:           boolean;
@@ -238,15 +239,23 @@ async function _logoutUsuario(refreshToken: string): Promise<void> {
  * Retorna o perfil do usuario autenticado (sem senha).
  */
 async function _getUsuarioById(userId: string): Promise<UsuarioSafe> {
-  const { rows } = await masterPool.query<UsuarioSafe>(
-    `SELECT user_id, nome_completo, email, cpf, data_nascimento, numero_celular, papel, criado_em, ativo
+  const { rows } = await masterPool.query<UsuarioSafe & { foto_perfil: string | null }>(
+    `SELECT user_id, nome_completo, email, cpf, data_nascimento, numero_celular,
+            foto_perfil, papel, criado_em, ativo
      FROM usuario
      WHERE user_id = $1 AND ativo = TRUE`,
     [userId],
   );
 
   if (!rows[0]) throw new Error('Usuário não encontrado');
-  return rows[0];
+
+  const prefix = process.env.API_PREFIX ?? '/api';
+  return {
+    ...rows[0],
+    foto_perfil: rows[0].foto_perfil
+      ? `${prefix}/uploads/usuarios/${userId}/avatar`
+      : null,
+  };
 }
 
 /**

@@ -134,7 +134,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         : null;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        MediaQuery.of(context).padding.top + 50,
+        24,
+        24,
+      ),
       color: colorScheme.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,14 +156,17 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   height: 32,
                 ),
               ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: () => context.push('/notifications'),
-                  child: Icon(
-                    Icons.notifications_none,
-                    color: colorScheme.onSurface,
-                    size: 28,
+              SizedBox(
+                width: 48,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () => context.push('/notifications'),
+                    child: Icon(
+                      Icons.notifications_none,
+                      color: colorScheme.onSurface,
+                      size: 28,
+                    ),
                   ),
                 ),
               ),

@@ -103,11 +103,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           bottomRight: Radius.circular(27),
         ),
       ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(17, 8, 17, 20),
-          child: Column(
+      child: Padding(
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 50,
+          left: 24,
+          right: 24,
+          bottom: 20,
+        ),
+        child: Column(
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -116,7 +119,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     icon: Icons.chevron_left,
                     onTap: () => context.pop(),
                   ),
-                  SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 28),
+                  SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 32),
                   _headerButton(
                     icon: Icons.notifications_none,
                     onTap: () => context.go('/notifications'),
@@ -135,7 +138,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             ],
           ),
         ),
-      ),
     );
   }
 

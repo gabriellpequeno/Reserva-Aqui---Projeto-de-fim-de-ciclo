@@ -77,6 +77,9 @@ services:
       # Monta o código local — edições refletem em tempo real (hot-reload)
       - ./src:/app/src:ro
       - ./database:/app/database:ro
+      # Arquivos de upload (fotos de capa, política do hotel, etc.) — persistente entre restarts
+      - reservaqui-storage:/app/storage
 
 volumes:
   pgdata:
+  reservaqui-storage:

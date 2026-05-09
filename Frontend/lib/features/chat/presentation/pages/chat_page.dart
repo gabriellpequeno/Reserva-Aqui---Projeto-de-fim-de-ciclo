@@ -218,7 +218,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 10,
+        top: MediaQuery.of(context).padding.top + 42,
         bottom: 24,
         left: 20,
         right: 20,

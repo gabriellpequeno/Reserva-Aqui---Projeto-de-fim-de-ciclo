@@ -718,7 +718,9 @@ export async function seedCompleto(): Promise<void> {
           aceita_animais:        hi === 4,
           idiomas_atendimento:   hi === 1 ? 'Português, Inglês, Espanhol' : 'Português, Inglês',
         });
-      } catch { /* configuração já existe — ignora */ }
+      } catch {
+        console.log('  ⚠️  Configuração já existe (ignorado)');
+      }
 
       // 3c. Fotos de capa mockadas
       // foto_hotel não tem UNIQUE em storage_path → DELETE das seeds + INSERT fresco

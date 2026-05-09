@@ -1,20 +1,22 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/auth_notifier.dart';
 import '../auth/auth_state.dart';
 
-// Android emulator uses 10.0.2.2 to reach host; web/desktop use localhost
 const kBackendHost = String.fromEnvironment(
   'BACKEND_HOST',
   defaultValue: '',
 );
 
-final backendHost = kBackendHost.isNotEmpty
-    ? kBackendHost
-    : (kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000');
-
-final _baseUrl = '$backendHost/api/v1';
+// 1. BACKEND_HOST explícito sempre vence (staging, override manual)
+// 2. kReleaseMode sem override → produção hardcoded
+// 3. Fallback debug → emulador/web local
+final _baseUrl = kBackendHost.isNotEmpty
+    ? '$kBackendHost/api/v1'
+    : kReleaseMode
+        ? 'https://lab.alphaedtech.org.br/server04/api/v1'
+        : (kIsWeb ? 'http://localhost:3000/api/v1' : 'http://10.0.2.2:3000/api/v1');
 
 // Dio separado exclusivamente para chamadas de refresh — evita loop de interceptor.
 final _refreshDio = Dio(

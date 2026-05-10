@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/string_extensions.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/admin_profile_provider.dart';
 import '../widgets/profile_header.dart';
@@ -32,7 +33,7 @@ class AdminProfilePage extends ConsumerWidget {
               children: [
                 const SizedBox(height: 120),
                 ProfileHeader(
-                  name: profile.nome.isEmpty ? 'Admin' : profile.nome,
+                  name: profile.nome.isEmpty ? 'Admin' : profile.nome.toTitleCase(),
                   email: profile.email,
                   onEditTap: () => context.push('/profile/admin/edit'),
                 ),

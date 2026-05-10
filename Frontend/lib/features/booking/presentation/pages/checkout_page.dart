@@ -83,6 +83,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                               const SizedBox(height: 14),
                               _buildPoliciesCard(state),
                             ],
+                            const SizedBox(height: 14),
+                            _buildFinalizeButton(context, state),
                           ],
                         ),
                       ),
@@ -269,7 +271,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             rightValue: '${state.categoria?.capacidadePessoas ?? '—'} pessoa(s)',
             isLast: true,
           ),
-          _buildFinalizeButton(context, state),
         ],
       ),
     );

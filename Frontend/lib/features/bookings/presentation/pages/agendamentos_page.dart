@@ -168,11 +168,17 @@ class _AgendamentosPageState extends ConsumerState<AgendamentosPage> {
 
     return Padding(
       padding: const EdgeInsets.only(top: 16),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        child: Row(
-          children: tabs.map((tab) {
+      child: ShaderMask(
+        shaderCallback: (bounds) => const LinearGradient(
+          colors: [Colors.transparent, Colors.white, Colors.white, Colors.transparent],
+          stops: [0.0, 0.05, 0.95, 1.0],
+        ).createShader(bounds),
+        blendMode: BlendMode.dstIn,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          child: Row(
+            children: tabs.map((tab) {
             final isActive = currentFilter == tab.$1;
             return GestureDetector(
               onTap: () => notifier.setStatusFilter(tab.$1),
@@ -199,6 +205,7 @@ class _AgendamentosPageState extends ConsumerState<AgendamentosPage> {
               ),
             );
           }).toList(),
+          ),
         ),
       ),
     );

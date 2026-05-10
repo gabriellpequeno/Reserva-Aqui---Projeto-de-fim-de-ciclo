@@ -56,8 +56,15 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
     final link =
         'https://reservaqui.com/hotel/${widget.hotelId}/room/${widget.roomId}';
     Clipboard.setData(ClipboardData(text: link));
+    final colorScheme = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Link copiado para a área de transferência')),
+      SnackBar(
+        content: Text(
+          'Link copiado para a área de transferência',
+          style: TextStyle(color: colorScheme.onInverseSurface),
+        ),
+        backgroundColor: colorScheme.inverseSurface,
+      ),
     );
   }
 
@@ -360,17 +367,21 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
     required VoidCallback onTap,
     Color iconColor = Colors.white,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.3),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.3),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+          ),
+          child: Icon(icon, color: iconColor, size: 20),
         ),
-        child: Icon(icon, color: iconColor, size: 20),
       ),
     );
   }

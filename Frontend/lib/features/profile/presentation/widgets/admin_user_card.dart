@@ -92,28 +92,36 @@ class AdminUserCard extends StatelessWidget {
   Widget _buildAvatar(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final url = user.fotoUrl;
-    final decoration = BoxDecoration(
-      color: colorScheme.surfaceContainerHigh,
-      shape: BoxShape.circle,
-      image: url != null
-          ? DecorationImage(image: NetworkImage(url), fit: BoxFit.cover)
-          : null,
-    );
-    return Container(
+
+    Widget fallback = Container(
       width: 48,
       height: 48,
-      decoration: decoration,
+      color: colorScheme.surfaceContainerHigh,
       alignment: Alignment.center,
-      child: url == null
-          ? Text(
-              _initials(user.nome),
-              style: TextStyle(
-                color: colorScheme.onSurface,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            )
-          : null,
+      child: Text(
+        _initials(user.nome),
+        style: TextStyle(
+          color: colorScheme.onSurface,
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+
+    if (url == null) return ClipOval(child: fallback);
+
+    return ClipOval(
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: Image.network(
+          url,
+          width: 48,
+          height: 48,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => fallback,
+        ),
+      ),
     );
   }
 }

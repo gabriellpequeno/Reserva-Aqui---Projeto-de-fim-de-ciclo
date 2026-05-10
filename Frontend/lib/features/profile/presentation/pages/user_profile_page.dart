@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart' show launchUrl;
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/string_extensions.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/user_profile_provider.dart';
 import '../widgets/profile_header.dart';
@@ -49,7 +50,7 @@ class UserProfilePage extends ConsumerWidget {
               children: [
                 const SizedBox(height: 120),
                 ProfileHeader(
-                  name: profile.nomeCompleto,
+                  name: profile.nomeCompleto.toTitleCase(),
                   email: profile.email,
                   avatarUrl: profile.fotoPerfil,
                   onEditTap: () => context.push('/profile/user/edit'),

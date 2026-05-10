@@ -60,17 +60,17 @@ class UserProfilePage extends ConsumerWidget {
                   title: 'Atividade',
                   items: [
                     ProfileMenuItem(
-                      title: 'notificações',
+                      title: 'Notificações',
                       icon: Icons.notifications_none,
                       onTap: () => context.go('/notifications'),
                     ),
                     ProfileMenuItem(
-                      title: 'meus tickets',
+                      title: 'Meus Tickets',
                       icon: Icons.confirmation_number_outlined,
                       onTap: () => context.go('/tickets'),
                     ),
                     ProfileMenuItem(
-                      title: 'favoritos',
+                      title: 'Favoritos',
                       icon: Icons.favorite_border,
                       onTap: () => context.go('/favorites'),
                       showDivider: false,
@@ -79,15 +79,15 @@ class UserProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
                 ProfileMenuSection(
-                  title: 'sistema',
+                  title: 'Sistema',
                   items: [
                     ProfileMenuItem(
-                      title: 'configurações',
+                      title: 'Configurações',
                       icon: Icons.settings_outlined,
                       onTap: () => context.push('/profile/settings'),
                     ),
                     ProfileMenuItem(
-                      title: 'suporte',
+                      title: 'Suporte',
                       icon: Icons.headset_mic_outlined,
                       onTap: () async {
                         final uri = Uri(
@@ -121,7 +121,7 @@ class UserProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 32),
                 PrimaryButton(
-                  text: 'sair',
+                  text: 'Sair',
                   color: AppColors.secondary,
                   textColor: AppColors.primary,
                   onPressed: () async {

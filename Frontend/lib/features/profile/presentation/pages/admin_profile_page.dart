@@ -56,15 +56,15 @@ class AdminProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
                 ProfileMenuSection(
-                  title: 'sistema',
+                  title: 'Sistema',
                   items: [
                     ProfileMenuItem(
-                      title: 'configurações',
+                      title: 'Configurações',
                       icon: Icons.settings_outlined,
                       onTap: () => context.push('/profile/settings'),
                     ),
                     ProfileMenuItem(
-                      title: 'suporte',
+                      title: 'Suporte',
                       icon: Icons.headset_mic_outlined,
                       onTap: () {},
                       showDivider: false,
@@ -73,7 +73,7 @@ class AdminProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 32),
                 PrimaryButton(
-                  text: 'sair',
+                  text: 'Sair',
                   color: AppColors.secondary,
                   textColor: AppColors.primary,
                   onPressed: () async {

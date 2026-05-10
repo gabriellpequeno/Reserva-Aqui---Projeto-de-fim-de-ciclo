@@ -367,21 +367,14 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
     required VoidCallback onTap,
     Color iconColor = Colors.white,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.3),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-          ),
-          child: Icon(icon, color: iconColor, size: 20),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.3),
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: iconColor, size: 20),
+        onPressed: onTap,
       ),
     );
   }

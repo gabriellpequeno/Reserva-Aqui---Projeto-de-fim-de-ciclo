@@ -7,7 +7,7 @@ export class DynamicIngestionService {
    * Cria chunks de texto consolidados para que o LangChain possa fazer similaridade (RAG).
    */
   static async ingestHotelData(hotelId: string, schemaName: string): Promise<void> {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY?.split(',')[0]?.trim();
     if (!apiKey) {
       throw new Error('GEMINI_API_KEY não configurada no .env');
     }

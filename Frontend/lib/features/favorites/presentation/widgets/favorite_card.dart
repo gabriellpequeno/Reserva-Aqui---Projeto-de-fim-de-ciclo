@@ -5,6 +5,7 @@ import '../../../../core/network/dio_client.dart';
 import '../../../../core/widgets/smart_network_image.dart';
 import '../../domain/models/favorite_hotel.dart';
 import '../providers/favorites_provider.dart';
+import 'favorite_dialogs.dart';
 
 class FavoriteCard extends ConsumerStatefulWidget {
   final FavoriteHotel hotel;
@@ -31,8 +32,8 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
       vsync: this,
     );
     _heartScale = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.2), weight: 50),
-      TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.3), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.3, end: 1.0), weight: 50),
     ]).animate(_heartController);
   }
 
@@ -51,10 +52,19 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
     return '$serverRoot/api/v1/uploads/hotels/${widget.hotel.hotelId}/cover/${widget.hotel.firstCoverFotoId}';
   }
 
-  void _handleRemove() {
-    _heartController.forward(from: 0).then((_) {
-      ref.read(favoritesProvider.notifier).removeFavorite(widget.hotel.hotelId);
-    });
+  Future<void> _handleRemove() async {
+    final confirmed = await showUnfavoriteConfirmationDialog(context);
+    if (!confirmed) return;
+
+    await ref
+        .read(favoritesProvider.notifier)
+        .removeFavorite(widget.hotel.hotelId);
+
+    _heartController.forward(from: 0);
+
+    if (mounted) {
+      await showFavoriteRemovedDialog(context);
+    }
   }
 
   @override
@@ -62,155 +72,118 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
     final coverUrl = _buildCoverUrl();
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Dismissible(
-      key: Key('fav_${widget.hotel.hotelId}'),
-      direction: DismissDirection.startToEnd,
-      background: Container(
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        color: Colors.red.shade400,
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      onDismissed: (_) {
-        ref
-            .read(favoritesProvider.notifier)
-            .removeFavorite(widget.hotel.hotelId);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${widget.hotel.nomeHotel} removido dos favoritos'),
-          ),
-        );
-      },
-      child: GestureDetector(
-        onTap: () => context.push('/hotel_details/${widget.hotel.hotelId}'),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                  ),
-                  child: SmartNetworkImage(
-                url: coverUrl,
-                fallback: fallbackForHotel(widget.hotel.hotelId),
-                width: 120,
-                height: double.infinity,
-                fit: BoxFit.cover,
-              ),
+    return GestureDetector(
+      onTap: () => context.push('/hotel_details/${widget.hotel.hotelId}'),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  bottomLeft: Radius.circular(16),
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                widget.hotel.nomeHotel,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: colorScheme.onSurface,
+                child: SmartNetworkImage(
+                  url: coverUrl,
+                  fallback: fallbackForHotel(widget.hotel.hotelId),
+                  width: 120,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.hotel.nomeHotel,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: colorScheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.location_on,
+                              size: 12, color: colorScheme.onSurfaceVariant),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '${widget.hotel.bairro}, ${widget.hotel.cidade} - ${widget.hotel.uf}',
+                              style: TextStyle(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontSize: 11),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 32,
+                              child: ElevatedButton(
+                                onPressed: () => context.push(
+                                    '/hotel_details/${widget.hotel.hotelId}'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: colorScheme.primary,
+                                  foregroundColor: colorScheme.onPrimary,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: EdgeInsets.zero,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                child: const Text('VER MAIS',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold)),
                               ),
                             ),
-                            IconButton(
-                              onPressed: () => ref
-                                  .read(favoritesProvider.notifier)
-                                  .removeFavorite(widget.hotel.hotelId),
-                              icon: Icon(Icons.cancel_outlined,
-                                  size: 20, color: colorScheme.onSurfaceVariant),
+                          ),
+                          const SizedBox(width: 8),
+                          ScaleTransition(
+                            scale: _heartScale,
+                            child: IconButton(
+                              onPressed: _handleRemove,
+                              icon: const Icon(Icons.favorite, color: Colors.red),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(Icons.location_on,
-                                size: 12, color: colorScheme.onSurfaceVariant),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                '${widget.hotel.bairro}, ${widget.hotel.cidade} - ${widget.hotel.uf}',
-                                style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant, fontSize: 11),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const SizedBox.shrink(),
-                            ScaleTransition(
-                              scale: _heartScale,
-                              child: IconButton(
-                                onPressed: _handleRemove,
-                                icon: const Icon(Icons.favorite,
-                                    color: Colors.red),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 32,
-                          child: ElevatedButton(
-                            onPressed: () => context
-                                .push('/hotel_details/${widget.hotel.hotelId}'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colorScheme.primary,
-                              foregroundColor: colorScheme.onPrimary,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              padding: EdgeInsets.zero,
-                            ),
-                            child: const Text('VER MAIS',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold)),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
-
 }

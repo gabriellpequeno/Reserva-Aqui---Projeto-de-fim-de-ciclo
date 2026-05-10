@@ -111,7 +111,7 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
     final request = RegisterRequest(
       nomeCompleto: _nomeController.text.trim(),
       cpf: _cpfController.text.replaceAll(RegExp(r'\D'), ''),
-      numeroCelular: _telefoneController.text.replaceAll(RegExp(r'\D'), ''),
+      numeroCelular: _telefoneController.text,
       email: _emailController.text.trim(),
       senha: _senhaController.text,
       dataNascimento: _dataNascimentoController.text,

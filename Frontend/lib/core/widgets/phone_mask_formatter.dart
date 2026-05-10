@@ -9,8 +9,18 @@ class PhoneMaskFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
-    final d = digits.length > 11 ? digits.substring(0, 11) : digits;
+    final oldDigits = oldValue.text.replaceAll(RegExp(r'\D'), '');
+    final newDigits = newValue.text.replaceAll(RegExp(r'\D'), '');
+
+    // Se o usuário apagou um caractere de máscara (ex: ")" ou "-"), a contagem
+    // de dígitos não muda — removemos o último dígito para não travar o cursor.
+    String d = newDigits;
+    if (newValue.text.length < oldValue.text.length &&
+        newDigits == oldDigits &&
+        d.isNotEmpty) {
+      d = d.substring(0, d.length - 1);
+    }
+    if (d.length > 11) d = d.substring(0, 11);
 
     final buffer = StringBuffer();
     for (int i = 0; i < d.length; i++) {

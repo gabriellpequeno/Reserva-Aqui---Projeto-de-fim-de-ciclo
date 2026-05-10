@@ -20,6 +20,7 @@ const CANAL_APP = 'APP';
 const STATUS_ABERTA = 'ABERTA';
 const ORIGEM_CLIENTE = 'CLIENTE';
 const ORIGEM_BOT = 'BOT_SISTEMA';
+const CHAT_MAX_MESSAGE_LENGTH = 500;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -144,6 +145,11 @@ export async function sendMessageController(req: Request, res: Response): Promis
 
     if (!message || typeof message !== 'string' || !message.trim()) {
       res.status(400).json({ error: 'Mensagem não pode ser vazia' });
+      return;
+    }
+
+    if (message.length > CHAT_MAX_MESSAGE_LENGTH) {
+      res.status(400).json({ error: `Mensagem muito longa. Máximo: ${CHAT_MAX_MESSAGE_LENGTH} caracteres.` });
       return;
     }
 

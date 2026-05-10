@@ -53,8 +53,8 @@ class HostProfilePage extends ConsumerWidget {
             final hotel = data.hotel;
             final fotos = data.fotos;
 
-            final name = hotel['nome_hotel'] ?? 'Sem nome';
-            final email = hotel['email'] ?? 'Sem e-mail';
+            final name = (hotel['nome_hotel'] as String? ?? 'Sem nome');
+            final email = (hotel['email'] as String? ?? 'Sem e-mail');
             final avatarUrl = (hotel['foto_perfil'] as String?) ??
                 (fotos.isNotEmpty ? fotos.first['url'] as String? : null);
 

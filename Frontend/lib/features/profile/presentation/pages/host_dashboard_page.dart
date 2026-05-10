@@ -26,7 +26,7 @@ class HostDashboardPage extends ConsumerWidget {
     final notifier = ref.read(hostDashboardProvider.notifier);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
           DashboardHeader(
@@ -61,12 +61,12 @@ class HostDashboardPage extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, color: AppColors.primary, size: 48),
+            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 48),
             const SizedBox(height: 16),
             Text(
               'Erro ao carregar o dashboard:\n$message',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.primary),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
             const SizedBox(height: 24),
             PrimaryButton(text: 'Tentar novamente', onPressed: onRetry),
@@ -97,9 +97,9 @@ class HostDashboardPage extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(11),
-                border: Border.all(color: const Color(0x3F182541)),
+                border: Border.all(color: Theme.of(context).colorScheme.outline),
               ),
               child: ReservaStatusBreakdown(items: data.reservasPorStatus),
             ),
@@ -179,13 +179,13 @@ class _NextCheckinsSection extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surfaceContainer,
           borderRadius: BorderRadius.circular(11),
-          border: Border.all(color: const Color(0x3F182541)),
+          border: Border.all(color: Theme.of(context).colorScheme.outline),
         ),
-        child: const Text(
+        child: Text(
           'Sem check-ins próximos',
-          style: TextStyle(color: AppColors.greyText, fontSize: 13),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
         ),
       );
     }
@@ -203,8 +203,8 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
-        color: AppColors.primary,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
         fontSize: 16,
         fontWeight: FontWeight.w700,
       ),

@@ -92,7 +92,7 @@ class _WhatsappPaymentPageState extends ConsumerState<WhatsappPaymentPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFD9D9D9),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -114,11 +114,11 @@ class _WhatsappPaymentPageState extends ConsumerState<WhatsappPaymentPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+            Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(height: 12),
             Text(_error ?? 'Pagamento não encontrado.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600])),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 24),
             ElevatedButton(onPressed: _refresh, child: const Text('Tentar novamente')),
           ],
@@ -166,7 +166,7 @@ class _WhatsappPaymentPageState extends ConsumerState<WhatsappPaymentPage> {
           ..._methodTiles(),
           if (_error != null) ...[
             const SizedBox(height: 10),
-            Text(_error!, style: const TextStyle(color: Color(0xFFC0392B), fontSize: 12)),
+            Text(_error!, style: const TextStyle(color: AppColors.errorColor, fontSize: 12)),
           ],
           const SizedBox(height: 18),
           SizedBox(
@@ -204,8 +204,8 @@ class _WhatsappPaymentPageState extends ConsumerState<WhatsappPaymentPage> {
         : '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
 
     final low = _remaining.inMinutes < 5;
-    final bg  = low ? const Color(0xFFFDE8E8) : Colors.white;
-    final fg  = low ? const Color(0xFFC0392B) : AppColors.primary;
+    final bg  = low ? AppColors.errorContainer : Theme.of(context).colorScheme.surfaceContainer;
+    final fg  = low ? AppColors.errorColor : AppColors.primary;
 
     return Container(
       width: double.infinity,
@@ -238,11 +238,11 @@ class _WhatsappPaymentPageState extends ConsumerState<WhatsappPaymentPage> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
               border: Border.all(
-                color: selected ? AppColors.primary : Colors.grey.shade300,
+                color: selected ? AppColors.primary : Theme.of(context).colorScheme.outline,
                 width: selected ? 1.5 : 1,
               ),
               borderRadius: BorderRadius.circular(10),
-              color: selected ? AppColors.primary.withValues(alpha: 0.05) : Colors.white,
+              color: selected ? AppColors.primary.withValues(alpha: 0.05) : Theme.of(context).colorScheme.surface,
             ),
             child: Row(
               children: [
@@ -280,10 +280,10 @@ class _WhatsappPaymentPageState extends ConsumerState<WhatsappPaymentPage> {
             Container(
               width: 80, height: 80,
               decoration: BoxDecoration(
-                color: const Color(0xFF1E7A1E).withValues(alpha: 0.15),
+                color: AppColors.successContainer,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.check_circle, color: Color(0xFF1E7A1E), size: 52),
+              child: const Icon(Icons.check_circle, color: AppColors.successColor, size: 52),
             ),
             const SizedBox(height: 16),
             const Text('Pagamento confirmado!',
@@ -292,7 +292,7 @@ class _WhatsappPaymentPageState extends ConsumerState<WhatsappPaymentPage> {
             Text(
               'Enviamos o ticket da sua reserva para o email cadastrado.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade700),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -307,7 +307,7 @@ class _WhatsappPaymentPageState extends ConsumerState<WhatsappPaymentPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.timer_off_outlined, size: 64, color: Colors.grey.shade500),
+            Icon(Icons.timer_off_outlined, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(height: 16),
             const Text('Link expirado',
                 style: TextStyle(color: AppColors.primary, fontSize: 20, fontWeight: FontWeight.w700)),
@@ -316,7 +316,7 @@ class _WhatsappPaymentPageState extends ConsumerState<WhatsappPaymentPage> {
               'O prazo para pagamento desta reserva foi atingido e o link foi cancelado. '
               'Se ainda quiser reservar, inicie um novo pedido.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade700),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),

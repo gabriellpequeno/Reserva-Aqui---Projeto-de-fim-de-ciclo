@@ -5,14 +5,16 @@ import '../../../../core/theme/app_colors.dart';
 const _logoPath = 'lib/assets/icons/logoFav.svg';
 const _logoWidth = 72.0;
 const _dialogPadding = EdgeInsets.fromLTRB(28, 32, 28, 24);
-const _titleStyle = TextStyle(
+
+TextStyle _titleStyle(BuildContext context) => TextStyle(
   fontSize: 18,
   fontWeight: FontWeight.bold,
-  color: AppColors.primary,
+  color: Theme.of(context).colorScheme.onSurface,
 );
-const _bodyStyle = TextStyle(
+
+TextStyle _bodyStyle(BuildContext context) => TextStyle(
   fontSize: 14,
-  color: Color(0xFF555555),
+  color: Theme.of(context).colorScheme.onSurfaceVariant,
   height: 1.5,
 );
 
@@ -31,11 +33,11 @@ Future<bool> showUnfavoriteConfirmationDialog(BuildContext context) async {
           children: [
             _dialogLogo(),
             const SizedBox(height: 20),
-            const Text('Desfavoritar hotel', style: _titleStyle),
+            Text('Desfavoritar hotel', style: _titleStyle(ctx)),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Você tem certeza que deseja desfavoritar este hotel?',
-              style: _bodyStyle,
+              style: _bodyStyle(ctx),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
@@ -45,8 +47,8 @@ Future<bool> showUnfavoriteConfirmationDialog(BuildContext context) async {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(ctx, false),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary),
+                      foregroundColor: Theme.of(ctx).colorScheme.onSurface,
+                      side: BorderSide(color: Theme.of(ctx).colorScheme.outline),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -96,11 +98,11 @@ Future<void> showFavoriteAddedDialog(BuildContext context) {
           children: [
             _dialogLogo(),
             const SizedBox(height: 20),
-            const Text('Favorito adicionado!', style: _titleStyle),
+            Text('Favorito adicionado!', style: _titleStyle(ctx)),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Hotel adicionado aos favoritos com sucesso.',
-              style: _bodyStyle,
+              style: _bodyStyle(ctx),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
@@ -141,11 +143,11 @@ Future<void> showFavoriteRemovedDialog(BuildContext context) {
           children: [
             _dialogLogo(),
             const SizedBox(height: 20),
-            const Text('Favorito removido!', style: _titleStyle),
+            Text('Favorito removido!', style: _titleStyle(ctx)),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Hotel removido dos favoritos com sucesso.',
-              style: _bodyStyle,
+              style: _bodyStyle(ctx),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),

@@ -4,33 +4,51 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_notifier.dart';
 import '../auth/auth_state.dart';
+import '../theme/app_colors.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
-  const CustomAppBar({super.key, this.showBackButton = true, this.fallbackRoute});
+  const CustomAppBar({
+    super.key,
+    this.showBackButton = true,
+    this.fallbackRoute,
+    this.title,
+    this.showNotificationIcon = false,
+  });
 
   final bool showBackButton;
   final String? fallbackRoute;
+
+  /// When non-null, displays this text centered instead of the logo.
+  final String? title;
+
+  /// When true, displays a notifications bell icon on the trailing side.
+  final bool showNotificationIcon;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bool canPop = context.canPop();
     final String location = GoRouterState.of(context).uri.path;
     final bool isHome = location == '/' || location == '/home';
-    final colorScheme = Theme.of(context).colorScheme;
 
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.primary,
       elevation: 0,
       centerTitle: true,
       toolbarHeight: 100,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(27),
+          bottomRight: Radius.circular(27),
+        ),
+      ),
       leading: (showBackButton && (!isHome || canPop))
           ? Padding(
               padding: const EdgeInsets.only(top: 30.0, left: 8.0),
               child: IconButton(
-                icon: Icon(
-                  Icons.chevron_left,
-                  color: colorScheme.onSurface,
-                  size: 32,
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 24,
                 ),
                 onPressed: () {
                   if (canPop) {
@@ -51,13 +69,45 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
           : null,
       title: Padding(
         padding: const EdgeInsets.only(top: 30.0),
-        child: SvgPicture.asset(
-          Theme.of(context).brightness == Brightness.dark
-              ? 'lib/assets/icons/logo/logoDark.svg'
-              : 'lib/assets/icons/logo/logo.svg',
-          height: 32,
-        ),
+        child: title != null
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SvgPicture.asset(
+                    'lib/assets/icons/logo/logoDark.svg',
+                    height: 28,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    title!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              )
+            : SvgPicture.asset(
+                'lib/assets/icons/logo/logoDark.svg',
+                height: 32,
+              ),
       ),
+      actions: showNotificationIcon
+          ? [
+              Padding(
+                padding: const EdgeInsets.only(top: 30.0, right: 8.0),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.notifications_none,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  onPressed: () => context.go('/notifications'),
+                ),
+              ),
+            ]
+          : null,
     );
   }
 

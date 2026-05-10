@@ -967,6 +967,15 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
         width: double.infinity,
         height: 150,
         key: ValueKey(_currentCoverUrl),
+        errorBuilder: (_, __, ___) => Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.broken_image_outlined, size: 36, color: colorScheme.onSurfaceVariant),
+            const SizedBox(height: 8),
+            Text('Imagem indisponível',
+                style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13)),
+          ],
+        ),
       );
     }
     return Column(

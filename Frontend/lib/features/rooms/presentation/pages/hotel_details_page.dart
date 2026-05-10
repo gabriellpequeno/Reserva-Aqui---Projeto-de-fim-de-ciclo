@@ -348,7 +348,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
             shape: BoxShape.circle,
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.white),
+            icon: const Icon(Icons.arrow_back_ios_new, size: 24, color: Colors.white),
             onPressed: () => context.pop(),
           ),
         ),

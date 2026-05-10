@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 import '../../domain/models/room_category_card.dart';
 import '../notifiers/my_rooms_notifier.dart';
 import '../notifiers/my_rooms_state.dart';
@@ -38,11 +38,16 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
     final state = ref.watch(myRoomsNotifierProvider);
 
     return Scaffold(
+      appBar: const CustomAppBar(
+        title: 'Meus Quartos',
+        showNotificationIcon: true,
+        fallbackRoute: '/profile/host',
+      ),
       body: Stack(
         children: [
           Column(
             children: [
-              _buildHeader(state),
+              _buildSearchBar(),
               _buildFiltroChips(state),
               Expanded(child: _buildBody(state)),
             ],
@@ -53,107 +58,38 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
+  // ── Barra de busca ────────────────────────────────────────────────────────
 
-  Widget _buildHeader(MyRoomsState state) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(27),
-          bottomRight: Radius.circular(27),
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+      child: Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(23),
         ),
-      ),
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 50,
-        left: 24,
-        right: 24,
-        bottom: 24,
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Semantics(
-                  label: 'Voltar',
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new,
-                        color: Colors.white, size: 18),
-                    onPressed: () => context.canPop()
-                        ? context.pop()
-                        : context.go('/profile/host'),
-                  ),
-                ),
-              ),
-              Column(
-                children: [
-                  SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 32),
-                  const SizedBox(height: 4),
-                  const Text('Meus Quartos',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500)),
-                ],
-              ),
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Semantics(
-                  label: 'Notificações',
-                  child: IconButton(
-                    icon: const Icon(Icons.notifications_none,
-                        color: Colors.white),
-                    onPressed: () => context.go('/notifications'),
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Container(
-            height: 44,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(23),
-            ),
-            child: Semantics(
-              label: 'Pesquisar quartos por nome',
-              child: TextField(
-                controller: _searchController,
-                onChanged: (v) =>
-                    ref.read(myRoomsNotifierProvider.notifier).setBusca(v),
-                decoration: InputDecoration(
-                  hintText: 'Pesquisar por tipo de quarto...',
-                  hintStyle:
-                      TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  filled: false,
-                  suffixIcon: const Icon(Icons.search,
-                      color: AppColors.secondary),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 14),
-                ),
-              ),
+        child: Semantics(
+          label: 'Pesquisar quartos por nome',
+          child: TextField(
+            controller: _searchController,
+            onChanged: (v) =>
+                ref.read(myRoomsNotifierProvider.notifier).setBusca(v),
+            decoration: InputDecoration(
+              hintText: 'Pesquisar por tipo de quarto...',
+              hintStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 14),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+              suffixIcon: const Icon(Icons.search, color: AppColors.secondary),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

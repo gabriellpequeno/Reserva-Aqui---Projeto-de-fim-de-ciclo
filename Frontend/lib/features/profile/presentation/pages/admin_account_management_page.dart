@@ -142,12 +142,8 @@ class _AdminAccountManagementPageState
               Column(
                 children: [
                   SvgPicture.asset(
-                    'lib/assets/icons/logo/logo.svg',
+                    'lib/assets/icons/logo/logoDark.svg',
                     height: 32,
-                    colorFilter: const ColorFilter.mode(
-                      Colors.white,
-                      BlendMode.srcIn,
-                    ),
                     semanticsLabel: 'ReservaQui',
                   ),
                   const SizedBox(height: 4),

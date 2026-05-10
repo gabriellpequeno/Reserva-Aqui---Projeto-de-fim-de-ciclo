@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../tickets/domain/models/ticket.dart';
 import '../notifiers/agendamentos_notifier.dart';
 import '../widgets/calendar_filter_widget.dart';
@@ -48,9 +48,13 @@ class _AgendamentosPageState extends ConsumerState<AgendamentosPage> {
     final activeDate = notifier.activeDateFilter;
 
     return Scaffold(
+      appBar: const CustomAppBar(
+        title: 'Agendamentos',
+        showNotificationIcon: true,
+        fallbackRoute: '/host/dashboard',
+      ),
       body: Column(
         children: [
-          _buildHeader(context),
           _buildSearchAndCalendar(context, agendamentosAsync, activeDate, notifier),
           _buildFilterTabs(notifier),
           if (activeDate != null) _buildActiveDateChip(activeDate, notifier),
@@ -66,73 +70,6 @@ class _AgendamentosPageState extends ConsumerState<AgendamentosPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ── Header ─────────────────────────────────────────────────────────────────
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(27),
-          bottomRight: Radius.circular(27),
-        ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 50,
-          left: 24,
-          right: 24,
-          bottom: 24,
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _headerButton(
-                  icon: Icons.chevron_left,
-                  onTap: () => context.canPop() ? context.pop() : context.go('/host/dashboard'),
-                ),
-                SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 32),
-                _headerButton(
-                  icon: Icons.notifications_none,
-                  onTap: () => context.go('/notifications'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Agendamentos',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontFamily: 'Stack Sans Headline',
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-            ],
-          ),
-        ),
-    );
-  }
-
-  Widget _headerButton({required IconData icon, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 45.79,
-        height: 45.79,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.37),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withValues(alpha: 0.17), width: 0.62),
-        ),
-        child: Icon(icon, color: Colors.white, size: 22),
       ),
     );
   }

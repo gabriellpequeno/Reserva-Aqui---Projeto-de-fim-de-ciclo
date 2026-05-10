@@ -132,17 +132,17 @@ class _PaymentSheetState extends State<_PaymentSheet> {
                     width: 44,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: Theme.of(context).colorScheme.outlineVariant,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                const Text(
+                Text(
                   'Pagamento',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),
@@ -150,21 +150,21 @@ class _PaymentSheetState extends State<_PaymentSheet> {
                 const SizedBox(height: 4),
                 Text(
                   widget.resumo.nomeHotel,
-                  style: const TextStyle(color: AppColors.primary, fontSize: 13),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13),
                 ),
                 Text(
                   widget.resumo.datas,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                 ),
                 const SizedBox(height: 14),
 
                 _resumoValor(widget.resumo.valorTotal),
                 const SizedBox(height: 16),
 
-                const Text(
+                Text(
                   'Forma de pagamento',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
@@ -176,7 +176,7 @@ class _PaymentSheetState extends State<_PaymentSheet> {
                   const SizedBox(height: 10),
                   Text(
                     _errorMessage!,
-                    style: const TextStyle(color: Color(0xFFC0392B), fontSize: 12),
+                    style: const TextStyle(color: AppColors.errorColor, fontSize: 12),
                   ),
                 ],
 
@@ -187,13 +187,13 @@ class _PaymentSheetState extends State<_PaymentSheet> {
                       child: OutlinedButton(
                         onPressed: _submitting ? null : _handleCancel,
                         style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.grey.shade400),
+                          side: BorderSide(color: Theme.of(context).colorScheme.outline),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Cancelar',
-                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
@@ -210,11 +210,11 @@ class _PaymentSheetState extends State<_PaymentSheet> {
                           elevation: 0,
                         ),
                         child: _submitting
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 18, height: 18,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.onPrimary),
                                 ),
                               )
                             : const Text('Pagar', style: TextStyle(fontWeight: FontWeight.w700)),
@@ -241,7 +241,7 @@ class _PaymentSheetState extends State<_PaymentSheet> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('Total', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+          Text('Total', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600)),
           Text(
             'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}',
             style: const TextStyle(
@@ -267,21 +267,21 @@ class _PaymentSheetState extends State<_PaymentSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
               border: Border.all(
-                color: selected ? AppColors.primary : Colors.grey.shade300,
+                color: selected ? AppColors.primary : Theme.of(context).colorScheme.outline,
                 width: selected ? 1.5 : 1,
               ),
               borderRadius: BorderRadius.circular(10),
-              color: selected ? AppColors.primary.withValues(alpha: 0.05) : Colors.white,
+              color: selected ? AppColors.primary.withValues(alpha: 0.05) : Theme.of(context).colorScheme.surface,
             ),
             child: Row(
               children: [
-                Icon(_iconFor(m), size: 20, color: AppColors.primary),
+                Icon(_iconFor(m), size: 20, color: Theme.of(context).colorScheme.onSurface),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     m.label,
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),

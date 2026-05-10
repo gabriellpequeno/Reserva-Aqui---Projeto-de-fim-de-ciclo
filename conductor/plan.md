@@ -343,6 +343,29 @@
 
 ---
 
+## BUG-4 — Dark Mode & Visual Bugs [PENDENTE]
+
+> Spec: `specs/dark-mode-and-visual-bugs.spec.md`
+> Plan detalhado: `plans/dark-mode-and-visual-bugs.plan.md`
+
+- [ ] `AppColors` — adicionar constantes de status (`successColor`, `errorColor`, containers)
+- [ ] `string_extensions.dart` — extension `toTitleCase()`
+- [ ] `CustomAppBar` — parâmetros `title` e `showNotificationIcon`
+- [ ] Scaffolds hardcoded (`checkout`, `public_ticket`, `reservation_success`, `whatsapp_payment`, `chat`) — `colorScheme.surface`
+- [ ] Headers — migrar 9 telas para `CustomAppBar` (agendamentos, my_rooms, tickets, favorites, add_room, notifications, admin_account, hotel_details, agendamento_detail)
+- [ ] Dark mode — 10 telas do bug report original (assistente, check-in, minha reserva, hotel, quarto, reservar, dashboards hotel/admin, detalhes agendamento)
+- [ ] Cores de status hardcoded — 5 arquivos (`checkout`, `public_ticket`, `reservation_success`, `whatsapp_payment`, `payment_bottom_sheet`)
+- [ ] Criação de conta Hotel — ícones nos inputs + Termos como bottom sheet
+- [ ] Ícone de favoritar (Quarto) — feedback visual de tap
+- [ ] Tela Reservar — botão "Finalizar" ao final + modal de feedback pós-pagamento
+- [ ] Search — corrigir exibição de rating nos cards
+- [ ] Perfis (User, Hotel, Admin) — Title Case nos campos de nome
+- [ ] Agendamentos — gradiente indicador de scroll horizontal + colorização de dias no calendário
+- [ ] `AddRoomPage` — isolar estado de comodidades em `AmenitiesSelector`
+- [ ] Clientes Admin — fallback de avatar padrão + corrigir carregamento de imagens
+
+---
+
 ## Nice to Have — Se Sobrar Tempo
 
 - [ ] Tela de roteiro turístico com aba dedicada (cards por dia)

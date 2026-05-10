@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../domain/models/catalogo_item.dart';
@@ -122,12 +122,15 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
     });
 
     return Scaffold(
+      appBar: const CustomAppBar(
+        title: 'Novo Quarto',
+        showNotificationIcon: true,
+      ),
       body: Stack(
         children: [
           SingleChildScrollView(
             child: Column(
               children: [
-                _buildCustomAppBar(),
                 if (state.submitting) _buildProgressBar(state),
                 Padding(
                   padding: EdgeInsets.symmetric(
@@ -212,66 +215,6 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
     );
   }
 
-  Widget _buildCustomAppBar() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 50,
-        left: 24,
-        right: 24,
-        bottom: 24,
-      ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF182541),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(27),
-          bottomRight: Radius.circular(27),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          GestureDetector(
-            onTap: () => context.pop(),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.arrow_back,
-                  color: Colors.white, size: 24),
-            ),
-          ),
-          Column(
-            children: [
-              SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 32),
-              const Text(
-                'Novo Quarto',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-          GestureDetector(
-            onTap: () => context.go('/notifications'),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.notifications,
-                  color: Colors.white, size: 24),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildTextField({
     required TextEditingController controller,

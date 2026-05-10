@@ -235,3 +235,19 @@ CREATE TABLE IF NOT EXISTS documento_hotel (
 );
 
 CREATE INDEX IF NOT EXISTS idx_documento_hotel_id ON documento_hotel (hotel_id);
+
+-- 13. Documento de Política do Hotel
+--     Arquivo único (PDF, TXT ou MD) por hotel — substituído quando enviado de novo.
+--     Os arquivos salvos via POST /uploads/hotels/:hotel_id/policy são consumidos
+--     pelo RagService para responder perguntas sobre política do hotel no chatbot.
+--     Caminho físico: storage/hotels/:hotel_id/policies/
+CREATE TABLE IF NOT EXISTS documento_politica_hotel (
+    id              SERIAL          PRIMARY KEY,
+    hotel_id        UUID            NOT NULL REFERENCES anfitriao(hotel_id) ON DELETE CASCADE,
+    storage_path    TEXT            NOT NULL,
+    mime_type       TEXT            NOT NULL,
+    nome_arquivo    TEXT            NOT NULL,
+    criado_em       TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    atualizado_em   TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    UNIQUE (hotel_id)
+);

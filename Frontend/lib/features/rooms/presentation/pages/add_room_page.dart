@@ -6,10 +6,10 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import '../../domain/models/catalogo_item.dart';
 import '../notifiers/add_room_notifier.dart';
 import '../notifiers/add_room_state.dart';
 import '../notifiers/my_rooms_notifier.dart';
+import '../widgets/amenities_selector.dart';
 
 class AddRoomPage extends ConsumerStatefulWidget {
   const AddRoomPage({super.key});
@@ -295,15 +295,15 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
         ),
         const SizedBox(height: 8),
         if (state.loadingCatalogo)
-          const Center(
+          Center(
             child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               child: SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFFEC6725),
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),
@@ -311,80 +311,20 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
         else if (state.catalogoItens.isEmpty)
           Text(
             'Sem comodidades cadastradas',
-            style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
           )
         else
-          _buildAmenitiesChips(state.catalogoItens),
+          AmenitiesSelector(
+            itens: state.catalogoItens,
+            onToggle: (id, selected) {
+              if (selected) {
+                _selectedAmenityIds.add(id);
+              } else {
+                _selectedAmenityIds.remove(id);
+              }
+            },
+          ),
       ],
-    );
-  }
-
-  Widget _buildAmenitiesChips(List<CatalogoItemModel> itens) {
-    // Agrupar por categoria
-    final grupos = <String, List<CatalogoItemModel>>{};
-    for (final item in itens) {
-      grupos.putIfAbsent(item.categoria, () => []).add(item);
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 8,
-      children: grupos.entries.map((entry) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              entry.key,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF999999),
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: entry.value.map((item) {
-                final selected = _selectedAmenityIds.contains(item.id);
-                return FilterChip(
-                  label: Text(item.nome),
-                  selected: selected,
-                  onSelected: (val) {
-                    setState(() {
-                      if (val) {
-                        _selectedAmenityIds.add(item.id);
-                      } else {
-                        _selectedAmenityIds.remove(item.id);
-                      }
-                    });
-                  },
-                  selectedColor: Theme.of(context).colorScheme.primary,
-                  checkmarkColor: Theme.of(context).colorScheme.onPrimary,
-                  labelStyle: TextStyle(
-                    fontSize: 12,
-                    color: selected
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : Theme.of(context).colorScheme.onSurface,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    side: BorderSide(
-                      color: selected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  showCheckmark: true,
-                );
-              }).toList(),
-            ),
-          ],
-        );
-      }).toList(),
     );
   }
 

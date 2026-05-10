@@ -170,8 +170,9 @@ class _PublicTicketPageState extends ConsumerState<PublicTicketPage> {
   }
 
   Widget _row(String label, String value, {bool highlight = false, bool selectable = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
     final valueStyle = TextStyle(
-      color: highlight ? AppColors.secondary : AppColors.primary,
+      color: highlight ? AppColors.secondary : colorScheme.onSurface,
       fontWeight: highlight ? FontWeight.w700 : FontWeight.w500,
       fontSize: highlight ? 16 : 13,
     );
@@ -180,7 +181,7 @@ class _PublicTicketPageState extends ConsumerState<PublicTicketPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text(label, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
           Flexible(
             child: selectable
                 ? SelectableText(value, style: valueStyle, textAlign: TextAlign.right)

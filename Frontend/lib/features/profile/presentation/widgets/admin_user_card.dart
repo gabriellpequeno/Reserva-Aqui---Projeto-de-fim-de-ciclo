@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/admin_user_model.dart';
 import 'admin_account_status_chip.dart';
@@ -110,12 +111,13 @@ class AdminUserCard extends StatelessWidget {
 
     if (url == null) return ClipOval(child: fallback);
 
+    final fullUrl = '$backendHost$url';
     return ClipOval(
       child: SizedBox(
         width: 48,
         height: 48,
         child: Image.network(
-          url,
+          fullUrl,
           width: 48,
           height: 48,
           fit: BoxFit.cover,

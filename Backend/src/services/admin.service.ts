@@ -44,6 +44,7 @@ export interface AdminHotelDTO {
   numero:           string;
   complemento:      string | null;
   capaUrl:          string | null;
+  fotoUrl:          string | null;
   status:           HotelStatus;
   totalQuartos:     number | null;
   criadoEm:         string;
@@ -100,6 +101,7 @@ interface UsuarioRow {
   nome_completo:   string;
   email:           string;
   numero_celular:  string | null;
+  foto_perfil:     string | null;
   ativo:           boolean;
   criado_em:       Date;
 }
@@ -110,7 +112,7 @@ function serializeUser(row: UsuarioRow): AdminUserDTO {
     nome:     row.nome_completo,
     email:    row.email,
     telefone: row.numero_celular,
-    fotoUrl:  null, // usuário não tem foto de perfil persistida no schema atual
+    fotoUrl:  row.foto_perfil ? `/api/uploads/usuarios/${row.user_id}/avatar` : null,
     status:   row.ativo ? 'ativo' : 'suspenso',
     criadoEm: row.criado_em.toISOString(),
   };
@@ -130,6 +132,7 @@ interface AnfitriaoRow {
   numero:             string;
   complemento:        string | null;
   cover_storage_path: string | null;
+  foto_perfil:        string | null;
   ativo:              boolean;
   criado_em:          Date;
   total_quartos:      string | null; // COUNT() retorna string no pg
@@ -150,6 +153,7 @@ function serializeHotel(row: AnfitriaoRow): AdminHotelDTO {
     numero:           row.numero,
     complemento:      row.complemento,
     capaUrl:          row.cover_storage_path,
+    fotoUrl:          row.foto_perfil ? `/api/uploads/hotels/${row.hotel_id}/avatar` : null,
     status:           row.ativo ? 'ativo' : 'inativo',
     totalQuartos:     row.total_quartos != null ? parseInt(row.total_quartos, 10) : null,
     criadoEm:         row.criado_em.toISOString(),
@@ -158,7 +162,7 @@ function serializeHotel(row: AnfitriaoRow): AdminHotelDTO {
 
 const HOTEL_COLUMNS = `hotel_id, nome_hotel, email, telefone, descricao,
                        cep, uf, cidade, bairro, rua, numero, complemento,
-                       cover_storage_path, ativo, criado_em,
+                       cover_storage_path, foto_perfil, ativo, criado_em,
                        NULL::text AS total_quartos`;
 
 // ── Exports: listagem e status ────────────────────────────────────────────────
@@ -168,7 +172,7 @@ export async function listUsers(pagination: Pagination = {}): Promise<AdminUserD
   const offset = normalizeOffset(pagination.offset);
 
   const { rows } = await masterPool.query<UsuarioRow>(
-    `SELECT user_id, nome_completo, email, numero_celular, ativo, criado_em
+    `SELECT user_id, nome_completo, email, numero_celular, foto_perfil, ativo, criado_em
      FROM usuario
      WHERE papel = 'usuario'
      ORDER BY criado_em DESC
@@ -186,7 +190,7 @@ export async function setUserStatus(userId: string, status: UserStatus): Promise
     `UPDATE usuario
         SET ativo = $1
       WHERE user_id = $2 AND papel = 'usuario'
-     RETURNING user_id, nome_completo, email, numero_celular, ativo, criado_em`,
+     RETURNING user_id, nome_completo, email, numero_celular, foto_perfil, ativo, criado_em`,
     [novoAtivo, userId],
   );
 
@@ -265,7 +269,7 @@ export async function updateUser(
   const { rows } = await masterPool.query<UsuarioRow>(
     `UPDATE usuario SET ${fields.join(', ')}
       WHERE user_id = $${idx} AND papel = 'usuario'
-     RETURNING user_id, nome_completo, email, numero_celular, ativo, criado_em`,
+     RETURNING user_id, nome_completo, email, numero_celular, foto_perfil, ativo, criado_em`,
     values,
   );
 

@@ -9,6 +9,7 @@ import '../../domain/models/room.dart';
 import '../notifiers/room_details_notifier.dart';
 import '../widgets/availability_checker.dart';
 import '../../../favorites/presentation/providers/favorites_provider.dart';
+import '../../../favorites/presentation/widgets/favorite_dialogs.dart';
 
 class RoomDetailsPage extends ConsumerStatefulWidget {
   final String hotelId;
@@ -31,9 +32,6 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   // Datas escolhidas no AvailabilityChecker — propagadas ao checkout via queryParam
   DateTime? _checkInDate;
   DateTime? _checkOutDate;
-
-  // null = usa estado do provider; true/false = override otimista local do favorito
-  bool? _favoriteOptimistic;
 
   @override
   void initState() {
@@ -71,7 +69,9 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final roomState = ref.watch(roomDetailsNotifierProvider);
-    ref.watch(favoritesProvider); // garante rebuild quando favoritos mudam
+    final isFavorite = ref.watch(favoritesProvider).value
+            ?.any((h) => h.hotelId == widget.hotelId) ??
+        false;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -104,11 +104,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildImageSection(
-                              roomState.room!,
-                              isFavorite: _favoriteOptimistic ??
-                                  ref.read(favoritesProvider.notifier).isFavorite(widget.hotelId),
-                            ),
+                          _buildImageSection(roomState.room!, isFavorite: isFavorite),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(24, 58, 24, 24),
                             child: Column(
@@ -380,34 +376,25 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   }
 
   Future<void> _toggleFavorite() async {
-    final authValue = ref.read(authProvider).value;
-    if (!(authValue?.isAuthenticated ?? false)) {
+    final isAuth =
+        ref.read(authProvider).asData?.value.isAuthenticated ?? false;
+    if (!isAuth) {
       context.go('/auth/login');
       return;
     }
 
-    final notifier = ref.read(favoritesProvider.notifier);
-    final wasFavorite = notifier.isFavorite(widget.hotelId);
-    setState(() => _favoriteOptimistic = !wasFavorite);
+    final isFav = ref.read(favoritesProvider).value
+            ?.any((h) => h.hotelId == widget.hotelId) ??
+        false;
 
-    try {
-      if (wasFavorite) {
-        await notifier.removeFavorite(widget.hotelId);
-      } else {
-        await notifier.addFavorite(widget.hotelId);
-      }
-      if (mounted) setState(() => _favoriteOptimistic = null);
-    } catch (_) {
-      if (mounted) {
-        setState(() => _favoriteOptimistic = null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              wasFavorite ? 'Erro ao remover dos favoritos' : 'Erro ao adicionar aos favoritos',
-            ),
-          ),
-        );
-      }
+    if (isFav) {
+      final confirmed = await showUnfavoriteConfirmationDialog(context);
+      if (!confirmed || !mounted) return;
+      await ref.read(favoritesProvider.notifier).removeFavorite(widget.hotelId);
+      if (mounted) await showFavoriteRemovedDialog(context);
+    } else {
+      await ref.read(favoritesProvider.notifier).addFavorite(widget.hotelId);
+      if (mounted) await showFavoriteAddedDialog(context);
     }
   }
 

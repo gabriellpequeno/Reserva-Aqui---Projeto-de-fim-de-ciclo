@@ -190,7 +190,7 @@ class SearchNotifier extends Notifier<SearchState> {
       hotelName: r.nomeHotel,
       destination: '${r.cidade}, ${r.uf}',
       imageUrl: imageUrl,
-      rating: '—',
+      rating: r.notaMedia ?? '—',
       amenities: _mapItemsToIcons(r.itens),
       price: double.tryParse(r.valorDiaria) ?? 0.0,
     );

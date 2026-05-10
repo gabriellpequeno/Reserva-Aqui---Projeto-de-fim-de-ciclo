@@ -15,6 +15,7 @@ class AdminHotelModel {
   final String numero;
   final String? complemento;
   final String? capaUrl;
+  final String? fotoUrl;
   final AdminAccountStatus status;
   final int? totalQuartos;
   final DateTime criadoEm;
@@ -33,6 +34,7 @@ class AdminHotelModel {
     required this.numero,
     required this.complemento,
     required this.capaUrl,
+    required this.fotoUrl,
     required this.status,
     required this.totalQuartos,
     required this.criadoEm,
@@ -60,6 +62,7 @@ class AdminHotelModel {
       numero: (json['numero'] as String?) ?? '',
       complemento: json['complemento'] as String?,
       capaUrl: json['capaUrl'] as String?,
+      fotoUrl: json['fotoUrl'] as String?,
       status: AdminAccountStatus.fromString(json['status'] as String?),
       totalQuartos: json['totalQuartos'] as int?,
       criadoEm: parsedCriadoEm,
@@ -94,6 +97,7 @@ class AdminHotelModel {
       numero: numero ?? this.numero,
       complemento: complemento ?? this.complemento,
       capaUrl: capaUrl,
+      fotoUrl: fotoUrl,
       status: status ?? this.status,
       totalQuartos: totalQuartos,
       criadoEm: criadoEm,

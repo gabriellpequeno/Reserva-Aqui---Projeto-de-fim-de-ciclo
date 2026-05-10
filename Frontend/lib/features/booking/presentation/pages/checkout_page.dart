@@ -585,10 +585,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       lastDate: now.add(const Duration(days: 365)),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
+          colorScheme: Theme.of(context).colorScheme.copyWith(
             primary: AppColors.primary,
             onPrimary: Colors.white,
             secondary: AppColors.secondary,
+            onSecondary: Colors.white,
           ),
         ),
         child: child!,
@@ -675,7 +676,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     if (sheetResult == PaymentSheetResult.paid) {
       if (isAuth) {
         ref.read(ticketsNotifierProvider.notifier).reload();
-        context.go('/tickets');
+        if (mounted) await _showBookingConfirmedSheet();
+        if (mounted) context.go('/tickets');
       } else {
         context.go('/booking/success?codigo=${res.codigoPublico}&mode=guest');
       }
@@ -688,6 +690,74 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         context.pop();
       }
     }
+  }
+
+  Future<void> _showBookingConfirmedSheet() {
+    return showModalBottomSheet<void>(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        final colorScheme = Theme.of(ctx).colorScheme;
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.successColor.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle_outline, color: AppColors.successColor, size: 40),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Reserva realizada!',
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Aguardando confirmação do hotel.\nVocê receberá uma notificação em breve.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.secondary,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 52),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Ver minhas reservas', style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   String _fmt(DateTime d) =>

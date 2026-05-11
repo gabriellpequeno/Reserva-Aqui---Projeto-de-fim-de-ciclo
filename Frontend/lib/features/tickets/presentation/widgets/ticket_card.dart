@@ -126,7 +126,10 @@ class TicketCard extends StatelessWidget {
             width: 160,
             height: 38,
             child: ElevatedButton(
-              onPressed: () => context.push('/tickets/details/${ticket.id}'),
+              onPressed: () {
+                final targetId = ticket.codigoPublico.isNotEmpty ? ticket.codigoPublico : ticket.id;
+                context.push('/tickets/details/$targetId');
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,

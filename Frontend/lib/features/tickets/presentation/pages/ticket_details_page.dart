@@ -162,7 +162,7 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
 
     final hotelId = ref.read(ticketsNotifierProvider).asData?.value
         .cast<Ticket?>()
-        .firstWhere((t) => t?.id == widget.ticketId, orElse: () => null)
+        .firstWhere((t) => (t?.codigoPublico == widget.ticketId) || (t?.id == widget.ticketId), orElse: () => null)
         ?.hotelId;
 
     try {

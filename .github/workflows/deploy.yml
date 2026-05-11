@@ -1,0 +1,108 @@
+name: 🚀 Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+env:
+  BACKEND_PATH: /home/desafio04/reserva-aqui/Backend
+  REPO_PATH: /home/desafio04/reserva-aqui
+  WEB_PATH: /var/www/reserva-aqui/build/web
+  PM2_PROCESS: all
+
+jobs:
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Job 1: Build Flutter Web on GitHub cloud runner
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  build-flutter:
+    name: 🐦 Build Flutter Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Install dependencies
+        working-directory: ./Frontend
+        run: flutter pub get
+
+      - name: 🔨 Build Flutter Web
+        working-directory: ./Frontend
+        run: flutter build web --release
+
+      - name: 📤 Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-web-build
+          path: Frontend/build/web/
+          retention-days: 1
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Job 2: Deploy on the server (self-hosted runner)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  deploy:
+    name: 🖥️ Deploy to Server
+    needs: build-flutter
+    runs-on: self-hosted
+    timeout-minutes: 10
+
+    steps:
+      # ── Backend: pull + build + restart ─────────────────
+      - name: 🔄 Pull latest code
+        run: |
+          cd ${{ env.REPO_PATH }}
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: 📦 Install backend dependencies
+        run: |
+          cd ${{ env.BACKEND_PATH }}
+          npm install --omit=dev
+
+      - name: 🔨 Build backend
+        run: |
+          cd ${{ env.BACKEND_PATH }}
+          npm run build
+
+      - name: 🔄 Restart PM2
+        run: |
+          pm2 restart ${{ env.PM2_PROCESS }} --update-env
+          pm2 save
+
+      # ── Flutter Web: download artifact + deploy ─────────
+      - name: 📥 Download Flutter Web build
+        uses: actions/download-artifact@v4
+        with:
+          name: flutter-web-build
+          path: /tmp/flutter-web-build
+
+      - name: 🌐 Deploy Flutter Web to Nginx
+        run: |
+          echo "=== Backing up current build ==="
+          if [ -d "${{ env.WEB_PATH }}" ]; then
+            rm -rf /tmp/reserva-aqui-web-backup
+            cp -r ${{ env.WEB_PATH }} /tmp/reserva-aqui-web-backup
+          fi
+
+          echo "=== Deploying new build ==="
+          rm -rf ${{ env.WEB_PATH }}
+          mkdir -p ${{ env.WEB_PATH }}
+          cp -r /tmp/flutter-web-build/* ${{ env.WEB_PATH }}/
+          
+          # A pasta agora pertence ao desafio04, então ele pode alterar livremente!
+          
+          echo "=== Fixing Base Href ==="
+          sed -i 's|<base href="/">|<base href="/server04/">|g' ${{ env.WEB_PATH }}/index.html
+
+          echo "=== Cleaning up ==="
+          rm -rf /tmp/flutter-web-build
+
+          echo "✅ Deploy complete at $(date)"

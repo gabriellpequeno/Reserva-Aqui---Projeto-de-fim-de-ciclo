@@ -65,7 +65,7 @@ jobs:
       - name: 📦 Install backend dependencies
         run: |
           cd ${{ env.BACKEND_PATH }}
-          npm install --omit=dev
+          npm install
 
       - name: 🔨 Build backend
         run: |

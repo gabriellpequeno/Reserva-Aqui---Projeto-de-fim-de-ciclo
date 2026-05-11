@@ -10,10 +10,20 @@ export class IntentClassifierService {
   // Fast-path: saudações/encerramentos triviais. Evita chamada de rede.
   private static readonly FAST_PATH_OUTROS = /^\s*(oi+|ol[aá]+|oie+|e[ai]+|hey+|hello+|bom\s*dia|boa\s*tarde|boa\s*noite|tchau+|at[eé]\s*(mais|logo|breve)|valeu+|obrigad[oa]+|vlw+|brigad[oa]+|\?+|\.+|!+)\s*[!.?]*\s*$/i;
 
+  // Fast-path: expressões de interesse em hotel → RESERVA sem chamada LLM.
+  // Cobre "gostei desse", "pode me falar mais", "me conta mais", "quero esse", etc.
+  private static readonly FAST_PATH_INTEREST = /gost(ei|o)\s+(desse|dele|desse\s+hotel|disso)|me\s+(fala|conta|fale|conte)\s+mais|falar\s+mais|quero\s+(esse|saber\s+mais|conhecer|ver\s+mais)|pode\s+me\s+(falar|contar|dizer)\s+mais|me\s+d[aá]\s+mais\s+(detalhes|informa|info)|mais\s+(detalhes|informa|info)\s+(sobre|desse|do)|interessei|parece\s+(bom|[oó]timo|perfeito|legal)/i;
+
   static async classify(message: string, history: string[] = []): Promise<IntentType> {
     // Atalho sem IA para mensagens triviais (zero latência, zero quota)
     if (this.FAST_PATH_OUTROS.test(message)) {
       return IntentType.OUTROS;
+    }
+
+    // Atalho sem IA para expressões de interesse em hotel — vai RESERVA
+    // para que o agente possa selecionar o hotel via tool e dar continuidade.
+    if (this.FAST_PATH_INTEREST.test(message)) {
+      return IntentType.RESERVA;
     }
 
     if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY) {
@@ -37,6 +47,7 @@ Categorias permitidas:
    - Perguntas sobre disponibilidade de quartos, preços, datas
    - Respostas curtas a uma pergunta anterior do bot sobre onde/quando (ex: bot perguntou a cidade e usuário respondeu só "caruaru")
    - Pedir para criar/confirmar reserva
+   - Expressar interesse num hotel apresentado pelo bot (ex: "gostei desse", "pode me falar mais", "me conta mais sobre esse", "quero saber mais")
 3. OUTROS: Saudações ("oi", "bom dia"), encerramentos ("tchau", "obrigado"), ou mensagens aleatórias sem ligação com hotéis.
 
 IMPORTANTE: Se o bot acabou de perguntar algo (cidade, datas, hotel) e o usuário respondeu, o contexto DETERMINA a categoria. Ex: bot pergunta cidade, usuário responde "caruaru" -> RESERVA.

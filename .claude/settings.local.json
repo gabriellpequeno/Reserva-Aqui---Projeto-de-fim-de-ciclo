@@ -3,5 +3,9 @@
     "allow": [
       "Bash(mkdir:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "context7",
+    "linear"
+  ]
 }

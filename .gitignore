@@ -39,6 +39,9 @@ Frontend/android/app/release
 *.jks
 *.keystore
 .env
+**/firebase-adminsdk*.json
+**/*firebase-adminsdk*.json
+**/google-services.json
 
 # ─── Logs / Temp ─────────────────────────────────────────────────────────────
 *.log

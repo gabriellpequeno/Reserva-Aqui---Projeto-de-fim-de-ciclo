@@ -20,6 +20,14 @@ TextStyle _bodyStyle(BuildContext context) => TextStyle(
 
 Widget _dialogLogo() => SvgPicture.asset(_logoPath, width: _logoWidth);
 
+/// Cor do botão de ação dos dialogs de favorito.
+/// No modo claro mantém o azul-marinho da marca; no escuro usa o laranja
+/// (AppColors.secondary) para ter contraste suficiente contra o fundo escuro.
+Color _actionButtonColor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? AppColors.secondary
+        : AppColors.primary;
+
 Future<bool> showUnfavoriteConfirmationDialog(BuildContext context) async {
   final result = await showDialog<bool>(
     context: context,
@@ -63,7 +71,7 @@ Future<bool> showUnfavoriteConfirmationDialog(BuildContext context) async {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(ctx, true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: _actionButtonColor(ctx),
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -111,7 +119,7 @@ Future<void> showFavoriteAddedDialog(BuildContext context) {
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(ctx),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: _actionButtonColor(ctx),
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -156,7 +164,7 @@ Future<void> showFavoriteRemovedDialog(BuildContext context) {
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(ctx),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: _actionButtonColor(ctx),
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(

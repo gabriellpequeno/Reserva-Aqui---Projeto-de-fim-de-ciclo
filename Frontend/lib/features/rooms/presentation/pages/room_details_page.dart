@@ -196,6 +196,12 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
     final safeIndex = _currentPhotoIndex.clamp(0, galleryUrls.length - 1);
     final mainImageUrl = galleryUrls[safeIndex];
 
+    // Card de preço: light = fundo azul-marinho com texto laranja;
+    // dark = inverte para ganhar contraste contra o fundo escuro.
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final priceCardBg = isDark ? AppColors.secondary : AppColors.primary;
+    final priceCardFg = isDark ? AppColors.primary : AppColors.secondary;
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -259,9 +265,9 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
             child: IntrinsicWidth(
               child: Container(
                 padding: const EdgeInsets.fromLTRB(24, 14, 24, 14),
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: priceCardBg,
+                  borderRadius: const BorderRadius.only(
                     topRight: Radius.circular(16),
                     bottomRight: Radius.circular(16),
                   ),
@@ -275,10 +281,10 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                       textBaseline: TextBaseline.alphabetic,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
+                        Text(
                           '\$',
                           style: TextStyle(
-                            color: AppColors.secondary,
+                            color: priceCardFg,
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             height: 0.9,
@@ -286,8 +292,8 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                         ),
                         Text(
                           '${room.price.toInt()}',
-                          style: const TextStyle(
-                            color: AppColors.secondary,
+                          style: TextStyle(
+                            color: priceCardFg,
                             fontSize: 38,
                             fontWeight: FontWeight.bold,
                             height: 0.9,
@@ -295,13 +301,13 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                         ),
                       ],
                     ),
-                    const FittedBox(
+                    FittedBox(
                       fit: BoxFit.fitWidth,
                       alignment: Alignment.centerLeft,
                       child: Text(
                         'por dia',
                         style: TextStyle(
-                          color: AppColors.secondary,
+                          color: priceCardFg,
                           fontSize: 8,
                           fontWeight: FontWeight.w300,
                           height: 0.9,

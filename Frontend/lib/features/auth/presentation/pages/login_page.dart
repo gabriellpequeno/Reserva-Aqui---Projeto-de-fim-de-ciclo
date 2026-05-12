@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/auth_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../data/services/auth_service.dart';
@@ -126,9 +127,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: const CustomAppBar(fallbackRoute: '/home'),
+      appBar: Breakpoints.isDesktop(context)
+          ? null
+          : const CustomAppBar(fallbackRoute: '/home'),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: ResponsiveCenter(
+          maxWidth: ContentMaxWidth.form,
+          child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Form(
             key: _formKey,
@@ -188,6 +193,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

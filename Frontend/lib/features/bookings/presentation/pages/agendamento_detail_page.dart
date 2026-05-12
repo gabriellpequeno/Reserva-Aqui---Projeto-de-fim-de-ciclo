@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../tickets/data/services/tickets_service.dart';
 import '../../../tickets/domain/models/ticket.dart';
 import '../notifiers/agendamentos_notifier.dart';
@@ -93,16 +94,20 @@ class _AgendamentoDetailPageState extends ConsumerState<AgendamentoDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
       body: Column(
         children: [
-          _buildHeader(context),
+          if (!isDesktop) _buildHeader(context),
           Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null
-                    ? _buildError()
-                    : _buildContent(),
+            child: ResponsiveCenter(
+              maxWidth: ContentMaxWidth.reading,
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? _buildError()
+                      : _buildContent(),
+            ),
           ),
         ],
       ),
@@ -110,14 +115,17 @@ class _AgendamentoDetailPageState extends ConsumerState<AgendamentoDetailPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final isDesktop = Breakpoints.isDesktop(context);
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(27),
-          bottomRight: Radius.circular(27),
-        ),
+        borderRadius: isDesktop
+            ? BorderRadius.zero
+            : const BorderRadius.only(
+                bottomLeft: Radius.circular(27),
+                bottomRight: Radius.circular(27),
+              ),
       ),
       child: Padding(
         padding: EdgeInsets.only(

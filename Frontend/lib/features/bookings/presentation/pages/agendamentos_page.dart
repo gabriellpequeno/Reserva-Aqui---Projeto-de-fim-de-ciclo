@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../tickets/domain/models/ticket.dart';
 import '../notifiers/agendamentos_notifier.dart';
 import '../widgets/calendar_filter_widget.dart';
@@ -47,21 +48,35 @@ class _AgendamentosPageState extends ConsumerState<AgendamentosPage> {
     final notifier = ref.read(agendamentosNotifierProvider.notifier);
     final activeDate = notifier.activeDateFilter;
 
+    final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
       body: Column(
         children: [
-          _buildHeader(context),
-          _buildSearchAndCalendar(context, agendamentosAsync, activeDate, notifier),
-          _buildFilterTabs(notifier),
-          if (activeDate != null) _buildActiveDateChip(activeDate, notifier),
+          if (!isDesktop) _buildHeader(context),
           Expanded(
-            child: agendamentosAsync.when(
-              skipLoadingOnReload: true,
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => _buildErrorState(e.toString(), notifier),
-              data: (tickets) => RefreshIndicator(
-                onRefresh: notifier.reload,
-                child: _buildList(_filtered(tickets)),
+            child: ResponsiveCenter(
+              maxWidth: ContentMaxWidth.content,
+              child: Column(
+                children: [
+                  _buildSearchAndCalendar(
+                      context, agendamentosAsync, activeDate, notifier),
+                  _buildFilterTabs(notifier),
+                  if (activeDate != null)
+                    _buildActiveDateChip(activeDate, notifier),
+                  Expanded(
+                    child: agendamentosAsync.when(
+                      skipLoadingOnReload: true,
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (e, _) =>
+                          _buildErrorState(e.toString(), notifier),
+                      data: (tickets) => RefreshIndicator(
+                        onRefresh: notifier.reload,
+                        child: _buildList(_filtered(tickets)),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -72,14 +87,17 @@ class _AgendamentosPageState extends ConsumerState<AgendamentosPage> {
 
   // ── Header ─────────────────────────────────────────────────────────────────
   Widget _buildHeader(BuildContext context) {
+    final isDesktop = Breakpoints.isDesktop(context);
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(27),
-          bottomRight: Radius.circular(27),
-        ),
+        borderRadius: isDesktop
+            ? BorderRadius.zero
+            : const BorderRadius.only(
+                bottomLeft: Radius.circular(27),
+                bottomRight: Radius.circular(27),
+              ),
       ),
       child: Padding(
         padding: EdgeInsets.only(

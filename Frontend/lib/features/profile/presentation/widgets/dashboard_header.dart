@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 
 /// Header curvo reutilizado pelos dashboards Host e Admin.
 ///
@@ -21,6 +22,9 @@ class DashboardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (Breakpoints.isDesktop(context)) {
+      return const SizedBox.shrink();
+    }
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(

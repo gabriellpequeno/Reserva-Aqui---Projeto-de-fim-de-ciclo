@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_menu_item.dart';
@@ -57,7 +58,9 @@ class HostProfilePage extends ConsumerWidget {
             final avatarUrl = (hotel['foto_perfil'] as String?) ??
                 (fotos.isNotEmpty ? fotos.first['url'] as String? : null);
 
-            return SingleChildScrollView(
+            return ResponsiveCenter(
+              maxWidth: ContentMaxWidth.profile,
+              child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
                 children: [
@@ -129,6 +132,7 @@ class HostProfilePage extends ConsumerWidget {
                   const SizedBox(height: 40),
                 ],
               ),
+            ),
             );
           },
         ),

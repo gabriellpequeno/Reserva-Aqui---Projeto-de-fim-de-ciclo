@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../widgets/chat_bubble.dart';
 import '../providers/chat_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -86,17 +87,28 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       _scrollToBottom();
     }
 
+    final isDesktop = Breakpoints.isDesktop(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          _buildHeader(context),
+          if (!isDesktop) _buildHeader(context),
           Expanded(
-            child: chatState.messages.isEmpty && !chatState.isLoading
-                ? _buildEmptyState()
-                : _buildMessageList(chatState),
+            child: ResponsiveCenter(
+              maxWidth: ContentMaxWidth.reading,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: chatState.messages.isEmpty && !chatState.isLoading
+                        ? _buildEmptyState()
+                        : _buildMessageList(chatState),
+                  ),
+                  _buildInput(),
+                ],
+              ),
+            ),
           ),
-          _buildInput(),
         ],
       ),
     );
@@ -216,6 +228,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final isDesktop = Breakpoints.isDesktop(context);
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 42,
@@ -223,12 +236,14 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         left: 20,
         right: 20,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(27),
-          bottomRight: Radius.circular(27),
-        ),
+        borderRadius: isDesktop
+            ? BorderRadius.zero
+            : const BorderRadius.only(
+                bottomLeft: Radius.circular(27),
+                bottomRight: Radius.circular(27),
+              ),
       ),
       child: Column(
         children: [

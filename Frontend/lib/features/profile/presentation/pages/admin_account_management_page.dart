@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../data/services/admin_accounts_service.dart';
 import '../../domain/models/admin_hotel_model.dart';
 import '../../domain/models/admin_user_model.dart';
@@ -76,10 +77,11 @@ class _AdminAccountManagementPageState
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
       body: Column(
         children: [
-          _buildHeader(),
+          if (!isDesktop) _buildHeader(),
           _buildTabs(),
           Expanded(
             child: TabBarView(

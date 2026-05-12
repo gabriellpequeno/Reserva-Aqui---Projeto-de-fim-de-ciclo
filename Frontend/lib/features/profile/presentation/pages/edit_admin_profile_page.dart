@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/admin_profile_provider.dart';
 import '../widgets/profile_form_section.dart';
@@ -154,7 +155,9 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
 
   Widget _buildForm() {
     final colorScheme = Theme.of(context).colorScheme;
-    return SingleChildScrollView(
+    return ResponsiveCenter(
+      maxWidth: ContentMaxWidth.profile,
+      child: SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Form(
         key: _formKey,
@@ -272,6 +275,7 @@ class _EditAdminProfilePageState extends ConsumerState<EditAdminProfilePage> {
             const SizedBox(height: 40),
           ],
         ),
+      ),
       ),
     );
   }

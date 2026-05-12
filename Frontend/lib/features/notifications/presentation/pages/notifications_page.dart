@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/auth_state.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../providers/notifications_provider.dart';
 import '../../domain/models/app_notification.dart';
 
@@ -17,48 +18,52 @@ class NotificationsPage extends ConsumerWidget {
     final isLoggedIn =
         ref.watch(authProvider).asData?.value.isAuthenticated ?? false;
 
+    final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
       body: Column(
         children: [
-          _buildHeader(context, ref),
+          if (!isDesktop) _buildHeader(context, ref),
           Expanded(
-            child: !isLoggedIn
-                ? _buildLoginMessage(context)
-                : notificationsAsync.when(
-                    loading: () => const Center(
-                      child: CircularProgressIndicator(),
+            child: ResponsiveCenter(
+              maxWidth: ContentMaxWidth.reading,
+              child: !isLoggedIn
+                  ? _buildLoginMessage(context)
+                  : notificationsAsync.when(
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      error: (_, __) => const Center(
+                        child: Text('Erro ao carregar notificações'),
+                      ),
+                      data: (notifications) => notifications.isEmpty
+                          ? _buildEmptyState(context)
+                          : Stack(
+                              children: [
+                                ListView.separated(
+                                  padding: const EdgeInsets.fromLTRB(
+                                      24, 24, 24, 100),
+                                  itemCount: notifications.length,
+                                  separatorBuilder: (_, __) =>
+                                      const SizedBox(height: 12),
+                                  itemBuilder: (context, index) {
+                                    return _buildNotificationCard(
+                                      context,
+                                      ref,
+                                      notifications[index],
+                                    );
+                                  },
+                                ),
+                                Positioned(
+                                  bottom: 30,
+                                  left: 0,
+                                  right: 0,
+                                  child: Center(
+                                      child: _buildClearButton(context, ref)),
+                                ),
+                              ],
+                            ),
                     ),
-                    error: (_, __) => const Center(
-                      child: Text('Erro ao carregar notificações'),
-                    ),
-                    data: (notifications) => notifications.isEmpty
-                        ? _buildEmptyState(context)
-                        : Stack(
-                            children: [
-                              ListView.separated(
-                                padding: const EdgeInsets.fromLTRB(
-                                    24, 24, 24, 100),
-                                itemCount: notifications.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  return _buildNotificationCard(
-                                    context,
-                                    ref,
-                                    notifications[index],
-                                  );
-                                },
-                              ),
-                              Positioned(
-                                bottom: 30,
-                                left: 0,
-                                right: 0,
-                                child: Center(
-                                    child: _buildClearButton(context, ref)),
-                              ),
-                            ],
-                          ),
-                  ),
+            ),
           ),
         ],
       ),
@@ -66,15 +71,18 @@ class NotificationsPage extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
+    final isDesktop = Breakpoints.isDesktop(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 60, 16, 30),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(27),
-          bottomRight: Radius.circular(27),
-        ),
+        borderRadius: isDesktop
+            ? BorderRadius.zero
+            : const BorderRadius.only(
+                bottomLeft: Radius.circular(27),
+                bottomRight: Radius.circular(27),
+              ),
       ),
       child: Stack(
         alignment: Alignment.center,

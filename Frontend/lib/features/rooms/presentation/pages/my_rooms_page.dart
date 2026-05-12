@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../domain/models/room_category_card.dart';
 import '../notifiers/my_rooms_notifier.dart';
 import '../notifiers/my_rooms_state.dart';
@@ -37,12 +38,16 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(myRoomsNotifierProvider);
 
+    final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
       body: Stack(
         children: [
           Column(
             children: [
-              _buildHeader(state),
+              if (isDesktop)
+                _buildDesktopHeader(state)
+              else
+                _buildHeader(state),
               _buildFiltroChips(state),
               Expanded(child: _buildBody(state)),
             ],
@@ -53,25 +58,86 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
     );
   }
 
+  Widget _buildDesktopHeader(MyRoomsState state) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: ContentMaxWidth.content),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Meus Quartos',
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(23),
+                  border: Border.all(color: colorScheme.outline),
+                ),
+                child: Semantics(
+                  label: 'Pesquisar quartos por nome',
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (v) =>
+                        ref.read(myRoomsNotifierProvider.notifier).setBusca(v),
+                    decoration: InputDecoration(
+                      hintText: 'Pesquisar por tipo de quarto...',
+                      hintStyle: TextStyle(
+                          color: colorScheme.onSurfaceVariant, fontSize: 14),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
+                      suffixIcon: const Icon(Icons.search,
+                          color: AppColors.secondary),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── Header ────────────────────────────────────────────────────────────────
 
   Widget _buildHeader(MyRoomsState state) {
+    final isDesktop = Breakpoints.isDesktop(context);
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(27),
-          bottomRight: Radius.circular(27),
-        ),
+        borderRadius: isDesktop
+            ? BorderRadius.zero
+            : const BorderRadius.only(
+                bottomLeft: Radius.circular(27),
+                bottomRight: Radius.circular(27),
+              ),
       ),
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 50,
-        left: 24,
-        right: 24,
         bottom: 24,
       ),
-      child: Column(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: ContentMaxWidth.content),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -155,6 +221,9 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
           ),
         ],
       ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -224,20 +293,47 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
     if (cards.isEmpty && state.cards.isEmpty) return _buildEmpty();
     if (cards.isEmpty) return _buildEmptyFilter();
 
-    return RefreshIndicator(
-      onRefresh: () =>
-          ref.read(myRoomsNotifierProvider.notifier).refresh(),
-      color: AppColors.secondary,
-      child: ListView.builder(
-        padding: const EdgeInsets.only(
-            top: 16, bottom: 100, left: 16, right: 16),
-        itemCount: cards.length,
-        itemBuilder: (context, index) {
-          final card = cards[index];
-          return card.disponivel
-              ? _buildCardAtivo(state, card)
-              : _buildCardInativo(state, card);
-        },
+    return ResponsiveCenter(
+      maxWidth: ContentMaxWidth.content,
+      child: RefreshIndicator(
+        onRefresh: () =>
+            ref.read(myRoomsNotifierProvider.notifier).refresh(),
+        color: AppColors.secondary,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final useGrid = constraints.maxWidth >= 1024;
+            if (useGrid) {
+              return GridView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                gridDelegate:
+                    const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 540,
+                  mainAxisExtent: 220,
+                  mainAxisSpacing: 0,
+                  crossAxisSpacing: 16,
+                ),
+                itemCount: cards.length,
+                itemBuilder: (context, index) {
+                  final card = cards[index];
+                  return card.disponivel
+                      ? _buildCardAtivo(state, card)
+                      : _buildCardInativo(state, card);
+                },
+              );
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.only(
+                  top: 16, bottom: 100, left: 16, right: 16),
+              itemCount: cards.length,
+              itemBuilder: (context, index) {
+                final card = cards[index];
+                return card.disponivel
+                    ? _buildCardAtivo(state, card)
+                    : _buildCardInativo(state, card);
+              },
+            );
+          },
+        ),
       ),
     );
   }

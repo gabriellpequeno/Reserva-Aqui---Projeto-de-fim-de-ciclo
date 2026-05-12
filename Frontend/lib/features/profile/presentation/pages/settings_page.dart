@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_notifier.dart';
+import '../../../../core/utils/breakpoints.dart';
 
 const _notificationsKey = 'notifications_enabled';
 
@@ -45,7 +46,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: ResponsiveCenter(
+          maxWidth: ContentMaxWidth.profile,
+          child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -132,6 +135,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const SizedBox(height: 40),
             ],
           ),
+        ),
         ),
       ),
     );

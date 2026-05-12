@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../domain/models/ticket.dart';
 import '../notifiers/tickets_notifier.dart';
 import '../widgets/ticket_card.dart';
@@ -45,21 +46,33 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
   Widget build(BuildContext context) {
     final ticketsAsync = ref.watch(ticketsNotifierProvider);
 
+    final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
       body: Column(
         children: [
-          _buildHeader(context),
-          _buildSearchBar(),
-          _buildFilterTabs(),
+          if (!isDesktop) _buildHeader(context),
           Expanded(
-            child: ticketsAsync.when(
-              skipLoadingOnReload: true,
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => _buildErrorState(e.toString()),
-              data: (tickets) => RefreshIndicator(
-                onRefresh: () =>
-                    ref.read(ticketsNotifierProvider.notifier).reload(),
-                child: _buildList(_filtered(tickets)),
+            child: ResponsiveCenter(
+              maxWidth: ContentMaxWidth.content,
+              child: Column(
+                children: [
+                  _buildSearchBar(),
+                  _buildFilterTabs(),
+                  Expanded(
+                    child: ticketsAsync.when(
+                      skipLoadingOnReload: true,
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (e, _) => _buildErrorState(e.toString()),
+                      data: (tickets) => RefreshIndicator(
+                        onRefresh: () => ref
+                            .read(ticketsNotifierProvider.notifier)
+                            .reload(),
+                        child: _buildList(_filtered(tickets)),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -97,57 +110,67 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
 
   // ── Header ───────────────────────────────────────────────────────────────
   Widget _buildHeader(BuildContext context) {
+    final isDesktop = Breakpoints.isDesktop(context);
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(27),
-          bottomRight: Radius.circular(27),
-        ),
+        borderRadius: isDesktop
+            ? BorderRadius.zero
+            : const BorderRadius.only(
+                bottomLeft: Radius.circular(27),
+                bottomRight: Radius.circular(27),
+              ),
       ),
       child: Padding(
         padding: EdgeInsets.only(
           top: MediaQuery.of(context).padding.top + 50,
-          left: 24,
-          right: 24,
           bottom: 20,
         ),
-        child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Center(
+          child: ConstrainedBox(
+            constraints:
+                const BoxConstraints(maxWidth: ContentMaxWidth.content),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
                 children: [
-                  _headerButton(
-                    icon: Icons.chevron_left,
-                    onTap: () => context.canPop()
-                        ? context.pop()
-                        : context.go('/profile/user'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _headerButton(
+                        icon: Icons.chevron_left,
+                        onTap: () => context.canPop()
+                            ? context.pop()
+                            : context.go('/profile/user'),
+                      ),
+                      SvgPicture.asset(
+                        'lib/assets/icons/logo/logoDark.svg',
+                        height: 32,
+                      ),
+                      _headerButton(
+                        icon: Icons.notifications_none,
+                        onTap: () => context.go('/notifications'),
+                      ),
+                    ],
                   ),
-                  SvgPicture.asset(
-                    'lib/assets/icons/logo/logoDark.svg',
-                    height: 32,
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Minhas Reservas',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontFamily: 'Stack Sans Headline',
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                  _headerButton(
-                    icon: Icons.notifications_none,
-                    onTap: () => context.go('/notifications'),
-                  ),
+                  const SizedBox(height: 4),
                 ],
               ),
-              const SizedBox(height: 12),
-              const Text(
-                'Minhas Reservas',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontFamily: 'Stack Sans Headline',
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-            ],
+            ),
           ),
         ),
+      ),
     );
   }
 

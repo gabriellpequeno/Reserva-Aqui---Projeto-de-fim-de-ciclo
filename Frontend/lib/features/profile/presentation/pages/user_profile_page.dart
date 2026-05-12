@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart' show launchUrl;
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/user_profile_provider.dart';
 import '../widgets/profile_header.dart';
@@ -43,7 +44,9 @@ class UserProfilePage extends ConsumerWidget {
               ),
             ),
           ),
-          data: (profile) => SingleChildScrollView(
+          data: (profile) => ResponsiveCenter(
+            maxWidth: ContentMaxWidth.profile,
+            child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Column(
               children: [
@@ -131,6 +134,7 @@ class UserProfilePage extends ConsumerWidget {
                 const SizedBox(height: 40),
               ],
             ),
+          ),
           ),
         ),
       ),

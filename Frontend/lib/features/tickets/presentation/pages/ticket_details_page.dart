@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../data/services/tickets_service.dart';
 import '../../domain/models/ticket.dart';
@@ -267,8 +268,11 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
 
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerHigh,
-      appBar: const CustomAppBar(),
-      body: _buildBody(),
+      appBar: Breakpoints.isDesktop(context) ? null : const CustomAppBar(),
+      body: ResponsiveCenter(
+        maxWidth: ContentMaxWidth.reading,
+        child: _buildBody(),
+      ),
     );
   }
 

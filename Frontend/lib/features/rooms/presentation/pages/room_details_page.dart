@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/smart_network_image.dart';
 import '../../domain/models/room.dart';
 import '../notifiers/room_details_notifier.dart';
@@ -93,7 +94,9 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                 )
               : Stack(
                   children: [
-                    SingleChildScrollView(
+                    ResponsiveCenter(
+                      maxWidth: ContentMaxWidth.content,
+                      child: SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -177,6 +180,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                             ),
                           ),
                         ],
+                      ),
                       ),
                     ),
                     _buildBottomBar(context, roomState.room!),
@@ -543,7 +547,11 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
             ),
           ],
         ),
-        child: Row(
+        child: Center(
+          child: ConstrainedBox(
+            constraints:
+                const BoxConstraints(maxWidth: ContentMaxWidth.content),
+            child: Row(
           children: [
             GestureDetector(
               onTap: () => _handleShareTap(room),
@@ -587,6 +595,8 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
               ),
             ),
           ],
+            ),
+          ),
         ),
       ),
     );

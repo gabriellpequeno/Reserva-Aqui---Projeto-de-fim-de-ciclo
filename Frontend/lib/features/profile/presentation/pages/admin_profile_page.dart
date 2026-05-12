@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/admin_profile_provider.dart';
 import '../widgets/profile_header.dart';
@@ -26,7 +27,9 @@ class AdminProfilePage extends ConsumerWidget {
             message: err.toString(),
             onRetry: () => ref.invalidate(adminProfileProvider),
           ),
-          data: (profile) => SingleChildScrollView(
+          data: (profile) => ResponsiveCenter(
+            maxWidth: ContentMaxWidth.profile,
+            child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Column(
               children: [
@@ -85,6 +88,7 @@ class AdminProfilePage extends ConsumerWidget {
                 const SizedBox(height: 40),
               ],
             ),
+          ),
           ),
         ),
       ),

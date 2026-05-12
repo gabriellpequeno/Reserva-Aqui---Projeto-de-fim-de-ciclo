@@ -12,6 +12,7 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/utils/via_cep.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/host_profile_provider.dart';
@@ -505,7 +506,9 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
 
   Widget _buildForm() {
     final colorScheme = Theme.of(context).colorScheme;
-    return SingleChildScrollView(
+    return ResponsiveCenter(
+      maxWidth: ContentMaxWidth.profile,
+      child: SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Form(
         key: _formKey,
@@ -830,6 +833,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
             const SizedBox(height: 40),
           ],
         ),
+      ),
       ),
     );
   }

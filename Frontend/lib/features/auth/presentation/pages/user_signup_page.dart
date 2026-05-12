@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/auth_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/date_picker_field.dart';
 import '../../../../core/widgets/phone_mask_formatter.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -153,7 +154,9 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: ResponsiveCenter(
+          maxWidth: ContentMaxWidth.form,
+          child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Form(
             key: _formKey,
@@ -308,6 +311,7 @@ class _UserSignUpPageState extends ConsumerState<UserSignUpPage> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

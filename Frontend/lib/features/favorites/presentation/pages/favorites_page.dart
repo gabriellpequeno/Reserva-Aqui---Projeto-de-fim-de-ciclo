@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/auth/auth_notifier.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/favorite_card.dart';
 
@@ -19,11 +20,16 @@ class FavoritesPage extends ConsumerWidget {
         ref.watch(authProvider).asData?.value.isAuthenticated ?? false;
     final colorScheme = Theme.of(context).colorScheme;
 
+    final isDesktop = Breakpoints.isDesktop(context);
+
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerLow,
       body: Column(
         children: [
-          _buildHeader(context, ref),
+          if (isDesktop)
+            _buildDesktopHeader(context, ref)
+          else
+            _buildHeader(context, ref),
 
           if (!isLoggedIn) _buildLoginMessage(context),
 
@@ -73,6 +79,61 @@ class FavoritesPage extends ConsumerWidget {
                               ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopHeader(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1100),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Favoritos',
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: colorScheme.outline),
+                ),
+                child: TextField(
+                  onChanged: (value) =>
+                      ref.read(searchQueryProvider.notifier).update(value),
+                  style: TextStyle(color: colorScheme.onSurface),
+                  decoration: InputDecoration(
+                    hintText: 'Busque por destino, hotel ou quarto...',
+                    hintStyle: TextStyle(
+                        color: colorScheme.onSurfaceVariant, fontSize: 14),
+                    suffixIcon: const Padding(
+                      padding: EdgeInsets.only(right: 12),
+                      child: Icon(Icons.search,
+                          color: AppColors.secondary, size: 24),
+                    ),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

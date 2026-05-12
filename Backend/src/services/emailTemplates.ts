@@ -5,7 +5,7 @@
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function esc(v: string | number | null | undefined): string {
+export function esc(v: string | number | null | undefined): string {
   if (v === null || v === undefined) return '';
   return String(v)
     .replace(/&/g, '&amp;')
@@ -14,12 +14,12 @@ function esc(v: string | number | null | undefined): string {
     .replace(/"/g, '&quot;');
 }
 
-function fmtBRL(valor: string | number): string {
+export function fmtBRL(valor: string | number): string {
   const n = typeof valor === 'number' ? valor : parseFloat(valor);
   return `R$ ${n.toFixed(2).replace('.', ',')}`;
 }
 
-function fmtDate(value: string | Date): string {
+export function fmtDate(value: string | Date): string {
   // Driver `pg` retorna colunas DATE como Date object; API de reserva guest
   // envia string ISO. Suportamos ambos.
   const iso = value instanceof Date

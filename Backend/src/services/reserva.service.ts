@@ -152,9 +152,17 @@ export async function getReservasAtivasByCategoria(
 
 // ── Helpers Privados ──────────────────────────────────────────────────────────
 
-function calcDiarias(checkin: string, checkout: string): number {
+export function calcDiarias(checkin: string, checkout: string): number {
   const ms = new Date(checkout).getTime() - new Date(checkin).getTime();
   return Math.round(ms / 86_400_000);
+}
+
+/**
+ * Status em que a reserva ainda pode ser cancelada pelo hóspede.
+ * Reservas CONCLUIDA (já hospedou) e CANCELADA (já cancelada) estão fora.
+ */
+export function canCancelReserva(status: ReservaStatus): boolean {
+  return status === 'SOLICITADA' || status === 'APROVADA';
 }
 
 async function _calcValorTotal(
@@ -193,7 +201,7 @@ async function _getHotelInfo(hotelId: string): Promise<HotelInfo> {
  * colunas DATE como `Date`, e `String(dateObj)` produz "Fri May 01 2026 ..."
  * que o Postgres não aceita em colunas DATE no upsert de historico.
  */
-function toISODate(value: Date | string): string {
+export function toISODate(value: Date | string): string {
   if (value instanceof Date) return value.toISOString().slice(0, 10);
   return value.slice(0, 10);
 }
@@ -994,7 +1002,7 @@ async function _cancelarReservaUsuario(userId: string, codigoPublico: string): P
       throw new Error('sem permissão para cancelar esta reserva');
 
     // Só cancela se status permitir
-    if (reserva.status !== 'SOLICITADA' && reserva.status !== 'APROVADA')
+    if (!canCancelReserva(reserva.status))
       throw new Error('Reserva não pode ser cancelada no status atual');
 
     await client.query(

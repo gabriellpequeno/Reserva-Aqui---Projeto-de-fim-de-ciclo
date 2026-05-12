@@ -6,7 +6,7 @@ import { Usuario } from '../entities/Usuario';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-function parseDataBrToEn(data: string): string {
+export function parseDataBrToEn(data: string): string {
   const [dd, mm, yyyy] = data.split('/');
   return `${yyyy}-${mm}-${dd}`;
 }
@@ -53,19 +53,19 @@ const JWT_SECRET          = process.env.JWT_SECRET!;
 const JWT_ACCESS_EXPIRES  = process.env.JWT_ACCESS_EXPIRES  ?? '1h';
 const JWT_REFRESH_EXPIRES = process.env.JWT_REFRESH_EXPIRES ?? '7d';
 
-function signAccessToken(payload: { user_id: string; email: string; papel: UsuarioPapel }): string {
+export function signAccessToken(payload: { user_id: string; email: string; papel: UsuarioPapel }): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_ACCESS_EXPIRES } as jwt.SignOptions);
 }
 
-function signRefreshToken(payload: { user_id: string }): string {
+export function signRefreshToken(payload: { user_id: string }): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_REFRESH_EXPIRES } as jwt.SignOptions);
 }
 
-function hashToken(token: string): string {
+export function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-function refreshExpiresAt(): Date {
+export function refreshExpiresAt(): Date {
   return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 }
 

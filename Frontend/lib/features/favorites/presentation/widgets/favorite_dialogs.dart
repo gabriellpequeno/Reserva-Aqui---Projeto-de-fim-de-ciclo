@@ -5,18 +5,28 @@ import '../../../../core/theme/app_colors.dart';
 const _logoPath = 'lib/assets/icons/logoFav.svg';
 const _logoWidth = 72.0;
 const _dialogPadding = EdgeInsets.fromLTRB(28, 32, 28, 24);
-const _titleStyle = TextStyle(
+
+TextStyle _titleStyle(BuildContext context) => TextStyle(
   fontSize: 18,
   fontWeight: FontWeight.bold,
-  color: AppColors.primary,
+  color: Theme.of(context).colorScheme.onSurface,
 );
-const _bodyStyle = TextStyle(
+
+TextStyle _bodyStyle(BuildContext context) => TextStyle(
   fontSize: 14,
-  color: Color(0xFF555555),
+  color: Theme.of(context).colorScheme.onSurfaceVariant,
   height: 1.5,
 );
 
 Widget _dialogLogo() => SvgPicture.asset(_logoPath, width: _logoWidth);
+
+/// Cor do botão de ação dos dialogs de favorito.
+/// No modo claro mantém o azul-marinho da marca; no escuro usa o laranja
+/// (AppColors.secondary) para ter contraste suficiente contra o fundo escuro.
+Color _actionButtonColor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? AppColors.secondary
+        : AppColors.primary;
 
 Future<bool> showUnfavoriteConfirmationDialog(BuildContext context) async {
   final result = await showDialog<bool>(
@@ -31,11 +41,11 @@ Future<bool> showUnfavoriteConfirmationDialog(BuildContext context) async {
           children: [
             _dialogLogo(),
             const SizedBox(height: 20),
-            const Text('Desfavoritar hotel', style: _titleStyle),
+            Text('Desfavoritar hotel', style: _titleStyle(ctx)),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Você tem certeza que deseja desfavoritar este hotel?',
-              style: _bodyStyle,
+              style: _bodyStyle(ctx),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
@@ -45,8 +55,8 @@ Future<bool> showUnfavoriteConfirmationDialog(BuildContext context) async {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(ctx, false),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary),
+                      foregroundColor: Theme.of(ctx).colorScheme.onSurface,
+                      side: BorderSide(color: Theme.of(ctx).colorScheme.outline),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -61,7 +71,7 @@ Future<bool> showUnfavoriteConfirmationDialog(BuildContext context) async {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(ctx, true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: _actionButtonColor(ctx),
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -96,11 +106,11 @@ Future<void> showFavoriteAddedDialog(BuildContext context) {
           children: [
             _dialogLogo(),
             const SizedBox(height: 20),
-            const Text('Favorito adicionado!', style: _titleStyle),
+            Text('Favorito adicionado!', style: _titleStyle(ctx)),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Hotel adicionado aos favoritos com sucesso.',
-              style: _bodyStyle,
+              style: _bodyStyle(ctx),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
@@ -109,7 +119,7 @@ Future<void> showFavoriteAddedDialog(BuildContext context) {
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(ctx),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: _actionButtonColor(ctx),
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -141,11 +151,11 @@ Future<void> showFavoriteRemovedDialog(BuildContext context) {
           children: [
             _dialogLogo(),
             const SizedBox(height: 20),
-            const Text('Favorito removido!', style: _titleStyle),
+            Text('Favorito removido!', style: _titleStyle(ctx)),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Hotel removido dos favoritos com sucesso.',
-              style: _bodyStyle,
+              style: _bodyStyle(ctx),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
@@ -154,7 +164,7 @@ Future<void> showFavoriteRemovedDialog(BuildContext context) {
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(ctx),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: _actionButtonColor(ctx),
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(

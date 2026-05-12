@@ -26,7 +26,7 @@ class AdminDashboardPage extends ConsumerWidget {
     final notifier = ref.read(adminDashboardProvider.notifier);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
           DashboardHeader(
@@ -61,12 +61,12 @@ class AdminDashboardPage extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, color: AppColors.primary, size: 48),
+            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 48),
             const SizedBox(height: 16),
             Text(
               'Erro ao carregar o dashboard:\n$message',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.primary),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
             const SizedBox(height: 24),
             PrimaryButton(text: 'Tentar novamente', onPressed: onRetry),
@@ -103,9 +103,9 @@ class AdminDashboardPage extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(11),
-                border: Border.all(color: const Color(0x3F182541)),
+                border: Border.all(color: Theme.of(context).colorScheme.outline),
               ),
               child: ReservaStatusBreakdown(items: data.reservasPorStatus),
             ),
@@ -180,13 +180,13 @@ class _TopHoteisSection extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surfaceContainer,
           borderRadius: BorderRadius.circular(11),
-          border: Border.all(color: const Color(0x3F182541)),
+          border: Border.all(color: Theme.of(context).colorScheme.outline),
         ),
-        child: const Text(
+        child: Text(
           'Sem hotéis com reservas ativas no período',
-          style: TextStyle(color: AppColors.greyText, fontSize: 13),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
         ),
       );
     }
@@ -207,8 +207,8 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
-        color: AppColors.primary,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
         fontSize: 16,
         fontWeight: FontWeight.w700,
       ),
@@ -225,9 +225,9 @@ class _MelhorAvaliadoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: const Color(0x3F182541)),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Row(
         children: [
@@ -251,8 +251,8 @@ class _MelhorAvaliadoCard extends StatelessWidget {
               children: [
                 Text(
                   hotel.nomeHotel,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
@@ -266,8 +266,8 @@ class _MelhorAvaliadoCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       hotel.avaliacaoMedia.toStringAsFixed(1),
-                      style: const TextStyle(
-                        color: AppColors.primary,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
@@ -275,8 +275,8 @@ class _MelhorAvaliadoCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       '· ${hotel.totalAvaliacoes} ${hotel.totalAvaliacoes == 1 ? "avaliação" : "avaliações"}',
-                      style: const TextStyle(
-                        color: AppColors.greyText,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 12,
                       ),
                     ),

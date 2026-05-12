@@ -46,14 +46,15 @@ class _Counter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Semantics(
       label: '$label, novos cadastros: $value',
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cs.surfaceContainer,
           borderRadius: BorderRadius.circular(11),
-          border: Border.all(color: const Color(0x3F182541)),
+          border: Border.all(color: cs.outline),
         ),
         child: Row(
           children: [
@@ -65,16 +66,16 @@ class _Counter extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
-                      color: AppColors.greyText,
+                    style: TextStyle(
+                      color: cs.onSurfaceVariant,
                       fontSize: 12,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '$value',
-                    style: const TextStyle(
-                      color: AppColors.primary,
+                    style: TextStyle(
+                      color: cs.onSurface,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),

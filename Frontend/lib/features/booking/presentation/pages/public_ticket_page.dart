@@ -39,7 +39,7 @@ class _PublicTicketPageState extends ConsumerState<PublicTicketPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFD9D9D9),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -64,11 +64,11 @@ class _PublicTicketPageState extends ConsumerState<PublicTicketPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+            Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(height: 12),
             Text(_error ?? 'Reserva não encontrada.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600])),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 24),
             ElevatedButton(onPressed: _load, child: const Text('Tentar novamente')),
           ],
@@ -114,7 +114,7 @@ class _PublicTicketPageState extends ConsumerState<PublicTicketPage> {
           Text(
             'Guarde este código — ele é sua referência junto ao hotel.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontStyle: FontStyle.italic),
+            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic),
           ),
         ],
       ),
@@ -126,8 +126,8 @@ class _PublicTicketPageState extends ConsumerState<PublicTicketPage> {
     String label;
     switch (status) {
       case 'APROVADA':
-        bg = const Color(0xFF1E7A1E).withValues(alpha: 0.12);
-        fg = const Color(0xFF1E7A1E);
+        bg = AppColors.successContainer;
+        fg = AppColors.successColor;
         label = 'Confirmada';
         break;
       case 'SOLICITADA':
@@ -137,13 +137,13 @@ class _PublicTicketPageState extends ConsumerState<PublicTicketPage> {
         label = status == 'AGUARDANDO_PAGAMENTO' ? 'Aguardando pagamento' : 'Solicitada';
         break;
       case 'CANCELADA':
-        bg = const Color(0xFFFDE8E8);
-        fg = const Color(0xFFC0392B);
+        bg = AppColors.errorContainer;
+        fg = AppColors.errorColor;
         label = 'Cancelada';
         break;
       default:
-        bg = Colors.grey.shade200;
-        fg = Colors.grey.shade700;
+        bg = Theme.of(context).colorScheme.surfaceContainerHighest;
+        fg = Theme.of(context).colorScheme.onSurfaceVariant;
         label = status;
     }
 
@@ -164,14 +164,15 @@ class _PublicTicketPageState extends ConsumerState<PublicTicketPage> {
   Widget _card(List<Widget> children) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(16)),
       child: Column(children: children),
     );
   }
 
   Widget _row(String label, String value, {bool highlight = false, bool selectable = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
     final valueStyle = TextStyle(
-      color: highlight ? AppColors.secondary : AppColors.primary,
+      color: highlight ? AppColors.secondary : colorScheme.onSurface,
       fontWeight: highlight ? FontWeight.w700 : FontWeight.w500,
       fontSize: highlight ? 16 : 13,
     );
@@ -180,7 +181,7 @@ class _PublicTicketPageState extends ConsumerState<PublicTicketPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text(label, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
           Flexible(
             child: selectable
                 ? SelectableText(value, style: valueStyle, textAlign: TextAlign.right)
@@ -191,7 +192,7 @@ class _PublicTicketPageState extends ConsumerState<PublicTicketPage> {
     );
   }
 
-  Widget _divider() => const Divider(height: 1, color: Color(0xFFE6E6E6));
+  Widget _divider() => Divider(height: 1, color: Theme.of(context).colorScheme.outlineVariant);
 
   String _fmtDate(String iso) {
     if (iso.isEmpty) return '—';

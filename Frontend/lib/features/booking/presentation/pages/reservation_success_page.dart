@@ -21,8 +21,9 @@ class ReservationSuccessPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFD9D9D9),
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -32,16 +33,16 @@ class ReservationSuccessPage extends StatelessWidget {
               Container(
                 width: 88, height: 88,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E7A1E).withValues(alpha: 0.1),
+                  color: AppColors.successContainer,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check_circle, color: Color(0xFF1E7A1E), size: 56),
+                child: const Icon(Icons.check_circle, color: AppColors.successColor, size: 56),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Reserva confirmada!',
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: colorScheme.onSurface,
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                 ),
@@ -53,21 +54,21 @@ class ReservationSuccessPage extends StatelessWidget {
                       'Você também pode acessá-lo pelo link abaixo.'
                     : 'Sua reserva foi aprovada. Consulte os detalhes na aba Tickets.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.primary, fontSize: 13, height: 1.5),
+                style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5),
               ),
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
+                    Text(
                       'Código: ',
-                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600),
                     ),
                     Flexible(
                       child: SelectableText(
@@ -90,7 +91,10 @@ class ReservationSuccessPage extends StatelessWidget {
                         await Clipboard.setData(ClipboardData(text: codigoPublico));
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Código copiado')),
+                          SnackBar(
+                            content: const Text('Código copiado'),
+                            backgroundColor: colorScheme.inverseSurface,
+                          ),
                         );
                       },
                     ),
@@ -124,7 +128,7 @@ class ReservationSuccessPage extends StatelessWidget {
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => context.go('/home'),
-                child: const Text('Voltar à home', style: TextStyle(color: AppColors.primary)),
+                child: Text('Voltar à home', style: TextStyle(color: colorScheme.onSurface)),
               ),
             ],
           ),

@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart' show launchUrl;
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/string_extensions.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/user_profile_provider.dart';
 import '../widgets/profile_header.dart';
@@ -49,7 +50,7 @@ class UserProfilePage extends ConsumerWidget {
               children: [
                 const SizedBox(height: 120),
                 ProfileHeader(
-                  name: profile.nomeCompleto,
+                  name: profile.nomeCompleto.toTitleCase(),
                   email: profile.email,
                   avatarUrl: profile.fotoPerfil,
                   onEditTap: () => context.push('/profile/user/edit'),
@@ -59,17 +60,17 @@ class UserProfilePage extends ConsumerWidget {
                   title: 'Atividade',
                   items: [
                     ProfileMenuItem(
-                      title: 'notificações',
+                      title: 'Notificações',
                       icon: Icons.notifications_none,
                       onTap: () => context.go('/notifications'),
                     ),
                     ProfileMenuItem(
-                      title: 'meus tickets',
+                      title: 'Meus Tickets',
                       icon: Icons.confirmation_number_outlined,
                       onTap: () => context.go('/tickets'),
                     ),
                     ProfileMenuItem(
-                      title: 'favoritos',
+                      title: 'Favoritos',
                       icon: Icons.favorite_border,
                       onTap: () => context.go('/favorites'),
                       showDivider: false,
@@ -78,15 +79,15 @@ class UserProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
                 ProfileMenuSection(
-                  title: 'sistema',
+                  title: 'Sistema',
                   items: [
                     ProfileMenuItem(
-                      title: 'configurações',
+                      title: 'Configurações',
                       icon: Icons.settings_outlined,
                       onTap: () => context.push('/profile/settings'),
                     ),
                     ProfileMenuItem(
-                      title: 'suporte',
+                      title: 'Suporte',
                       icon: Icons.headset_mic_outlined,
                       onTap: () async {
                         final uri = Uri(
@@ -120,7 +121,7 @@ class UserProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 32),
                 PrimaryButton(
-                  text: 'sair',
+                  text: 'Sair',
                   color: AppColors.secondary,
                   textColor: AppColors.primary,
                   onPressed: () async {

@@ -16,13 +16,14 @@ class NextCheckinTile extends StatelessWidget {
         : (checkin.tipoQuarto ?? 'Quarto não atribuído');
     final dataLabel = _formatDate(checkin.dataCheckin);
 
+    final cs = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surfaceContainer,
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: const Color(0x3F182541)),
+        border: Border.all(color: cs.outline),
       ),
       child: Row(
         children: [
@@ -46,8 +47,8 @@ class NextCheckinTile extends StatelessWidget {
               children: [
                 Text(
                   checkin.nomeHospede,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: cs.onSurface,
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
@@ -57,8 +58,8 @@ class NextCheckinTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '$quartoLabel · $dataLabel',
-                  style: const TextStyle(
-                    color: AppColors.greyText,
+                  style: TextStyle(
+                    color: cs.onSurfaceVariant,
                     fontSize: 12,
                   ),
                   maxLines: 1,

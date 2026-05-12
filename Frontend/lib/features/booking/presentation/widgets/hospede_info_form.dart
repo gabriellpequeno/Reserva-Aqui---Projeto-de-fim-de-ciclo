@@ -113,10 +113,10 @@ class HospedeInfoFormState extends State<HospedeInfoForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Dados do hóspede',
             style: TextStyle(
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
@@ -204,14 +204,14 @@ class HospedeInfoFormState extends State<HospedeInfoForm> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
         ),
       ),
-      style: const TextStyle(fontSize: 13, color: AppColors.primary),
+      style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
     );
   }
 }

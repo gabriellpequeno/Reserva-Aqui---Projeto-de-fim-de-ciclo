@@ -33,6 +33,7 @@ class SearchRoomResult {
   final String cidade;
   final String uf;
   final String? fotoId;
+  final String? notaMedia;
 
   const SearchRoomResult({
     required this.quartoId,
@@ -46,6 +47,7 @@ class SearchRoomResult {
     required this.cidade,
     required this.uf,
     this.fotoId,
+    this.notaMedia,
   });
 
   factory SearchRoomResult.fromJson(Map<String, dynamic> json) {
@@ -64,6 +66,7 @@ class SearchRoomResult {
       cidade: json['cidade'] as String? ?? '',
       uf: json['uf'] as String? ?? '',
       fotoId: json['foto_id'] as String?,
+      notaMedia: json['nota_media'] as String?,
     );
   }
 }

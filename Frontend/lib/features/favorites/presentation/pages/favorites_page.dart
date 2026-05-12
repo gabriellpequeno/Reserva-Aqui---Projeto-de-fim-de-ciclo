@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/favorite_card.dart';
@@ -21,9 +21,14 @@ class FavoritesPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerLow,
+      appBar: const CustomAppBar(
+        title: 'Favoritos',
+        showNotificationIcon: true,
+        showBackButton: false,
+      ),
       body: Column(
         children: [
-          _buildHeader(context, ref),
+          _buildSearchBar(context, ref),
 
           if (!isLoggedIn) _buildLoginMessage(context),
 
@@ -77,89 +82,36 @@ class FavoritesPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref) {
+  Widget _buildSearchBar(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        MediaQuery.of(context).padding.top + 50,
-        16,
-        24,
-      ),
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(24),
         ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(width: 48),
-              Expanded(
-                child: SvgPicture.asset(
-                  'lib/assets/icons/logo/logoDark.svg',
-                  height: 32,
-                ),
-              ),
-              SizedBox(
-                width: 48,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: GestureDetector(
-                    onTap: () => context.push('/notifications'),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.notifications_none, color: Colors.white, size: 20),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Favoritos',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+        child: TextField(
+          onChanged: (value) =>
+              ref.read(searchQueryProvider.notifier).update(value),
+          style: TextStyle(color: colorScheme.onSurface),
+          decoration: InputDecoration(
+            hintText: 'Busque por destino, hotel ou quarto...',
+            hintStyle:
+                TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
+            prefixIcon: const Icon(Icons.search, color: Colors.transparent),
+            suffixIcon: const Padding(
+              padding: EdgeInsets.only(right: 12),
+              child: Icon(Icons.search, color: AppColors.secondary, size: 28),
             ),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            filled: false,
+            contentPadding: const EdgeInsets.symmetric(vertical: 14),
           ),
-          const SizedBox(height: 20),
-          Container(
-            height: 48,
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: TextField(
-              onChanged: (value) => ref.read(searchQueryProvider.notifier).update(value),
-              style: TextStyle(color: colorScheme.onSurface),
-              decoration: InputDecoration(
-                hintText: 'Busque por destino, hotel ou quarto...',
-                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
-                prefixIcon: const Icon(Icons.search, color: Colors.transparent),
-                suffixIcon: const Padding(
-                  padding: EdgeInsets.only(right: 12),
-                  child: Icon(Icons.search, color: AppColors.secondary, size: 28),
-                ),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                filled: false,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

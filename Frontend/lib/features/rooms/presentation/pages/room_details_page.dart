@@ -9,6 +9,7 @@ import '../../domain/models/room.dart';
 import '../notifiers/room_details_notifier.dart';
 import '../widgets/availability_checker.dart';
 import '../../../favorites/presentation/providers/favorites_provider.dart';
+import '../../../favorites/presentation/widgets/favorite_dialogs.dart';
 
 class RoomDetailsPage extends ConsumerStatefulWidget {
   final String hotelId;
@@ -32,9 +33,6 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   DateTime? _checkInDate;
   DateTime? _checkOutDate;
 
-  // null = usa estado do provider; true/false = override otimista local do favorito
-  bool? _favoriteOptimistic;
-
   @override
   void initState() {
     super.initState();
@@ -56,15 +54,24 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
     final link =
         'https://reservaqui.com/hotel/${widget.hotelId}/room/${widget.roomId}';
     Clipboard.setData(ClipboardData(text: link));
+    final colorScheme = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Link copiado para a área de transferência')),
+      SnackBar(
+        content: Text(
+          'Link copiado para a área de transferência',
+          style: TextStyle(color: colorScheme.onInverseSurface),
+        ),
+        backgroundColor: colorScheme.inverseSurface,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final roomState = ref.watch(roomDetailsNotifierProvider);
-    ref.watch(favoritesProvider); // garante rebuild quando favoritos mudam
+    final isFavorite = ref.watch(favoritesProvider).value
+            ?.any((h) => h.hotelId == widget.hotelId) ??
+        false;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -97,11 +104,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildImageSection(
-                              roomState.room!,
-                              isFavorite: _favoriteOptimistic ??
-                                  ref.read(favoritesProvider.notifier).isFavorite(widget.hotelId),
-                            ),
+                          _buildImageSection(roomState.room!, isFavorite: isFavorite),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(24, 58, 24, 24),
                             child: Column(
@@ -193,6 +196,12 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
     final safeIndex = _currentPhotoIndex.clamp(0, galleryUrls.length - 1);
     final mainImageUrl = galleryUrls[safeIndex];
 
+    // Card de preço: light = fundo azul-marinho com texto laranja;
+    // dark = inverte para ganhar contraste contra o fundo escuro.
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final priceCardBg = isDark ? AppColors.secondary : AppColors.primary;
+    final priceCardFg = isDark ? AppColors.primary : AppColors.secondary;
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -256,9 +265,9 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
             child: IntrinsicWidth(
               child: Container(
                 padding: const EdgeInsets.fromLTRB(24, 14, 24, 14),
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: priceCardBg,
+                  borderRadius: const BorderRadius.only(
                     topRight: Radius.circular(16),
                     bottomRight: Radius.circular(16),
                   ),
@@ -272,10 +281,10 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                       textBaseline: TextBaseline.alphabetic,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
+                        Text(
                           '\$',
                           style: TextStyle(
-                            color: AppColors.secondary,
+                            color: priceCardFg,
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             height: 0.9,
@@ -283,8 +292,8 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                         ),
                         Text(
                           '${room.price.toInt()}',
-                          style: const TextStyle(
-                            color: AppColors.secondary,
+                          style: TextStyle(
+                            color: priceCardFg,
                             fontSize: 38,
                             fontWeight: FontWeight.bold,
                             height: 0.9,
@@ -292,13 +301,13 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                         ),
                       ],
                     ),
-                    const FittedBox(
+                    FittedBox(
                       fit: BoxFit.fitWidth,
                       alignment: Alignment.centerLeft,
                       child: Text(
                         'por dia',
                         style: TextStyle(
-                          color: AppColors.secondary,
+                          color: priceCardFg,
                           fontSize: 8,
                           fontWeight: FontWeight.w300,
                           height: 0.9,
@@ -360,50 +369,38 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
     required VoidCallback onTap,
     Color iconColor = Colors.white,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.3),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-        ),
-        child: Icon(icon, color: iconColor, size: 20),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.3),
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: iconColor, size: 20),
+        onPressed: onTap,
       ),
     );
   }
 
   Future<void> _toggleFavorite() async {
-    final authValue = ref.read(authProvider).value;
-    if (!(authValue?.isAuthenticated ?? false)) {
+    final isAuth =
+        ref.read(authProvider).asData?.value.isAuthenticated ?? false;
+    if (!isAuth) {
       context.go('/auth/login');
       return;
     }
 
-    final notifier = ref.read(favoritesProvider.notifier);
-    final wasFavorite = notifier.isFavorite(widget.hotelId);
-    setState(() => _favoriteOptimistic = !wasFavorite);
+    final isFav = ref.read(favoritesProvider).value
+            ?.any((h) => h.hotelId == widget.hotelId) ??
+        false;
 
-    try {
-      if (wasFavorite) {
-        await notifier.removeFavorite(widget.hotelId);
-      } else {
-        await notifier.addFavorite(widget.hotelId);
-      }
-      if (mounted) setState(() => _favoriteOptimistic = null);
-    } catch (_) {
-      if (mounted) {
-        setState(() => _favoriteOptimistic = null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              wasFavorite ? 'Erro ao remover dos favoritos' : 'Erro ao adicionar aos favoritos',
-            ),
-          ),
-        );
-      }
+    if (isFav) {
+      final confirmed = await showUnfavoriteConfirmationDialog(context);
+      if (!confirmed || !mounted) return;
+      await ref.read(favoritesProvider.notifier).removeFavorite(widget.hotelId);
+      if (mounted) await showFavoriteRemovedDialog(context);
+    } else {
+      await ref.read(favoritesProvider.notifier).addFavorite(widget.hotelId);
+      if (mounted) await showFavoriteAddedDialog(context);
     }
   }
 

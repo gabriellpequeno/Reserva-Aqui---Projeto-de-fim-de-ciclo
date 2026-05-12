@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/auth_state.dart';
 import '../../../../core/utils/breakpoints.dart';
@@ -20,9 +21,11 @@ class NotificationsPage extends ConsumerWidget {
 
     final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
+      appBar: isDesktop
+          ? null
+          : const CustomAppBar(title: 'Notificações'),
       body: Column(
         children: [
-          if (!isDesktop) _buildHeader(context, ref),
           Expanded(
             child: ResponsiveCenter(
               maxWidth: ContentMaxWidth.reading,
@@ -70,54 +73,6 @@ class NotificationsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref) {
-    final isDesktop = Breakpoints.isDesktop(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 60, 16, 30),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: isDesktop
-            ? BorderRadius.zero
-            : const BorderRadius.only(
-                bottomLeft: Radius.circular(27),
-                bottomRight: Radius.circular(27),
-              ),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned(
-            left: 0,
-            child: IconButton(
-              icon: const Icon(Icons.chevron_left,
-                  color: Colors.white, size: 32),
-              onPressed: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  final auth = ref.read(authProvider).asData?.value;
-                  if (auth?.role == AuthRole.host) {
-                    context.go('/profile/host');
-                  } else {
-                    context.go('/profile/user');
-                  }
-                }
-              },
-            ),
-          ),
-          const Text(
-            'Notificações',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildNotificationCard(
     BuildContext context,

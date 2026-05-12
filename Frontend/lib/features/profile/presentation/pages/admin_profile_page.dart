@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/breakpoints.dart';
+import '../../../../core/utils/string_extensions.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/admin_profile_provider.dart';
 import '../widgets/profile_header.dart';
@@ -35,7 +36,7 @@ class AdminProfilePage extends ConsumerWidget {
               children: [
                 const SizedBox(height: 120),
                 ProfileHeader(
-                  name: profile.nome.isEmpty ? 'Admin' : profile.nome,
+                  name: profile.nome.isEmpty ? 'Admin' : profile.nome.toTitleCase(),
                   email: profile.email,
                   onEditTap: () => context.push('/profile/admin/edit'),
                 ),
@@ -58,15 +59,15 @@ class AdminProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
                 ProfileMenuSection(
-                  title: 'sistema',
+                  title: 'Sistema',
                   items: [
                     ProfileMenuItem(
-                      title: 'configurações',
+                      title: 'Configurações',
                       icon: Icons.settings_outlined,
                       onTap: () => context.push('/profile/settings'),
                     ),
                     ProfileMenuItem(
-                      title: 'suporte',
+                      title: 'Suporte',
                       icon: Icons.headset_mic_outlined,
                       onTap: () {},
                       showDivider: false,
@@ -75,7 +76,7 @@ class AdminProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 32),
                 PrimaryButton(
-                  text: 'sair',
+                  text: 'Sair',
                   color: AppColors.secondary,
                   textColor: AppColors.primary,
                   onPressed: () async {

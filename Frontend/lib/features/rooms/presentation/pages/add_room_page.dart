@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import '../../domain/models/catalogo_item.dart';
 import '../notifiers/add_room_notifier.dart';
 import '../notifiers/add_room_state.dart';
 import '../notifiers/my_rooms_notifier.dart';
+import '../widgets/amenities_selector.dart';
 
 class AddRoomPage extends ConsumerStatefulWidget {
   const AddRoomPage({super.key});
@@ -122,12 +122,15 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
     });
 
     return Scaffold(
+      appBar: const CustomAppBar(
+        title: 'Novo Quarto',
+        showNotificationIcon: true,
+      ),
       body: Stack(
         children: [
           SingleChildScrollView(
             child: Column(
               children: [
-                _buildCustomAppBar(),
                 if (state.submitting) _buildProgressBar(state),
                 Padding(
                   padding: EdgeInsets.symmetric(
@@ -212,66 +215,6 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
     );
   }
 
-  Widget _buildCustomAppBar() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 50,
-        left: 24,
-        right: 24,
-        bottom: 24,
-      ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF182541),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(27),
-          bottomRight: Radius.circular(27),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          GestureDetector(
-            onTap: () => context.pop(),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.arrow_back,
-                  color: Colors.white, size: 24),
-            ),
-          ),
-          Column(
-            children: [
-              SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 32),
-              const Text(
-                'Novo Quarto',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-          GestureDetector(
-            onTap: () => context.go('/notifications'),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.notifications,
-                  color: Colors.white, size: 24),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -352,15 +295,15 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
         ),
         const SizedBox(height: 8),
         if (state.loadingCatalogo)
-          const Center(
+          Center(
             child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               child: SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFFEC6725),
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),
@@ -368,80 +311,20 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
         else if (state.catalogoItens.isEmpty)
           Text(
             'Sem comodidades cadastradas',
-            style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
           )
         else
-          _buildAmenitiesChips(state.catalogoItens),
+          AmenitiesSelector(
+            itens: state.catalogoItens,
+            onToggle: (id, selected) {
+              if (selected) {
+                _selectedAmenityIds.add(id);
+              } else {
+                _selectedAmenityIds.remove(id);
+              }
+            },
+          ),
       ],
-    );
-  }
-
-  Widget _buildAmenitiesChips(List<CatalogoItemModel> itens) {
-    // Agrupar por categoria
-    final grupos = <String, List<CatalogoItemModel>>{};
-    for (final item in itens) {
-      grupos.putIfAbsent(item.categoria, () => []).add(item);
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 8,
-      children: grupos.entries.map((entry) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              entry.key,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF999999),
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: entry.value.map((item) {
-                final selected = _selectedAmenityIds.contains(item.id);
-                return FilterChip(
-                  label: Text(item.nome),
-                  selected: selected,
-                  onSelected: (val) {
-                    setState(() {
-                      if (val) {
-                        _selectedAmenityIds.add(item.id);
-                      } else {
-                        _selectedAmenityIds.remove(item.id);
-                      }
-                    });
-                  },
-                  selectedColor: Theme.of(context).colorScheme.primary,
-                  checkmarkColor: Theme.of(context).colorScheme.onPrimary,
-                  labelStyle: TextStyle(
-                    fontSize: 12,
-                    color: selected
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : Theme.of(context).colorScheme.onSurface,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    side: BorderSide(
-                      color: selected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  showCheckmark: true,
-                );
-              }).toList(),
-            ),
-          ],
-        );
-      }).toList(),
     );
   }
 

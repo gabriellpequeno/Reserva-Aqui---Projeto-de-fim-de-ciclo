@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/breakpoints.dart';
+import '../../../../core/utils/string_extensions.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_menu_item.dart';
@@ -53,8 +54,8 @@ class HostProfilePage extends ConsumerWidget {
             final hotel = data.hotel;
             final fotos = data.fotos;
 
-            final name = hotel['nome_hotel'] ?? 'Sem nome';
-            final email = hotel['email'] ?? 'Sem e-mail';
+            final name = (hotel['nome_hotel'] as String? ?? 'Sem nome');
+            final email = (hotel['email'] as String? ?? 'Sem e-mail');
             final avatarUrl = (hotel['foto_perfil'] as String?) ??
                 (fotos.isNotEmpty ? fotos.first['url'] as String? : null);
 
@@ -66,7 +67,7 @@ class HostProfilePage extends ConsumerWidget {
                 children: [
                   const SizedBox(height: 120),
                   ProfileHeader(
-                    name: name,
+                    name: name.toTitleCase(),
                     email: email,
                     avatarUrl: avatarUrl,
                     onEditTap: () => context.push('/profile/host/edit'),
@@ -76,7 +77,7 @@ class HostProfilePage extends ConsumerWidget {
                     title: 'Atividade',
                     items: [
                       ProfileMenuItem(
-                        title: 'notificações',
+                        title: 'Notificações',
                         icon: Icons.notifications_none,
                         onTap: () => context.go('/notifications'),
                       ),
@@ -102,17 +103,17 @@ class HostProfilePage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
                   ProfileMenuSection(
-                    title: 'sistema',
+                    title: 'Sistema',
                     items: [
                       ProfileMenuItem(
-                        title: 'configurações',
+                        title: 'Configurações',
                         icon: Icons.settings_outlined,
                         onTap: () {
                           context.push('/profile/settings');
                         },
                       ),
                       ProfileMenuItem(
-                        title: 'suporte',
+                        title: 'Suporte',
                         icon: Icons.headset_mic_outlined,
                         onTap: () {},
                         showDivider: false,
@@ -121,7 +122,7 @@ class HostProfilePage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 32),
                   PrimaryButton(
-                    text: 'sair',
+                    text: 'Sair',
                     color: AppColors.secondary,
                     textColor: AppColors.primary,
                     onPressed: () async {

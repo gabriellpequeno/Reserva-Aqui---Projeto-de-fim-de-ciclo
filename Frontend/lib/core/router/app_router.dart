@@ -97,7 +97,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/search',
-            builder: (context, state) => const SearchPage(),
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>? ?? {};
+              return SearchPage(
+                initialQuery: extra['query'] as String?,
+                initialAmenities: (extra['amenities'] as List?)?.cast<String>().toSet(),
+              );
+            },
           ),
           GoRoute(
             path: '/chat',

@@ -567,7 +567,28 @@ async function _handleWebhook(payload: InfinitePayWebhookPayload): Promise<void>
 
 // ── Helpers do fluxo fake ────────────────────────────────────────────────────
 
-const MODALIDADES_FAKE: FormaPagamento[] = ['PIX', 'CARTAO_CREDITO', 'CARTAO_DEBITO'];
+export const MODALIDADES_FAKE: FormaPagamento[] = ['PIX', 'CARTAO_CREDITO', 'CARTAO_DEBITO'];
+
+/**
+ * Forma de pagamento aceita pelo simulador. O webhook real da InfinitePay
+ * não está em uso enquanto não há documentação de sandbox.
+ */
+export function isFormaPagamentoValida(forma: unknown): forma is FormaPagamento {
+  return typeof forma === 'string' && (MODALIDADES_FAKE as string[]).includes(forma);
+}
+
+/**
+ * Verifica se um link de pagamento expirou. `null` significa "sem TTL"
+ * (canal APP, sem timer) e nunca expira.
+ */
+export function isLinkPagamentoExpirado(
+  expiresAt: Date | string | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  if (!expiresAt) return false;
+  const exp = expiresAt instanceof Date ? expiresAt : new Date(expiresAt);
+  return exp.getTime() < now.getTime();
+}
 
 async function _resolveTenantByCodigoPublico(codigoPublico: string): Promise<{
   schema_name: string;
@@ -595,7 +616,7 @@ async function _resolveTenantByCodigoPublico(codigoPublico: string): Promise<{
   };
 }
 
-function _toResumo(
+export function toPagamentoResumo(
   row: {
     id: number;
     reserva_id: number;
@@ -654,7 +675,7 @@ async function _createPagamentoFake(input: CriarPagamentoFakeInput): Promise<Pag
       // Se ainda não expirou, reutiliza
       const ex = existente[0];
       const stillValid = !ex.expires_at || ex.expires_at > new Date();
-      if (stillValid) return _toResumo(ex, reserva.codigo_publico, reserva.valor_total);
+      if (stillValid) return toPagamentoResumo(ex, reserva.codigo_publico, reserva.valor_total);
     }
 
     const expiresAt = input.canal === 'WHATSAPP'
@@ -680,7 +701,7 @@ async function _createPagamentoFake(input: CriarPagamentoFakeInput): Promise<Pag
     // Log silencioso pra facilitar debug sem poluir; hotel receberá notificação ao aprovar
     void hotel_id; void nome_hotel;
 
-    return _toResumo(inserted[0], reserva.codigo_publico, reserva.valor_total);
+    return toPagamentoResumo(inserted[0], reserva.codigo_publico, reserva.valor_total);
   });
 }
 
@@ -700,7 +721,7 @@ async function _getPagamentoPublic(codigoPublico: string, pagamentoId: number): 
     );
     if (!rows[0]) throw new Error('Pagamento não encontrado');
 
-    return _toResumo(rows[0], rows[0].codigo_publico, rows[0].valor_pago);
+    return toPagamentoResumo(rows[0], rows[0].codigo_publico, rows[0].valor_pago);
   });
 }
 
@@ -754,7 +775,7 @@ async function _confirmarPagamentoFake(
     );
     if (!upd[0]) throw new Error('Pagamento já processado');
 
-    resumo = _toResumo(upd[0], reserva.codigo_publico, reserva.valor_total);
+    resumo = toPagamentoResumo(upd[0], reserva.codigo_publico, reserva.valor_total);
   });
 
   // Notifica o hotel que há uma nova reserva aguardando aprovação — fire-and-forget
@@ -804,7 +825,7 @@ async function _cancelarPagamentoFake(
     );
     if (!reservaRows[0]) throw new Error('Reserva não encontrada');
 
-    return _toResumo(pagRows[0], codigoPublico, reservaRows[0].valor_total);
+    return toPagamentoResumo(pagRows[0], codigoPublico, reservaRows[0].valor_total);
   });
 
   // Notifica hotel — fire-and-forget

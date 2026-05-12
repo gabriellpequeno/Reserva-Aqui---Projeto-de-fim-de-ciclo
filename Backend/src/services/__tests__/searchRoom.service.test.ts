@@ -162,4 +162,62 @@ describe('searchRoom.service', () => {
     expect(results[0].cidade).toBe('Salvador');
     expect(results[0].uf).toBe('BA');
   });
+
+  describe('escapeLikePattern (via params do mock)', () => {
+    it('escapa underscore (_) que é wildcard de "qualquer caractere" em LIKE', async () => {
+      queryMock.mockResolvedValue({ rows: [] });
+      await searchRooms('foo_bar');
+      const [, params] = queryMock.mock.calls[0];
+      expect(params[0]).toBe('%foo\\_bar%');
+    });
+
+    it('escapa backslash antes dos demais wildcards (ordem importa)', async () => {
+      queryMock.mockResolvedValue({ rows: [] });
+      await searchRooms('a\\b');
+      const [, params] = queryMock.mock.calls[0];
+      // \ vira \\, então o pattern fica %a\\b%
+      expect(params[0]).toBe('%a\\\\b%');
+    });
+
+    it('escapa combinação de %, _ e \\ no mesmo input', async () => {
+      queryMock.mockResolvedValue({ rows: [] });
+      await searchRooms('50%_off\\promo');
+      const [, params] = queryMock.mock.calls[0];
+      expect(params[0]).toBe('%50\\%\\_off\\\\promo%');
+    });
+
+    it('preserva caracteres unicode e acentos sem alterar', async () => {
+      queryMock.mockResolvedValue({ rows: [] });
+      await searchRooms('São Paulo — Pousada 🏨');
+      const [, params] = queryMock.mock.calls[0];
+      expect(params[0]).toBe('%São Paulo — Pousada 🏨%');
+    });
+
+    it('faz trim da query antes de montar o pattern', async () => {
+      queryMock.mockResolvedValue({ rows: [] });
+      await searchRooms('   salvador   ');
+      const [, params] = queryMock.mock.calls[0];
+      expect(params[0]).toBe('%salvador%');
+    });
+  });
+
+  describe('query curta / vazia', () => {
+    it('quando q tem menos de 2 chars após trim, usa query sem filtros', async () => {
+      queryMock.mockResolvedValue({ rows: [] });
+      await searchRooms(' a ');
+      const [query, params] = queryMock.mock.calls[0];
+      expect(params).toBeUndefined();
+      expect(query).not.toContain('ILIKE');
+      expect(query).toContain('ativo = TRUE');
+      expect(query).toContain('LIMIT 20');
+    });
+
+    it('quando q é string vazia, também usa o caminho sem filtros', async () => {
+      queryMock.mockResolvedValue({ rows: [] });
+      await searchRooms('');
+      const [query, params] = queryMock.mock.calls[0];
+      expect(params).toBeUndefined();
+      expect(query).not.toContain('ILIKE');
+    });
+  });
 });

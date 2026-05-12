@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/breakpoints.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../tickets/data/services/tickets_service.dart';
 import '../../../tickets/domain/models/ticket.dart';
 import '../notifiers/agendamentos_notifier.dart';
@@ -87,7 +88,7 @@ class _AgendamentoDetailPageState extends ConsumerState<AgendamentoDetailPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: isError ? Colors.red[700] : Colors.green[700],
+        backgroundColor: isError ? Theme.of(context).colorScheme.error : Colors.green[700],
       ),
     );
   }
@@ -96,72 +97,19 @@ class _AgendamentoDetailPageState extends ConsumerState<AgendamentoDetailPage> {
   Widget build(BuildContext context) {
     final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
-      body: Column(
-        children: [
-          if (!isDesktop) _buildHeader(context),
-          Expanded(
-            child: ResponsiveCenter(
-              maxWidth: ContentMaxWidth.reading,
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _error != null
-                      ? _buildError()
-                      : _buildContent(),
+      appBar: isDesktop
+          ? null
+          : const CustomAppBar(
+              title: 'Detalhe do Agendamento',
+              fallbackRoute: '/host/agendamentos',
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    final isDesktop = Breakpoints.isDesktop(context);
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: isDesktop
-            ? BorderRadius.zero
-            : const BorderRadius.only(
-                bottomLeft: Radius.circular(27),
-                bottomRight: Radius.circular(27),
-              ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 50,
-          left: 24,
-          right: 24,
-          bottom: 24,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            GestureDetector(
-              onTap: () => context.canPop() ? context.pop() : context.go('/host/agendamentos'),
-              child: Container(
-                width: 45.79,
-                height: 45.79,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.37),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.17), width: 0.62),
-                ),
-                child: const Icon(Icons.chevron_left, color: Colors.white, size: 22),
-              ),
-            ),
-            const Text(
-              'Detalhe do Agendamento',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontFamily: 'Stack Sans Headline',
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(width: 45.79),
-          ],
-        ),
+      body: ResponsiveCenter(
+        maxWidth: ContentMaxWidth.reading,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? _buildError()
+                : _buildContent(),
       ),
     );
   }
@@ -276,10 +224,10 @@ class _AgendamentoDetailPageState extends ConsumerState<AgendamentoDetailPage> {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontFamily: 'Stack Sans Text',
-                color: AppColors.primary,
+                color: colorScheme.onSurface,
               ),
             ),
           ),

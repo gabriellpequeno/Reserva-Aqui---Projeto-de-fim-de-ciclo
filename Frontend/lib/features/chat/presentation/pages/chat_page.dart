@@ -69,11 +69,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(chatState.error!),
-            backgroundColor: Colors.red.shade700,
+            backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
             action: SnackBarAction(
               label: 'OK',
-              textColor: Colors.white,
+              textColor: Theme.of(context).colorScheme.onError,
               onPressed: () => ref.read(chatProvider.notifier).clearError(),
             ),
           ),
@@ -90,7 +90,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     final isDesktop = Breakpoints.isDesktop(context);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
           if (!isDesktop) _buildHeader(context),
@@ -124,7 +124,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             Icon(
               Icons.chat_bubble_outline_rounded,
               size: 64,
-              color: AppColors.primary.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
@@ -132,7 +132,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -141,7 +141,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey.shade600,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 height: 1.5,
               ),
             ),
@@ -190,7 +190,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           maxWidth: MediaQuery.of(context).size.width * 0.3,
         ),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Row(
@@ -218,7 +218,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               shape: BoxShape.circle,
             ),
           ),
@@ -321,8 +321,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline)),
       ),
       child: SafeArea(
         top: false,
@@ -332,9 +332,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: TextField(
                   controller: _textController,

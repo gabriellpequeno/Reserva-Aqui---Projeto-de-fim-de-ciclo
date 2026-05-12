@@ -37,31 +37,36 @@ class PeriodSelector extends StatelessWidget {
   }
 
   Widget _chip(DashboardPeriod p, bool selected) {
-    return Semantics(
-      label: '${p.toLabel()}${selected ? ', selecionado' : ''}',
-      button: true,
-      child: GestureDetector(
-        onTap: () => onChanged(p),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.secondary : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: selected ? AppColors.secondary : AppColors.strokeLight,
+    return Builder(
+      builder: (context) {
+        final cs = Theme.of(context).colorScheme;
+        return Semantics(
+          label: '${p.toLabel()}${selected ? ', selecionado' : ''}',
+          button: true,
+          child: GestureDetector(
+            onTap: () => onChanged(p),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: selected ? AppColors.secondary : cs.surfaceContainer,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: selected ? AppColors.secondary : cs.outline,
+                ),
+              ),
+              child: Text(
+                p.toLabel(),
+                style: TextStyle(
+                  color: selected ? Colors.white : cs.onSurface,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
-          child: Text(
-            p.toLabel(),
-            style: TextStyle(
-              color: selected ? Colors.white : AppColors.primary,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -34,16 +34,16 @@ class ReservaStatusBreakdown extends StatelessWidget {
                 children: [
                   Text(
                     item.status.toLabel(),
-                    style: const TextStyle(
-                      color: AppColors.primary,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   Text(
                     '${item.count}',
-                    style: const TextStyle(
-                      color: AppColors.primary,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
@@ -55,7 +55,7 @@ class ReservaStatusBreakdown extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: fraction,
-                  backgroundColor: AppColors.strokeLight,
+                  backgroundColor: Theme.of(context).colorScheme.outlineVariant,
                   valueColor: AlwaysStoppedAnimation(_colorFor(item.status)),
                   minHeight: 6,
                 ),
@@ -89,9 +89,9 @@ class _EmptyState extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       alignment: Alignment.center,
-      child: const Text(
+      child: Text(
         'Sem reservas no período',
-        style: TextStyle(color: AppColors.greyText, fontSize: 13),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
       ),
     );
   }

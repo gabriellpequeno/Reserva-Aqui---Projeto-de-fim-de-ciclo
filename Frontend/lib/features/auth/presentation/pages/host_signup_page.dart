@@ -12,6 +12,7 @@ import '../../../../core/widgets/primary_button.dart';
 import '../../data/models/register_host_request.dart';
 import '../../data/services/auth_service.dart';
 import '../widgets/auth_text_field.dart';
+import '../widgets/terms_modal.dart';
 
 class HostSignUpPage extends ConsumerStatefulWidget {
   const HostSignUpPage({super.key});
@@ -154,55 +155,6 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _showTermsModal() {
-    final colorScheme = Theme.of(context).colorScheme;
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colorScheme.surface,
-        title: Text(
-          'Termos e Condições',
-          style: TextStyle(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Text(
-            '1. Uso da Plataforma\n'
-            'O ReservAqui é uma plataforma de intermediação de reservas. '
-            'O hotel é responsável pela precisão das informações cadastradas, '
-            'incluindo disponibilidade, preços e políticas.\n\n'
-            '2. Responsabilidades do Anfitrião\n'
-            'O anfitrião deve manter os dados do estabelecimento atualizados '
-            'e honrar as reservas confirmadas pela plataforma.\n\n'
-            '3. Dados Pessoais\n'
-            'As informações fornecidas serão utilizadas exclusivamente para '
-            'fins operacionais da plataforma, conforme nossa Política de Privacidade.\n\n'
-            '4. Cancelamentos\n'
-            'A política de cancelamento é definida por cada estabelecimento '
-            'e deve estar claramente informada no perfil do hotel.\n\n'
-            '5. Alterações dos Termos\n'
-            'O ReservAqui reserva-se o direito de atualizar estes termos a '
-            'qualquer momento, notificando os usuários por e-mail.\n\n'
-            'Dúvidas? Entre em contato: suporte@reservaqui.dev',
-            style: TextStyle(
-              color: colorScheme.onSurfaceVariant,
-              fontSize: 14,
-              height: 1.6,
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Fechar'),
-          ),
-        ],
-      ),
-    );
-  }
-
   // Campo de senha com toggle de visibilidade
   Widget _buildPasswordField({
     required TextEditingController controller,
@@ -229,6 +181,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
             color: AppColors.secondary,
           ),
         ),
+        prefixIcon: const Icon(Icons.lock_outlined, color: AppColors.secondary),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         filled:    true,
         fillColor: colorScheme.surfaceContainer,
@@ -287,6 +240,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                 // Nome do hotel
                 AuthTextField(
                   hintText: 'Nome do Hotel',
+                  icon: Icons.business_outlined,
                   controller: _nomeHotelController,
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Informe o Nome do Hotel';
@@ -298,6 +252,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                 // CNPJ
                 AuthTextField(
                   hintText:        'CNPJ',
+                  icon:            Icons.badge_outlined,
                   keyboardType:    TextInputType.number,
                   controller:      _cnpjController,
                   inputFormatters: [_cnpjFormatter],
@@ -314,6 +269,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                 // Telefone
                 AuthTextField(
                   hintText:        '(XX) XXXXX-XXXX',
+                  icon:            Icons.phone_outlined,
                   keyboardType:    TextInputType.phone,
                   controller:      _telefoneController,
                   inputFormatters: [PhoneMaskFormatter()],
@@ -331,6 +287,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                 // Email
                 AuthTextField(
                   hintText:     'email@dominio.com',
+                  icon:         Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   controller:   _emailController,
                   validator: (v) {
@@ -344,6 +301,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                 // CEP
                 AuthTextField(
                   hintText:        'CEP',
+                  icon:            Icons.location_on_outlined,
                   keyboardType:    TextInputType.number,
                   controller:      _cepController,
                   inputFormatters: [_cepFormatter],
@@ -363,6 +321,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                       flex: 3,
                       child: AuthTextField(
                         hintText:   'Cidade',
+                        icon:       Icons.location_city_outlined,
                         controller: _cidadeController,
                         validator:  (v) {
                           if (v == null || v.trim().isEmpty) return 'Informe a Cidade';
@@ -437,6 +396,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                       flex: 3,
                       child: AuthTextField(
                         hintText:  'Rua',
+                        icon:      Icons.home_outlined,
                         controller: _ruaController,
                         validator:  (v) {
                           if (v == null || v.trim().isEmpty) return 'Informe a Rua';
@@ -449,6 +409,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                       flex: 1,
                       child: AuthTextField(
                         hintText:  'N°',
+                        icon:      Icons.tag,
                         controller: _numeroController,
                         validator:  (v) {
                           if (v == null || v.trim().isEmpty) return 'N°';
@@ -462,12 +423,14 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
 
                 AuthTextField(
                   hintText:  'Complemento',
+                  icon:      Icons.apartment_outlined,
                   controller: _complementoController,
                 ),
                 const SizedBox(height: 16),
 
                 AuthTextField(
                   hintText:  'Bairro',
+                  icon:      Icons.map_outlined,
                   controller: _bairroController,
                   validator:  (v) {
                     if (v == null || v.trim().isEmpty) return 'Informe o Bairro';
@@ -478,6 +441,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
 
                 AuthTextField(
                   hintText:  'Descrição do Hotel',
+                  icon:      Icons.description_outlined,
                   controller: _descricaoController,
                 ),
                 const SizedBox(height: 16),
@@ -539,7 +503,7 @@ class _HostSignUpPageState extends ConsumerState<HostSignUpPage> {
                               WidgetSpan(
                                 alignment: PlaceholderAlignment.middle,
                                 child: GestureDetector(
-                                  onTap: _showTermsModal,
+                                  onTap: () => showTermsModal(context),
                                   child: const Text(
                                     'Termos e Condições',
                                     style: TextStyle(

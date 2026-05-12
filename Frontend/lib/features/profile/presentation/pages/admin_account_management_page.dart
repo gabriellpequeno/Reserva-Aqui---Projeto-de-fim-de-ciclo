@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/breakpoints.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 import '../../data/services/admin_accounts_service.dart';
 import '../../domain/models/admin_hotel_model.dart';
 import '../../domain/models/admin_user_model.dart';
@@ -78,10 +77,17 @@ class _AdminAccountManagementPageState
   @override
   Widget build(BuildContext context) {
     final isDesktop = Breakpoints.isDesktop(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
+      appBar: isDesktop
+          ? null
+          : const CustomAppBar(
+              title: 'Gerenciamento de Contas',
+              fallbackRoute: '/profile/admin',
+            ),
       body: Column(
         children: [
-          if (!isDesktop) _buildHeader(),
+          _buildSearchBar(colorScheme),
           _buildTabs(),
           Expanded(
             child: TabBarView(
@@ -97,110 +103,39 @@ class _AdminAccountManagementPageState
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
-
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(27),
-          bottomRight: Radius.circular(27),
+  Widget _buildSearchBar(ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+      child: Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(23),
+          border: Border.all(color: colorScheme.outlineVariant),
         ),
-      ),
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 50,
-        left: 24,
-        right: 24,
-        bottom: 24,
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Semantics(
-                  label: 'Voltar',
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                    onPressed: () => context.canPop()
-                        ? context.pop()
-                        : context.go('/profile/admin'),
-                  ),
-                ),
+        child: Semantics(
+          label: 'Pesquisar por nome ou e-mail',
+          child: TextField(
+            controller: _searchController,
+            style: TextStyle(color: colorScheme.onSurface),
+            decoration: InputDecoration(
+              hintText: 'Pesquisar por nome ou e-mail...',
+              hintStyle: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 14,
               ),
-              Column(
-                children: [
-                  SvgPicture.asset(
-                    'lib/assets/icons/logo/logo.svg',
-                    height: 32,
-                    colorFilter: const ColorFilter.mode(
-                      Colors.white,
-                      BlendMode.srcIn,
-                    ),
-                    semanticsLabel: 'ReservaQui',
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Gerenciamento de Contas',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 40),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Container(
-            height: 44,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(23),
-            ),
-            child: Semantics(
-              label: 'Pesquisar por nome ou e-mail',
-              child: TextField(
-                controller: _searchController,
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                decoration: InputDecoration(
-                  hintText: 'Pesquisar por nome ou e-mail...',
-                  hintStyle: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 14,
-                  ),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  filled: false,
-                  suffixIcon: const Icon(
-                    Icons.search,
-                    color: AppColors.secondary,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
-                ),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+              suffixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 14,
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

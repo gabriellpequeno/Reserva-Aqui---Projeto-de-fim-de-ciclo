@@ -61,7 +61,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
     final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFD9D9D9),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
           if (!isDesktop) _buildHeader(context),
@@ -215,15 +215,16 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
   // ── Estados de erro ─────────────────────────────────────────────────────
   Widget _buildErrorState(String message) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+            Icon(Icons.error_outline, size: 48, color: colorScheme.onSurfaceVariant),
             const SizedBox(height: 12),
-            Text(message, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600])),
+            Text(message, textAlign: TextAlign.center, style: TextStyle(color: colorScheme.onSurfaceVariant)),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => ref.read(checkoutNotifierProvider.notifier).loadData(
@@ -247,20 +248,20 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFDE8E8),
+        color: AppColors.errorContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEF2828).withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.errorBorder.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: Color(0xFFEF2828), size: 20),
+          const Icon(Icons.error_outline, color: AppColors.errorBorder, size: 20),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(message, style: const TextStyle(color: Color(0xFFEF2828), fontSize: 13)),
+            child: Text(message, style: const TextStyle(color: AppColors.errorBorder, fontSize: 13)),
           ),
           GestureDetector(
             onTap: () => ref.read(checkoutNotifierProvider.notifier).clearError(),
-            child: const Icon(Icons.close, color: Color(0xFFEF2828), size: 18),
+            child: const Icon(Icons.close, color: AppColors.errorBorder, size: 18),
           ),
         ],
       ),
@@ -269,9 +270,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
   // ── Card principal (datas + hóspedes + quarto) ──────────────────────────
   Widget _buildMainCard(BuildContext context, CheckoutState state) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -293,17 +295,17 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFFDE8E8),
+                color: AppColors.errorContainer,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.warning_amber_outlined, color: Color(0xFFC0392B), size: 18),
+                  Icon(Icons.warning_amber_outlined, color: AppColors.errorColor, size: 18),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Quarto indisponível nessas datas',
-                      style: TextStyle(color: Color(0xFFC0392B), fontSize: 12, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: AppColors.errorColor, fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],
@@ -323,7 +325,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             rightValue: '${state.categoria?.capacidadePessoas ?? '—'} pessoa(s)',
             isLast: true,
           ),
-          _buildFinalizeButton(context, state),
         ],
       ),
     );
@@ -337,7 +338,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         children: [
           Text(
             state.categoria?.nome ?? 'Carregando...',
-            style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           _dateField(
@@ -358,7 +359,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               padding: const EdgeInsets.only(top: 6),
               child: Text(
                 'Para alterar as datas, volte à tela anterior.',
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+                style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic),
               ),
             ),
         ],
@@ -378,11 +379,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         width: 220,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: ShapeDecoration(
-          color: locked ? const Color(0xFFF4F4F4) : Colors.white,
+          color: locked ? Theme.of(context).colorScheme.surfaceContainerHighest : Theme.of(context).colorScheme.surface,
           shape: RoundedRectangleBorder(
             side: BorderSide(
               width: 1,
-              color: hasValue ? AppColors.primary.withValues(alpha: 0.5) : const Color(0x3F182541),
+              color: Theme.of(context).colorScheme.outline,
             ),
             borderRadius: BorderRadius.circular(11),
           ),
@@ -396,14 +397,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               child: Text(
                 label,
                 style: TextStyle(
-                  color: hasValue ? AppColors.primary : const Color(0x7F182541),
+                  color: hasValue ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 12,
                   fontWeight: hasValue ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ),
             Icon(locked ? Icons.lock_outline : Icons.keyboard_arrow_down,
-                color: AppColors.primary, size: 16),
+                color: Theme.of(context).colorScheme.onSurface, size: 16),
           ],
         ),
       ),
@@ -414,14 +415,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(width: 0.5, color: Color(0xFFE6E6E6))),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(width: 0.5, color: Theme.of(context).colorScheme.outline)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('Hóspedes',
-              style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text('Hóspedes',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.w700)),
           Row(
             children: [
               _guestButton(Icons.remove, () {
@@ -430,8 +431,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text('$_numHospedes',
-                    style: const TextStyle(
-                        color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w600)),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
               ),
               _guestButton(Icons.add, () {
                 final max = ref.read(checkoutNotifierProvider).categoria?.capacidadePessoas ?? 99;
@@ -450,10 +451,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       child: Container(
         width: 28, height: 28,
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+          border: Border.all(color: Theme.of(context).colorScheme.outline),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Icon(icon, size: 16, color: AppColors.primary),
+        child: Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurface),
       ),
     );
   }
@@ -470,9 +471,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         border: Border(
-          top: const BorderSide(width: 0.5, color: Color(0xFFE6E6E6)),
+          top: BorderSide(width: 0.5, color: Theme.of(context).colorScheme.outline),
           bottom: isLast
-              ? const BorderSide(width: 0.5, color: Color(0xFFE6E6E6))
+              ? BorderSide(width: 0.5, color: Theme.of(context).colorScheme.outline)
               : BorderSide.none,
         ),
       ),
@@ -484,18 +485,18 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(leftLabel,
-                  style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.w700)),
               Text(leftValue,
-                  style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w300)),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.w300)),
             ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(rightLabel,
-                  style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.w700)),
               Text(rightValue,
-                  style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w300)),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.w300)),
             ],
           ),
         ],
@@ -543,7 +544,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(20)),
       child: HospedeInfoForm(
         key: _hospedeKey,
         initialData: state.initialHospedeData,
@@ -562,7 +563,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(20)),
       child: Column(
         children: [
           _financialRow('Diária', 'R\$${preco.toStringAsFixed(2)}'),
@@ -576,7 +577,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   Widget _financialRow(String label, String value, {bool isTotal = false}) {
-    final color = isTotal ? AppColors.secondary : AppColors.primary;
+    final color = isTotal ? AppColors.secondary : Theme.of(context).colorScheme.onSurface;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -597,12 +598,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Políticas do Hotel',
-              style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w700)),
+          Text('Políticas do Hotel',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
           if (p.politicaCancelamento != null)
             Padding(
@@ -610,11 +611,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.cancel_outlined, size: 16, color: AppColors.primary),
+                  Icon(Icons.cancel_outlined, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(p.politicaCancelamento!,
-                        style: const TextStyle(color: AppColors.primary, fontSize: 12, height: 1.5)),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, height: 1.5)),
                   ),
                 ],
               ),
@@ -638,10 +639,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       lastDate: now.add(const Duration(days: 365)),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
+          colorScheme: Theme.of(context).colorScheme.copyWith(
             primary: AppColors.primary,
             onPrimary: Colors.white,
             secondary: AppColors.secondary,
+            onSecondary: Colors.white,
           ),
         ),
         child: child!,
@@ -728,7 +730,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     if (sheetResult == PaymentSheetResult.paid) {
       if (isAuth) {
         ref.read(ticketsNotifierProvider.notifier).reload();
-        context.go('/tickets');
+        if (mounted) await _showBookingConfirmedSheet();
+        if (mounted) context.go('/tickets');
       } else {
         context.go('/booking/success?codigo=${res.codigoPublico}&mode=guest');
       }
@@ -741,6 +744,74 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         context.pop();
       }
     }
+  }
+
+  Future<void> _showBookingConfirmedSheet() {
+    return showModalBottomSheet<void>(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        final colorScheme = Theme.of(ctx).colorScheme;
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.successColor.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle_outline, color: AppColors.successColor, size: 40),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Reserva realizada!',
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Aguardando confirmação do hotel.\nVocê receberá uma notificação em breve.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.secondary,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 52),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Ver minhas reservas', style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   String _fmt(DateTime d) =>

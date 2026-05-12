@@ -28,6 +28,7 @@ export interface SearchRoomResult {
   cidade: string;
   uf: string;
   foto_id: string | null;
+  nota_media: string | null;
 }
 
 interface HotelMatch {
@@ -194,17 +195,28 @@ export async function searchRooms(
             FROM (${innerQuery}) AS inner_q
           `;
 
-          const tenantResults = await withTenant(hotel.schema_name, async client => {
-            const { rows } = await client.query<{
-              id: number;
-              numero: string;
-              descricao: string | null;
-              nome_categoria: string | null;
-              valor_diaria: string;
-              itens: QuartoItem[];
-              foto_id: string | null;
-            }>(quartoQuery, params);
-            return rows;
+          const { tenantResults, hotelRating } = await withTenant(hotel.schema_name, async client => {
+            const [ratingRes, roomsRes] = await Promise.all([
+              client.query<{ nota_media: string | null }>(
+                `SELECT ROUND(AVG(a.nota_total)::numeric, 1)::text AS nota_media
+                 FROM avaliacao a
+                 JOIN reserva r ON r.id = a.reserva_id
+                 WHERE r.status = 'CONCLUIDA'`
+              ),
+              client.query<{
+                id: number;
+                numero: string;
+                descricao: string | null;
+                nome_categoria: string | null;
+                valor_diaria: string;
+                itens: QuartoItem[];
+                foto_id: string | null;
+              }>(quartoQuery, params),
+            ]);
+            return {
+              hotelRating: ratingRes.rows[0]?.nota_media ?? null,
+              tenantResults: roomsRes.rows,
+            };
           });
 
           for (const row of tenantResults) {
@@ -220,6 +232,7 @@ export async function searchRooms(
               cidade: hotel.cidade,
               uf: hotel.uf,
               foto_id: row.foto_id ?? null,
+              nota_media: hotelRating ? hotelRating.replace('.', ',') : null,
             });
           }
         } catch (error) {

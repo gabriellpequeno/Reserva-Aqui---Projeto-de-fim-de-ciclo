@@ -14,17 +14,18 @@ class ViaCepResult {
   });
 }
 
-Future<ViaCepResult?> fetchViaCep(String cep) async {
+Future<ViaCepResult?> fetchViaCep(String cep, {Dio? dio}) async {
   final clean = cep.replaceAll(RegExp(r'\D'), '');
   if (clean.length != 8) return null;
 
-  final dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 3),
-    receiveTimeout: const Duration(seconds: 3),
-  ));
+  final client = dio ??
+      Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 3),
+        receiveTimeout: const Duration(seconds: 3),
+      ));
 
   try {
-    final response = await dio.get<dynamic>(
+    final response = await client.get<dynamic>(
       'https://viacep.com.br/ws/$clean/json/',
     );
     final raw = response.data;

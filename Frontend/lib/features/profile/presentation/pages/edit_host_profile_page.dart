@@ -226,7 +226,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
   }
 
   Future<void> _pickPolicyFile() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'txt', 'md'],
       withData: true,

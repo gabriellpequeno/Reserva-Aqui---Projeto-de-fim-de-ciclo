@@ -5,6 +5,8 @@ import { masterPool } from '../../database/masterDb';
 const RAG_MIN_RELEVANCE_SCORE = 0.70;   // Score mínimo para considerar documento relevante
 const RAG_TOP_K_DOCS          = 5;      // Máximo de documentos recuperados por busca
 const RAG_MAX_DOC_CONTENT_LEN = 5000;   // Máximo de caracteres por documento (trunca o excedente)
+const RAG_OVERVIEW_LIMIT      = 20;     // Máximo de chunks no overview (perguntas amplas: "me fala tudo", "principais informações")
+const RAG_OVERVIEW_CHUNK_LEN  = 1200;   // Truncamento por chunk no overview para caber no budget de contexto
 
 export class RagService {
   /**
@@ -70,6 +72,44 @@ export class RagService {
       return contextBlocks.join('\n\n');
     } catch (error) {
       console.error('[RagService] Erro durante a busca vetorial:', error);
+      return 'Erro interno ao recuperar contexto de IA.';
+    } finally {
+      if (client) client.release();
+    }
+  }
+
+  /**
+   * Retorna todos os chunks indexados de um hotel (sem busca vetorial, sem filtro de score).
+   * Uso: perguntas amplas como "me fala mais", "principais informações", "tudo sobre o hotel"
+   * — onde a busca por similaridade falha porque a query é genérica demais para casar com
+   * um chunk específico, mas o hotel TEM informação cadastrada que deve ser apresentada.
+   */
+  static async getHotelOverview(hotelId: string): Promise<string> {
+    let client;
+    try {
+      client = await masterPool.connect();
+      const { rows } = await client.query(`
+        SELECT content
+        FROM documento_hotel
+        WHERE hotel_id = $1
+        ORDER BY id ASC
+        LIMIT $2
+      `, [hotelId, RAG_OVERVIEW_LIMIT]);
+
+      if (rows.length === 0) {
+        return 'Nenhum documento ou contexto de RAG encontrado para este hotel.';
+      }
+
+      const blocks = rows.map((r, i) => {
+        const content = r.content.length > RAG_OVERVIEW_CHUNK_LEN
+          ? r.content.substring(0, RAG_OVERVIEW_CHUNK_LEN) + '... [truncado]'
+          : r.content;
+        return `[Trecho ${i + 1}]\n${content}`;
+      });
+
+      return blocks.join('\n\n');
+    } catch (error) {
+      console.error('[RagService] Erro ao buscar overview do hotel:', error);
       return 'Erro interno ao recuperar contexto de IA.';
     } finally {
       if (client) client.release();

@@ -47,6 +47,7 @@ Future<PaymentSheetResult?> showPaymentBottomSheet({
     isScrollControlled: true,
     isDismissible: false,
     enableDrag: false,
+    constraints: const BoxConstraints(maxWidth: 560),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
     ),

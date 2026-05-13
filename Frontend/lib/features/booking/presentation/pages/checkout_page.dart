@@ -73,40 +73,73 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     : ResponsiveCenter(
                         maxWidth: ContentMaxWidth.content,
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
+                          padding: EdgeInsets.fromLTRB(
+                              isDesktop ? 0 : 18,
+                              isDesktop ? 32 : 16,
+                              isDesktop ? 0 : 18,
+                              isDesktop ? 48 : 24),
                           child: LayoutBuilder(
                             builder: (context, constraints) {
                               final isWide = constraints.maxWidth >= 1024;
                               if (isWide) {
-                                return Row(
+                                final colorScheme =
+                                    Theme.of(context).colorScheme;
+                                return Column(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      flex: 3,
-                                      child: Column(
-                                        children: [
-                                          if (state.errorMessage != null)
-                                            _buildErrorBanner(
-                                                state.errorMessage!),
-                                          _buildMainCard(context, state),
-                                          const SizedBox(height: 14),
-                                          _buildHospedeCard(state),
-                                        ],
+                                    Text(
+                                      'Finalize sua reserva',
+                                      style: TextStyle(
+                                        color: colorScheme.onSurface,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: -0.5,
                                       ),
                                     ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Column(
-                                        children: [
-                                          _buildFinancialCard(state),
-                                          if (state.politicas != null) ...[
-                                            const SizedBox(height: 14),
-                                            _buildPoliciesCard(state),
-                                          ],
-                                        ],
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Confira os detalhes e confirme abaixo.',
+                                      style: TextStyle(
+                                        color: colorScheme.onSurfaceVariant,
+                                        fontSize: 14,
                                       ),
+                                    ),
+                                    const SizedBox(height: 28),
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          flex: 3,
+                                          child: Column(
+                                            children: [
+                                              if (state.errorMessage != null)
+                                                _buildErrorBanner(
+                                                    state.errorMessage!),
+                                              _buildMainCard(context, state),
+                                              const SizedBox(height: 14),
+                                              _buildHospedeCard(state),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 24),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Column(
+                                            children: [
+                                              _buildFinancialCard(state),
+                                              if (state.politicas != null) ...[
+                                                const SizedBox(height: 14),
+                                                _buildPoliciesCard(state),
+                                              ],
+                                              const SizedBox(height: 14),
+                                              _buildFinalizeButton(
+                                                  context, state),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 );
@@ -124,6 +157,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                     const SizedBox(height: 14),
                                     _buildPoliciesCard(state),
                                   ],
+                                  const SizedBox(height: 14),
+                                  _buildFinalizeButton(context, state),
                                 ],
                               );
                             },

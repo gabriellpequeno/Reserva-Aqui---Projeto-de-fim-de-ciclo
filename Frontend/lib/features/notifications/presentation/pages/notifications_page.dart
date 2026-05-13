@@ -7,6 +7,7 @@ import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/auth_state.dart';
 import '../../../../core/utils/breakpoints.dart';
+import '../../../auth/presentation/widgets/auth_dialogs.dart';
 import '../providers/notifications_provider.dart';
 import '../../domain/models/app_notification.dart';
 
@@ -263,7 +264,9 @@ class NotificationsPage extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () => context.push('/auth/login'),
+              onPressed: () => Breakpoints.isDesktop(context)
+                  ? showLoginDialog(context)
+                  : context.push('/auth/login'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.secondary,
                 foregroundColor: Colors.white,

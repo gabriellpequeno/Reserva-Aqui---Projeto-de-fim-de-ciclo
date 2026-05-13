@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/utils/breakpoints.dart';
+import '../../../auth/presentation/widgets/auth_dialogs.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/favorite_card.dart';
 
@@ -51,35 +52,20 @@ class FavoritesPage extends ConsumerWidget {
                           )
                         : filteredFavorites.isEmpty
                             ? _buildEmptyState(context, searchQuery.isNotEmpty)
-                            : LayoutBuilder(
-                                builder: (context, constraints) {
-                                  if (constraints.maxWidth > 800) {
-                                    return GridView.builder(
-                                      padding: const EdgeInsets.only(
-                                          bottom: 100, top: 10),
-                                      gridDelegate:
-                                          const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                        childAspectRatio: 2.2,
-                                        mainAxisSpacing: 8,
-                                        crossAxisSpacing: 8,
-                                      ),
-                                      itemCount: filteredFavorites.length,
-                                      itemBuilder: (context, index) =>
-                                          FavoriteCard(
-                                              hotel:
-                                                  filteredFavorites[index]),
-                                    );
-                                  }
-                                  return ListView.builder(
-                                    padding: const EdgeInsets.only(
-                                        bottom: 100, top: 10),
-                                    itemCount: filteredFavorites.length,
-                                    itemBuilder: (context, index) =>
-                                        FavoriteCard(
-                                            hotel: filteredFavorites[index]),
-                                  );
-                                },
+                            : GridView.builder(
+                                padding: const EdgeInsets.fromLTRB(
+                                    12, 8, 12, 100),
+                                gridDelegate:
+                                    const SliverGridDelegateWithMaxCrossAxisExtent(
+                                  maxCrossAxisExtent: 320,
+                                  childAspectRatio: 0.78,
+                                  mainAxisSpacing: 16,
+                                  crossAxisSpacing: 16,
+                                ),
+                                itemCount: filteredFavorites.length,
+                                itemBuilder: (context, index) =>
+                                    FavoriteCard(
+                                        hotel: filteredFavorites[index]),
                               ),
           ),
         ],
@@ -158,7 +144,9 @@ class FavoritesPage extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () => context.push('/auth/login'),
+            onPressed: () => Breakpoints.isDesktop(context)
+                ? showLoginDialog(context)
+                : context.push('/auth/login'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.secondary,
               foregroundColor: Colors.white,

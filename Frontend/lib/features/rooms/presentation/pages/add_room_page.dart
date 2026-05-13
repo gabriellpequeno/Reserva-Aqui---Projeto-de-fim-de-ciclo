@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -121,20 +122,25 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
       }
     });
 
+    final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Novo Quarto',
-        showNotificationIcon: true,
-      ),
+      appBar: isDesktop
+          ? null
+          : const CustomAppBar(
+              title: 'Novo Quarto',
+              showNotificationIcon: true,
+            ),
       body: Stack(
         children: [
-          SingleChildScrollView(
+          ResponsiveCenter(
+            maxWidth: ContentMaxWidth.editForm,
+            child: SingleChildScrollView(
             child: Column(
               children: [
                 if (state.submitting) _buildProgressBar(state),
                 Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 16.0 : 32.0,
+                    horizontal: isDesktop ? 0 : (isMobile ? 16.0 : 32.0),
                     vertical: 24.0,
                   ),
                   child: Form(
@@ -181,6 +187,7 @@ class _AddRoomPageState extends ConsumerState<AddRoomPage> {
                 ),
               ],
             ),
+          ),
           ),
         ],
       ),

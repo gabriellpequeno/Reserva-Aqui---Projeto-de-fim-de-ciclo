@@ -74,6 +74,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
             ?.any((h) => h.hotelId == widget.hotelId) ??
         false;
     final colorScheme = Theme.of(context).colorScheme;
+    final isDesktop = Breakpoints.isDesktop(context);
 
     return Scaffold(
       body: roomState.isLoading
@@ -99,96 +100,377 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                     ],
                   ),
                 )
-              : Stack(
-                  children: [
-                    ResponsiveCenter(
-                      maxWidth: ContentMaxWidth.content,
-                      child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              : isDesktop
+                  ? _buildDesktopLayout(
+                      context, roomState.room!, isFavorite, roomState.categoriaId)
+                  : _buildMobileLayout(
+                      context, roomState.room!, isFavorite, roomState.categoriaId),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // DESKTOP — 2 colunas, sem back button, sem bottom bar fixo
+  // ──────────────────────────────────────────────────────────────────────────
+
+  Widget _buildDesktopLayout(
+      BuildContext context, Room room, bool isFavorite, int categoriaId) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final galleryUrls = room.imageUrls.isNotEmpty
+        ? room.imageUrls
+        : fallbacksForRoom(room.title, widget.hotelId, 4);
+    final safeIndex = _currentPhotoIndex.clamp(0, galleryUrls.length - 1);
+    final mainImageUrl = galleryUrls[safeIndex];
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1320),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(48, 32, 48, 48),
+          child: SingleChildScrollView(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Galeria à esquerda
+                Expanded(
+                  flex: 6,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Stack(
                         children: [
-                          _buildImageSection(roomState.room!, isFavorite: isFavorite),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 58, 24, 24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                GestureDetector(
-                                  onTap: () => context.push('/hotel_details/${widget.hotelId}'),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        roomState.room!.hotelName,
-                                        style: TextStyle(
-                                          color: colorScheme.onSurface,
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        roomState.room!.title,
-                                        style: TextStyle(
-                                          color: colorScheme.onSurfaceVariant,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w300,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                                Text(
-                                  'Comodidades',
-                                  style: TextStyle(
-                                    color: colorScheme.onSurface,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                _buildAmenitiesGrid(roomState.room!.amenities),
-                                if (roomState.categoriaId > 0)
-                                  AvailabilityChecker(
-                                    hotelId: widget.hotelId,
-                                    categoriaId: roomState.categoriaId,
-                                    onDatesChanged: (ci, co) => setState(() {
-                                      _checkInDate = ci;
-                                      _checkOutDate = co;
-                                    }),
-                                  ),
-                                const SizedBox(height: 32),
-                                Text(
-                                  'Detalhes',
-                                  style: TextStyle(
-                                    color: colorScheme.onSurface,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  roomState.room!.description,
-                                  style: TextStyle(
-                                    color: colorScheme.onSurface,
-                                    fontSize: 14,
-                                    height: 1.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 32),
-                                _buildHostSection(context, roomState.room!.host),
-                                const SizedBox(height: 100),
-                              ],
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: AspectRatio(
+                              aspectRatio: 4 / 3,
+                              child: SmartNetworkImage(
+                                url: mainImageUrl.isNotEmpty
+                                    ? mainImageUrl
+                                    : null,
+                                fallback: fallbackForRoom(room.title,
+                                    hotelId: widget.hotelId),
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 16,
+                            right: 16,
+                            child: _buildCircularButton(
+                              icon: isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              iconColor:
+                                  isFavorite ? Colors.redAccent : Colors.white,
+                              onTap: _toggleFavorite,
                             ),
                           ),
                         ],
                       ),
-                      ),
-                    ),
-                    _buildBottomBar(context, roomState.room!),
-                  ],
+                      if (galleryUrls.length > 1) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 80,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: galleryUrls.length.clamp(0, 6),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 10),
+                            itemBuilder: (context, index) {
+                              final url = galleryUrls[index];
+                              final isSelected = safeIndex == index;
+                              return GestureDetector(
+                                onTap: () => setState(
+                                    () => _currentPhotoIndex = index),
+                                child: Container(
+                                  width: 100,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? AppColors.secondary
+                                          : colorScheme.outline,
+                                      width: isSelected ? 3 : 1,
+                                    ),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: SmartNetworkImage(
+                                      url: url.isNotEmpty ? url : null,
+                                      fallback: fallbackForRoom(room.title,
+                                          hotelId: widget.hotelId),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 40),
+                // Info à direita
+                Expanded(
+                  flex: 5,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () => context
+                            .push('/hotel_details/${widget.hotelId}'),
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: Text(
+                            room.hotelName,
+                            style: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        room.title,
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            'R\$ ${room.price.toInt()}',
+                            style: const TextStyle(
+                              color: AppColors.secondary,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '/ dia',
+                            style: TextStyle(
+                              color: colorScheme.onSurfaceVariant,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 28),
+                      _sectionTitle('Comodidades'),
+                      const SizedBox(height: 12),
+                      _buildAmenitiesGrid(room.amenities),
+                      if (categoriaId > 0) ...[
+                        const SizedBox(height: 24),
+                        AvailabilityChecker(
+                          hotelId: widget.hotelId,
+                          categoriaId: categoriaId,
+                          onDatesChanged: (ci, co) => setState(() {
+                            _checkInDate = ci;
+                            _checkOutDate = co;
+                          }),
+                        ),
+                      ],
+                      const SizedBox(height: 28),
+                      _sectionTitle('Detalhes'),
+                      const SizedBox(height: 12),
+                      Text(
+                        room.description,
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontSize: 14,
+                          height: 1.55,
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      _sectionTitle('Anfitrião'),
+                      const SizedBox(height: 12),
+                      _buildHostSection(context, room.host),
+                      const SizedBox(height: 32),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => _goToCheckout(room),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.secondary,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size.fromHeight(54),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Reservar',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          OutlinedButton(
+                            onPressed: () => _handleShareTap(room),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: colorScheme.onSurface,
+                              minimumSize: const Size(54, 54),
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              side:
+                                  BorderSide(color: colorScheme.outline),
+                            ),
+                            child: Icon(Icons.share_outlined,
+                                color: colorScheme.onSurface, size: 20),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _goToCheckout(Room room) {
+    final roomState = ref.read(roomDetailsNotifierProvider);
+    final base =
+        '/booking/checkout/${widget.hotelId}/${roomState.categoriaId}/${room.id}';
+    String url = base;
+    if (_checkInDate != null && _checkOutDate != null) {
+      final ci = _fmtDateIso(_checkInDate!);
+      final co = _fmtDateIso(_checkOutDate!);
+      url = '$base?checkin=$ci&checkout=$co';
+    }
+    context.push(url);
+  }
+
+  Widget _sectionTitle(String text) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Text(
+      text,
+      style: TextStyle(
+        color: colorScheme.onSurface,
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // MOBILE / TABLET — comportamento original
+  // ──────────────────────────────────────────────────────────────────────────
+
+  Widget _buildMobileLayout(
+      BuildContext context, Room room, bool isFavorite, int categoriaId) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Stack(
+      children: [
+        ResponsiveCenter(
+          maxWidth: ContentMaxWidth.content,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildImageSection(room, isFavorite: isFavorite),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 58, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () => context
+                            .push('/hotel_details/${widget.hotelId}'),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              room.hotelName,
+                              style: TextStyle(
+                                color: colorScheme.onSurface,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              room.title,
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w300,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Comodidades',
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildAmenitiesGrid(room.amenities),
+                      if (categoriaId > 0)
+                        AvailabilityChecker(
+                          hotelId: widget.hotelId,
+                          categoriaId: categoriaId,
+                          onDatesChanged: (ci, co) => setState(() {
+                            _checkInDate = ci;
+                            _checkOutDate = co;
+                          }),
+                        ),
+                      const SizedBox(height: 32),
+                      Text(
+                        'Detalhes',
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        room.description,
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      _buildHostSection(context, room.host),
+                      const SizedBox(height: 100),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        _buildBottomBar(context, room),
+      ],
     );
   }
 

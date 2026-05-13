@@ -212,7 +212,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
     return Scaffold(
       body: SafeArea(
         child: ResponsiveCenter(
-          maxWidth: ContentMaxWidth.profile,
+          maxWidth: ContentMaxWidth.editForm,
           child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Form(

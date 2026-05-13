@@ -1,10 +1,64 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/breakpoints.dart';
 
 void showTermsModal(BuildContext context) {
+  if (Breakpoints.isDesktop(context)) {
+    _showTermsDialog(context);
+  } else {
+    _showTermsBottomSheet(context);
+  }
+}
+
+void _showTermsDialog(BuildContext context) {
+  showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    builder: (ctx) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding:
+          const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640, maxHeight: 720),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(28, 24, 16, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Termos e Condições',
+                      style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(28, 16, 28, 24),
+                child: const Text(_kTermsText, style: TextStyle(height: 1.6)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+void _showTermsBottomSheet(BuildContext context) {
   final screenHeight = MediaQuery.sizeOf(context).height;
   final topPadding = MediaQuery.paddingOf(context).top;
   final bottomPadding = MediaQuery.paddingOf(context).bottom;
-  // Limita a 80% da área útil (abaixo da status bar e acima da nav bar do app)
   final maxHeight = (screenHeight - topPadding) * 0.80;
 
   showModalBottomSheet(
@@ -17,7 +71,6 @@ void showTermsModal(BuildContext context) {
     builder: (ctx) => Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // drag handle
         Container(
           width: 40,
           height: 4,

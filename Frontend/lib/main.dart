@@ -59,6 +59,16 @@ class _ReservAquiAppState extends ConsumerState<ReservAquiApp> {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       routerConfig: router,
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        if (mq.size.width >= 1024) {
+          return MediaQuery(
+            data: mq.copyWith(textScaler: const TextScaler.linear(0.9)),
+            child: child!,
+          );
+        }
+        return child!;
+      },
     );
   }
 }

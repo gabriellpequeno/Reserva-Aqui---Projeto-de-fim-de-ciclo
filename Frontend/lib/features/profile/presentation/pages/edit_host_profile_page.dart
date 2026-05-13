@@ -507,7 +507,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
   Widget _buildForm() {
     final colorScheme = Theme.of(context).colorScheme;
     return ResponsiveCenter(
-      maxWidth: ContentMaxWidth.profile,
+      maxWidth: ContentMaxWidth.editForm,
       child: SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Form(

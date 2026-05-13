@@ -194,7 +194,10 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
       );
     }
 
-    return _buildForm(state);
+    return ResponsiveCenter(
+      maxWidth: ContentMaxWidth.editForm,
+      child: _buildForm(state),
+    );
   }
 
   Widget _buildForm(EditRoomState state) {

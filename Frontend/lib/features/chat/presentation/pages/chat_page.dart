@@ -318,41 +318,59 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Widget _buildInput() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline)),
+        color: colorScheme.surface,
       ),
       child: SafeArea(
         top: false,
         child: Row(
           children: [
             Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Theme.of(context).colorScheme.outline),
-                ),
-                child: TextField(
-                  controller: _textController,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _handleSend(),
-                  decoration: const InputDecoration(
-                    hintText: 'Mensagem...',
-                    border: InputBorder.none,
+              child: TextField(
+                controller: _textController,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _handleSend(),
+                style: TextStyle(color: colorScheme.onSurface),
+                decoration: InputDecoration(
+                  hintText: 'Mensagem...',
+                  hintStyle:
+                      TextStyle(color: colorScheme.onSurfaceVariant),
+                  filled: true,
+                  fillColor: colorScheme.surfaceContainer,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: const BorderSide(
+                        color: AppColors.secondary, width: 1.5),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            CircleAvatar(
-              backgroundColor: AppColors.secondary,
-              child: IconButton(
-                icon: const Icon(Icons.send, color: Colors.white),
-                onPressed: _handleSend,
+            const SizedBox(width: 10),
+            Material(
+              color: AppColors.secondary,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: _handleSend,
+                child: const SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Icon(Icons.send, color: Colors.white, size: 20),
+                ),
               ),
             ),
           ],

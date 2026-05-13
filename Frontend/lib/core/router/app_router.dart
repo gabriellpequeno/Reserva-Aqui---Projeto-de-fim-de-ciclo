@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/auth_notifier.dart';
 import '../auth/auth_state.dart';
 import '../layouts/main_layout.dart';
+import '../utils/breakpoints.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/user_signup_page.dart';
@@ -42,6 +43,25 @@ import '../../features/bookings/presentation/pages/agendamento_detail_page.dart'
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
+
+/// Page wrapper that uses fade transitions in desktop and the platform
+/// default everywhere else. Avoids the slide-from-right that screams
+/// "mobile portado" on web.
+Page<dynamic> _adaptivePage(BuildContext context, GoRouterState state,
+    Widget child) {
+  if (Breakpoints.isDesktop(context)) {
+    return CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: const Duration(milliseconds: 120),
+      reverseTransitionDuration: const Duration(milliseconds: 80),
+      transitionsBuilder: (context, animation, _, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+    );
+  }
+  return MaterialPage<void>(key: state.pageKey, child: child);
+}
 
 class RouterNotifier extends ChangeNotifier {
   RouterNotifier(this._ref) {
@@ -97,194 +117,258 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/search',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final extra = state.extra as Map<String, dynamic>? ?? {};
-              return SearchPage(
-                initialQuery: extra['query'] as String?,
-                initialAmenities: (extra['amenities'] as List?)?.cast<String>().toSet(),
+              return _adaptivePage(
+                context,
+                state,
+                SearchPage(
+                  initialQuery: extra['query'] as String?,
+                  initialAmenities: (extra['amenities'] as List?)
+                      ?.cast<String>()
+                      .toSet(),
+                ),
               );
             },
           ),
           GoRoute(
             path: '/chat',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final hotelId = state.uri.queryParameters['hotelId'];
-              return ChatPage(hotelId: hotelId);
+              return _adaptivePage(
+                  context, state, ChatPage(hotelId: hotelId));
             },
           ),
           GoRoute(
             path: '/home',
-            builder: (context, state) => const HomePage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const HomePage()),
           ),
           GoRoute(
             path: '/favorites',
-            builder: (context, state) => const FavoritesPage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const FavoritesPage()),
           ),
           GoRoute(
             path: '/notifications',
-            builder: (context, state) => const NotificationsPage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const NotificationsPage()),
           ),
           GoRoute(
             path: '/tickets',
-            builder: (context, state) => const TicketsPage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const TicketsPage()),
           ),
           GoRoute(
             path: '/auth',
-            builder: (context, state) => const UserOrHostPage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const UserOrHostPage()),
             routes: [
               GoRoute(
                 path: 'login',
-                builder: (context, state) => const LoginPage(),
+                pageBuilder: (context, state) =>
+                    _adaptivePage(context, state, const LoginPage()),
               ),
               GoRoute(
                 path: 'signup/user',
-                builder: (context, state) => const UserSignUpPage(),
+                pageBuilder: (context, state) =>
+                    _adaptivePage(context, state, const UserSignUpPage()),
               ),
               GoRoute(
                 path: 'signup/host',
-                builder: (context, state) => const HostSignUpPage(),
+                pageBuilder: (context, state) =>
+                    _adaptivePage(context, state, const HostSignUpPage()),
               ),
             ],
           ),
           GoRoute(
             path: '/profile/user',
-            builder: (context, state) => const UserProfilePage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const UserProfilePage()),
           ),
           GoRoute(
             path: '/profile/host',
-            builder: (context, state) => const HostProfilePage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const HostProfilePage()),
           ),
           GoRoute(
             path: '/profile/admin',
-            builder: (context, state) => const AdminProfilePage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const AdminProfilePage()),
           ),
           GoRoute(
             path: '/profile/settings',
-            builder: (context, state) => const SettingsPage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const SettingsPage()),
           ),
           GoRoute(
             path: '/profile/user/edit',
-            builder: (context, state) => const EditUserProfilePage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const EditUserProfilePage()),
           ),
           GoRoute(
             path: '/profile/host/edit',
-            builder: (context, state) => const EditHostProfilePage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const EditHostProfilePage()),
           ),
           GoRoute(
             path: '/profile/admin/edit',
-            builder: (context, state) => const EditAdminProfilePage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const EditAdminProfilePage()),
           ),
           GoRoute(
             path: '/profile/terms',
-            builder: (context, state) => const TermsPage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const TermsPage()),
           ),
           GoRoute(
             path: '/profile/privacy',
-            builder: (context, state) => const PrivacyPage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const PrivacyPage()),
           ),
           GoRoute(
             path: '/profile/about',
-            builder: (context, state) => const AboutPage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const AboutPage()),
           ),
           GoRoute(
             path: '/room_details/:hotelId/:roomId',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final hotelId = state.pathParameters['hotelId'] ?? '';
               final roomId = state.pathParameters['roomId'] ?? '';
-              return RoomDetailsPage(hotelId: hotelId, roomId: roomId);
+              return _adaptivePage(
+                context,
+                state,
+                RoomDetailsPage(hotelId: hotelId, roomId: roomId),
+              );
             },
           ),
           GoRoute(
             path: '/hotel_details/:hotelId',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final hotelId = state.pathParameters['hotelId'] ?? '';
-              return HotelDetailsPage(hotelId: hotelId);
+              return _adaptivePage(
+                  context, state, HotelDetailsPage(hotelId: hotelId));
             },
           ),
           GoRoute(
             path: '/add_room',
-            builder: (context, state) => AddRoomPage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, AddRoomPage()),
           ),
           GoRoute(
             path: '/my_rooms',
-            builder: (context, state) => MyRoomsPage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, MyRoomsPage()),
           ),
           GoRoute(
             path: '/edit_room/:roomId',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final roomId = state.pathParameters['roomId'] ?? '';
-              return EditRoomPage(roomId: roomId);
+              return _adaptivePage(
+                  context, state, EditRoomPage(roomId: roomId));
             },
           ),
           GoRoute(
             path: '/tickets/details/:ticketId',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final ticketId = state.pathParameters['ticketId'] ?? '';
-              return TicketDetailsPage(ticketId: ticketId);
+              return _adaptivePage(
+                  context, state, TicketDetailsPage(ticketId: ticketId));
             },
           ),
           GoRoute(
             path: '/booking/checkout/:hotelId/:categoriaId/:quartoId',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final hotelId = state.pathParameters['hotelId'] ?? '';
-              final categoriaId = int.tryParse(state.pathParameters['categoriaId'] ?? '') ?? 0;
-              final quartoId = int.tryParse(state.pathParameters['quartoId'] ?? '') ?? 0;
-              final checkinRaw  = state.uri.queryParameters['checkin'];
+              final categoriaId = int.tryParse(
+                      state.pathParameters['categoriaId'] ?? '') ??
+                  0;
+              final quartoId =
+                  int.tryParse(state.pathParameters['quartoId'] ?? '') ?? 0;
+              final checkinRaw = state.uri.queryParameters['checkin'];
               final checkoutRaw = state.uri.queryParameters['checkout'];
-              return CheckoutPage(
-                hotelId: hotelId,
-                categoriaId: categoriaId,
-                quartoId: quartoId,
-                initialCheckin:  checkinRaw  != null ? DateTime.tryParse(checkinRaw)  : null,
-                initialCheckout: checkoutRaw != null ? DateTime.tryParse(checkoutRaw) : null,
+              return _adaptivePage(
+                context,
+                state,
+                CheckoutPage(
+                  hotelId: hotelId,
+                  categoriaId: categoriaId,
+                  quartoId: quartoId,
+                  initialCheckin: checkinRaw != null
+                      ? DateTime.tryParse(checkinRaw)
+                      : null,
+                  initialCheckout: checkoutRaw != null
+                      ? DateTime.tryParse(checkoutRaw)
+                      : null,
+                ),
               );
             },
           ),
           GoRoute(
             path: '/reservas/:codigoPublico',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final cp = state.pathParameters['codigoPublico'] ?? '';
-              return PublicTicketPage(codigoPublico: cp);
+              return _adaptivePage(
+                  context, state, PublicTicketPage(codigoPublico: cp));
             },
           ),
           GoRoute(
             path: '/pagamento/:codigoPublico/:pagamentoId',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final cp = state.pathParameters['codigoPublico'] ?? '';
-              final pid = int.tryParse(state.pathParameters['pagamentoId'] ?? '') ?? 0;
-              return WhatsappPaymentPage(codigoPublico: cp, pagamentoId: pid);
+              final pid =
+                  int.tryParse(state.pathParameters['pagamentoId'] ?? '') ?? 0;
+              return _adaptivePage(
+                context,
+                state,
+                WhatsappPaymentPage(codigoPublico: cp, pagamentoId: pid),
+              );
             },
           ),
           GoRoute(
             path: '/booking/success',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final cp = state.uri.queryParameters['codigo'] ?? '';
               final mode = state.uri.queryParameters['mode'] ?? 'user';
-              return ReservationSuccessPage(codigoPublico: cp, mode: mode);
+              return _adaptivePage(
+                context,
+                state,
+                ReservationSuccessPage(codigoPublico: cp, mode: mode),
+              );
             },
           ),
           GoRoute(
             path: '/host/agendamentos',
-            builder: (context, state) => const AgendamentosPage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const AgendamentosPage()),
           ),
           GoRoute(
             path: '/host/agendamentos/:reservaId',
-            builder: (context, state) {
-              final reservaId = int.tryParse(state.pathParameters['reservaId'] ?? '') ?? 0;
-              return AgendamentoDetailPage(reservaId: reservaId);
+            pageBuilder: (context, state) {
+              final reservaId =
+                  int.tryParse(state.pathParameters['reservaId'] ?? '') ?? 0;
+              return _adaptivePage(
+                context,
+                state,
+                AgendamentoDetailPage(reservaId: reservaId),
+              );
             },
           ),
           GoRoute(
             path: '/host/dashboard',
-            builder: (context, state) => const HostDashboardPage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const HostDashboardPage()),
           ),
           GoRoute(
             path: '/admin/dashboard',
-            builder: (context, state) => const AdminDashboardPage(),
+            pageBuilder: (context, state) =>
+                _adaptivePage(context, state, const AdminDashboardPage()),
           ),
           GoRoute(
             path: '/admin/accounts',
-            builder: (context, state) => const AdminAccountManagementPage(),
+            pageBuilder: (context, state) => _adaptivePage(
+                context, state, const AdminAccountManagementPage()),
           ),
         ],
       ),

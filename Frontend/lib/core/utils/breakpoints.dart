@@ -31,6 +31,7 @@ class ContentMaxWidth {
   static const double form = 480;
   static const double profile = 600;
   static const double reading = 720;
+  static const double editForm = 900;
   static const double content = 1100;
 }
 

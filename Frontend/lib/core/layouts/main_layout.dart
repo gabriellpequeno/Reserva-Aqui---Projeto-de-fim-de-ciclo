@@ -8,6 +8,7 @@ import '../widgets/custom_app_bar.dart';
 import '../widgets/desktop_top_bar.dart';
 import '../auth/auth_notifier.dart';
 import '../auth/auth_state.dart';
+import '../../features/auth/presentation/widgets/auth_dialogs.dart';
 
 class MainLayout extends ConsumerWidget {
   const MainLayout({super.key, required this.child});
@@ -39,6 +40,8 @@ class MainLayout extends ConsumerWidget {
         case null:
           context.go('/profile/user');
       }
+    } else if (Breakpoints.isDesktop(context)) {
+      showLoginDialog(context);
     } else {
       context.go('/auth/login');
     }

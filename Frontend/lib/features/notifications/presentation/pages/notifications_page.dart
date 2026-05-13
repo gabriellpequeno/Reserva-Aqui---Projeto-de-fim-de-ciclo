@@ -66,73 +66,82 @@ class NotificationsPage extends ConsumerWidget {
   }
 
 
+  String? _parseDates(String text) {
+    final matches = RegExp(r'\d{4}-\d{2}-\d{2}').allMatches(text).toList();
+    if (matches.isEmpty) return null;
+    String fmt(String iso) {
+      final p = iso.split('-');
+      return '${p[2]}/${p[1]}';
+    }
+    if (matches.length >= 2) {
+      return '${fmt(matches[0].group(0)!)} → ${fmt(matches[1].group(0)!)}';
+    }
+    return fmt(matches[0].group(0)!);
+  }
+
+  void _handleNotificationTap(
+    WidgetRef ref,
+    BuildContext context,
+    AppNotification notification,
+  ) {
+    ref.read(notificationsProvider.notifier).markAsRead(notification.id);
+    _navigateFromNotification(context, notification);
+  }
+
   Widget _buildNotificationCard(
     BuildContext context,
     WidgetRef ref,
     AppNotification notification,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(
-          color: notification.isRead
-              ? colorScheme.outline
-              : colorScheme.primary.withValues(alpha: 0.4),
+    final dates = _parseDates(notification.subtitle);
+    return InkWell(
+      onTap: () => _handleNotificationTap(ref, context, notification),
+      borderRadius: BorderRadius.circular(11),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(
+            color: notification.isRead
+                ? colorScheme.outline
+                : colorScheme.primary.withValues(alpha: 0.4),
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    if (!notification.isRead)
-                      Container(
-                        width: 7,
-                        height: 7,
-                        margin: const EdgeInsets.only(right: 6),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      if (!notification.isRead)
+                        Container(
+                          width: 7,
+                          height: 7,
+                          margin: const EdgeInsets.only(right: 6),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      Flexible(
+                        child: Text(
+                          notification.title,
+                          style: TextStyle(
+                            color: colorScheme.onSurface,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                    Flexible(
-                      child: Text(
-                        notification.title,
-                        style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () {
-                        ref
-                            .read(notificationsProvider.notifier)
-                            .markAsRead(notification.id);
-                        _navigateFromNotification(context, notification);
-                      },
-                      child: const Text(
-                        'ver detalhes',
-                        style: TextStyle(
-                          color: AppColors.secondary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
                 const SizedBox(height: 4),
                 Text(
-                  notification.subtitle,
+                  dates ?? notification.subtitle,
                   style: TextStyle(
                     color: colorScheme.onSurfaceVariant,
                     fontSize: 12,
@@ -155,6 +164,7 @@ class NotificationsPage extends ConsumerWidget {
           ),
         ],
       ),
+    ),
     );
   }
 

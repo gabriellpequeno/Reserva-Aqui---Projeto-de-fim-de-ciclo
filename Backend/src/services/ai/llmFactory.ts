@@ -2,7 +2,7 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { ChatGroq } from '@langchain/groq';
 import { BaseMessage, AIMessage } from '@langchain/core/messages';
 
-type LLMProvider = 'gemini' | 'groq';
+export type LLMProvider = 'gemini' | 'groq';
 
 export interface InvokeOptions {
   temperature?: number;
@@ -37,7 +37,7 @@ function hasKeyFor(provider: LLMProvider): boolean {
   return getKeys(provider).length > 0;
 }
 
-function getNextKey(provider: LLMProvider): string {
+export function getNextKey(provider: LLMProvider): string {
   const keys = getKeys(provider);
   if (keys.length === 0) throw new Error(`${provider.toUpperCase()}_API_KEY ausente`);
   

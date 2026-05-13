@@ -2,7 +2,7 @@ import { masterPool } from '../database/masterDb';
 import { WhatsAppService } from './whatsapp.service';
 import { ContextResolverService } from './ai/contextResolver.service';
 import { AgentOrchestratorService } from './ai/agentOrchestrator.service';
-import { downloadWhatsAppMedia, transcribeAudio, describeImage } from './ai/mediaProcessor.service';
+import { downloadWhatsAppMedia, transcribeAudio, IMAGE_UNSUPPORTED_REPLY } from './ai/mediaProcessor.service';
 
 interface UsuarioRow {
   user_id: string;
@@ -296,7 +296,19 @@ export async function processIncomingWhatsAppMessage(input: ProcessIncomingWhats
     metadata: inboundMetadata,
   });
 
-  if (input.messageType === 'audio' || input.messageType === 'image') {
+  if (input.messageType === 'image') {
+    const metaResponse = await WhatsAppService.sendText(normalizedPhone, IMAGE_UNSUPPORTED_REPLY);
+    const outboundMetaMessageId = metaResponse.messages?.[0]?.id ?? null;
+    await persistChatMessage({
+      sessionId,
+      origem: ORIGEM_BOT,
+      conteudo: IMAGE_UNSUPPORTED_REPLY,
+      tipoMensagem: 'TEXT',
+      metaMessageId: outboundMetaMessageId,
+      metaStatus: 'ACCEPTED',
+      metadata: { deliveryChannel: 'WHATSAPP', usedTemplate: false, derivedFrom: 'image', unsupported: true },
+    });
+  } else if (input.messageType === 'audio') {
     // 1. Ack imediato para respeitar a SLA de 5s da Meta.
     const ackText = buildMediaAcknowledgementReply(input.messageType);
     const ackResponse = await WhatsAppService.sendText(normalizedPhone, ackText);
@@ -312,11 +324,10 @@ export async function processIncomingWhatsAppMessage(input: ProcessIncomingWhats
       metadata: { deliveryChannel: 'WHATSAPP', usedTemplate: false, ack: true },
     });
 
-    // 2. Processamento real em background: download → transcrição/descrição → agent.
+    // 2. Processamento real em background: download → transcrição → agent.
     const mediaId = input.media?.mediaId;
     const mimeType = input.media?.mimeType ?? null;
-    const caption = input.media?.caption ?? null;
-    const messageType = input.messageType;
+    const messageType: 'audio' = 'audio';
 
     Promise.resolve().then(async () => {
       if (!mediaId) {
@@ -325,16 +336,8 @@ export async function processIncomingWhatsAppMessage(input: ProcessIncomingWhats
       }
       try {
         const downloaded = await downloadWhatsAppMedia(mediaId, mimeType ?? undefined);
-        let interpretedText: string;
-        let mediaMetadataKey: string;
-
-        if (messageType === 'audio') {
-          interpretedText = await transcribeAudio(downloaded);
-          mediaMetadataKey = 'audioTranscript';
-        } else {
-          interpretedText = await describeImage(downloaded, caption);
-          mediaMetadataKey = 'imageDescription';
-        }
+        const interpretedText = await transcribeAudio(downloaded);
+        const mediaMetadataKey = 'audioTranscript';
 
         if (!interpretedText) {
           throw new Error(`Interpretação da mídia veio vazia (${messageType}).`);
@@ -372,9 +375,7 @@ export async function processIncomingWhatsAppMessage(input: ProcessIncomingWhats
       } catch (err) {
         console.error(`[WhatsApp Webhook] Falha no processamento de ${messageType}:`, err);
         try {
-          const fallbackReply = messageType === 'audio'
-            ? 'Não consegui entender o áudio agora. Pode tentar escrever em texto?'
-            : 'Não consegui analisar a imagem agora. Pode me descrever em texto o que precisa?';
+          const fallbackReply = 'Não consegui entender o áudio agora. Pode tentar escrever em texto?';
           const metaResponse = await WhatsAppService.sendText(normalizedPhone, fallbackReply);
           const outboundMetaMessageId = metaResponse.messages?.[0]?.id ?? null;
           await persistChatMessage({

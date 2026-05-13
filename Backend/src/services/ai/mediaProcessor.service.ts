@@ -1,10 +1,11 @@
 import Groq from 'groq-sdk';
-import { ChatGroq } from '@langchain/groq';
-import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { getNextKey } from './llmFactory';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v22.0';
 const WHISPER_MODEL = 'whisper-large-v3-turbo';
-const VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
+
+export const IMAGE_UNSUPPORTED_REPLY =
+  'Ainda não consigo analisar imagens por aqui. Pode me descrever em texto o que precisa? 🙂';
 
 export interface DownloadedMedia {
   buffer: Buffer;
@@ -13,8 +14,7 @@ export interface DownloadedMedia {
 }
 
 function getGroqClient(): Groq {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) throw new Error('GROQ_API_KEY ausente — necessária para processamento de áudio/imagem.');
+  const apiKey = getNextKey('groq');
   return new Groq({ apiKey });
 }
 
@@ -70,39 +70,9 @@ export async function transcribeAudio(media: DownloadedMedia): Promise<string> {
   return text.trim();
 }
 
-/** Descreve imagem via Llama 4 Scout (multimodal, via Groq). Se houver texto na imagem, transcreve. */
-export async function describeImage(media: DownloadedMedia, caption?: string | null): Promise<string> {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) throw new Error('GROQ_API_KEY ausente.');
-
-  const vision = new ChatGroq({
-    apiKey,
-    model: VISION_MODEL,
-    temperature: 0,
-    maxRetries: 0,
-  });
-
-  const base64 = media.buffer.toString('base64');
-  const dataUrl = `data:${media.mimeType};base64,${base64}`;
-
-  const userContent: any[] = [
-    {
-      type: 'text',
-      text: caption
-        ? `Descreva de forma objetiva o que há nesta imagem. Legenda do usuário: "${caption}".`
-        : 'Descreva de forma objetiva o que há nesta imagem.',
-    },
-    { type: 'image_url', image_url: { url: dataUrl } },
-  ];
-
-  const response = await vision.invoke([
-    new SystemMessage(
-      'Você descreve imagens para um bot de hotelaria. Seja conciso (máximo 2 frases). Se houver texto legível (CPF, RG, datas, documento, comprovante), transcreva-o literalmente.',
-    ),
-    new HumanMessage({ content: userContent as any }),
-  ]);
-
-  return response.content.toString().trim();
+/** Análise de imagem ainda não suportada — retorna mensagem fixa para o usuário. */
+export async function describeImage(_media: DownloadedMedia, _caption?: string | null): Promise<string> {
+  return IMAGE_UNSUPPORTED_REPLY;
 }
 
 function guessExtensionFromMime(mime: string): string | null {

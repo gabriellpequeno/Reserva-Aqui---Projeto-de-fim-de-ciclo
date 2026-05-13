@@ -9,7 +9,7 @@ class NotificationsNotifier
     extends AsyncNotifier<List<AppNotification>> {
   @override
   Future<List<AppNotification>> build() async {
-    final auth = await ref.watch(authProvider.future);
+    final auth = await ref.read(authProvider.future);
     if (!auth.isAuthenticated) return [];
 
     if (auth.role == AuthRole.host) {

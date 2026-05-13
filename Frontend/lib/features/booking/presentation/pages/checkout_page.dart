@@ -583,17 +583,21 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       initialDate: initial,
       firstDate: now,
       lastDate: now.add(const Duration(days: 365)),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: Theme.of(context).colorScheme.copyWith(
-            primary: AppColors.primary,
-            onPrimary: Colors.white,
-            secondary: AppColors.secondary,
-            onSecondary: Colors.white,
+      builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: isDark ? AppColors.secondary : AppColors.primary,
+              onPrimary: Colors.white,
+              secondary: AppColors.secondary,
+              onSecondary: Colors.white,
+              onSurface: isDark ? Colors.white : AppColors.primary,
+            ),
           ),
-        ),
-        child: child!,
-      ),
+          child: child!,
+        );
+      },
     );
 
     if (picked == null) return;

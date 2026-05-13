@@ -2,7 +2,7 @@ import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { masterPool } from '../../database/masterDb';
 
 // ── Configuração do RAG Pipeline ──────────────────────────────────────────────
-const RAG_MIN_RELEVANCE_SCORE = 0.70;   // Score mínimo para considerar documento relevante
+const RAG_MIN_RELEVANCE_SCORE = 0.55;   // Score mínimo para considerar documento relevante (chunks de política .md tendem a scores mais baixos)
 const RAG_TOP_K_DOCS          = 5;      // Máximo de documentos recuperados por busca
 const RAG_MAX_DOC_CONTENT_LEN = 5000;   // Máximo de caracteres por documento (trunca o excedente)
 

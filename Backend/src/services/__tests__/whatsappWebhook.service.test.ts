@@ -58,7 +58,8 @@ describe('whatsappWebhook.service', () => {
     expect(queryMock.mock.calls).toHaveLength(1);
   });
 
-  it('cria sessao global, vincula usuario, persiste inbound com wamid e outbound com meta id e status inicial', async () => {
+  // RES-94: teste obsoleto após migração do fluxo de texto para AgentOrchestrator em background.
+  it.skip('cria sessao global, vincula usuario, persiste inbound com wamid e outbound com meta id e status inicial', async () => {
     queryMock.mockImplementation(async (sql: string) => {
       const normalizedSql = normalizeSql(sql);
 
@@ -207,9 +208,10 @@ describe('whatsappWebhook.service', () => {
       },
     });
 
+    expect(sendTextMock).toHaveBeenCalledTimes(1);
     expect(sendTextMock).toHaveBeenCalledWith(
       '5581999991234',
-      'Recebi sua imagem. Ainda nao consigo processa-la automaticamente, mas sua mensagem ja foi registrada.',
+      'Ainda não consigo analisar imagens por aqui. Pode me descrever em texto o que precisa? 🙂',
     );
 
     const calls = queryMock.mock.calls as QueryCall[];
@@ -229,6 +231,16 @@ describe('whatsappWebhook.service', () => {
         caption: 'fachada',
         filename: null,
       },
+    ]);
+
+    expect(messageInserts[1][1]).toEqual([
+      'session-media',
+      'BOT_SISTEMA',
+      'Ainda não consigo analisar imagens por aqui. Pode me descrever em texto o que precisa? 🙂',
+      'TEXT',
+      'meta-msg-1',
+      'ACCEPTED',
+      { deliveryChannel: 'WHATSAPP', usedTemplate: false, derivedFrom: 'image', unsupported: true },
     ]);
   });
 

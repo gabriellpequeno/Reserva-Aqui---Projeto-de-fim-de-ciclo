@@ -165,12 +165,17 @@ ${ragContext}
     const tools = buildAgentTools(context);
     const cidadesDisponiveis = await this.getCidadesDisponiveis();
 
-    // Se há hotel selecionado, busca contexto RAG para evitar alucinações em perguntas de política
+    // RAG obrigatório: injeta guardrail sempre que há hotel selecionado.
+    // Se não houver documentos indexados, injeta bloco restritivo para impedir alucinação.
     let ragSection = '';
     if (context.hotelId) {
       try {
         const ragContext = await RagService.searchRelevantContext(userMessage, context.hotelId);
-        if (ragContext && !ragContext.startsWith('Nenhum documento') && !ragContext.startsWith('Erro')) {
+        const hasContent = ragContext
+          && !ragContext.startsWith('Nenhum documento')
+          && !ragContext.startsWith('Erro');
+
+        if (hasContent) {
           ragSection = `
 <hotel_knowledge_base>
 Use EXCLUSIVAMENTE estas informações para responder dúvidas sobre políticas, regras, comodidades e serviços do hotel selecionado.
@@ -178,9 +183,22 @@ Não invente informações que não estejam aqui. Se a informação não estiver
 
 ${ragContext}
 </hotel_knowledge_base>`;
+        } else {
+          // Guardrail restritivo: sem documentos → proíbe explicitamente inventar dados do hotel.
+          ragSection = `
+<hotel_knowledge_base>
+Nenhuma política ou informação de comodidades foi indexada para este hotel ainda.
+NÃO invente check-in, check-out, aceite de pets, Wi-Fi, piscina, restaurante ou qualquer outra comodidade/regra.
+Se perguntado sobre políticas ou serviços do hotel, informe educadamente que o hotel ainda não disponibilizou esse detalhamento na plataforma e sugira contato direto com a recepção.
+</hotel_knowledge_base>`;
         }
       } catch (e) {
-        console.warn('[AgentOrchestrator] Falha ao buscar RAG no fluxo RESERVA (continuando sem):', e);
+        console.warn('[AgentOrchestrator] Falha ao buscar RAG no fluxo RESERVA:', e);
+        // Mesmo em caso de erro técnico, injeta guardrail mínimo.
+        ragSection = `
+<hotel_knowledge_base>
+Não foi possível recuperar políticas do hotel no momento. Não invente informações. Sugira contato com a recepção.
+</hotel_knowledge_base>`;
       }
     }
 

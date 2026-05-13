@@ -27,7 +27,15 @@ function isPdfMagicBytes(filePath: string): boolean {
  * quebras de parágrafo. Retorna array vazio se o conteúdo for vazio.
  */
 function chunkText(text: string, maxChars = 800): string[] {
-  const paragraphs = text
+  // Normaliza Markdown: garante dupla quebra antes de headers e itens de lista,
+  // para que cada seção vire um chunk semântico independente.
+  const normalized = text
+    .replace(/\r\n/g, '\n')
+    .replace(/\n(#{1,6}\s)/g, '\n\n$1')       // # Headers
+    .replace(/\n([-*]\s)/g, '\n\n$1')          // - * listas
+    .replace(/\n(\d+\.\s)/g, '\n\n$1');        // 1. listas numeradas
+
+  const paragraphs = normalized
     .split(/\n{2,}/)
     .map((p) => p.trim())
     .filter((p) => p.length > 0);

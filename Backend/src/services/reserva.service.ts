@@ -327,6 +327,34 @@ async function _createReservaUsuario(
   Reserva.validateUsuario(input);
   const { schema_name, nome_hotel } = await _getHotelInfo(input.hotel_id);
 
+  // Reserva no próprio nome (sem dados de hóspede) → preenche com o perfil do
+  // usuário pra reserva não chegar como "Hóspede" nas telas do hotel (RES-103).
+  let nomeHospede     = input.nome_hospede     ?? null;
+  let cpfHospede      = input.cpf_hospede      ?? null;
+  let emailHospede    = input.email_hospede    ?? null;
+  let telefoneContato = input.telefone_contato ?? null;
+
+  if (!nomeHospede) {
+    const { rows: userRows } = await masterPool.query<{
+      nome_completo:  string | null;
+      email:          string | null;
+      cpf:            string | null;
+      numero_celular: string | null;
+    }>(
+      `SELECT nome_completo, email, cpf, numero_celular
+         FROM usuario
+        WHERE user_id = $1 AND ativo = TRUE`,
+      [userId],
+    );
+    const u = userRows[0];
+    if (u) {
+      nomeHospede     = u.nome_completo;
+      emailHospede    = u.email;
+      cpfHospede      = u.cpf;
+      telefoneContato = u.numero_celular;
+    }
+  }
+
   return withTenant(schema_name, async (client) => {
     await _ensureReservaFluxoColumns(client);
     // Garante hospede registrado no tenant
@@ -363,10 +391,10 @@ async function _createReservaUsuario(
        RETURNING *`,
       [
         userId,
-        input.nome_hospede     ?? null,
-        input.cpf_hospede      ?? null,
-        input.telefone_contato ?? null,
-        input.email_hospede    ?? null,
+        nomeHospede,
+        cpfHospede,
+        telefoneContato,
+        emailHospede,
         input.quarto_id    ?? null,
         input.tipo_quarto  ?? null,
         input.num_hospedes,

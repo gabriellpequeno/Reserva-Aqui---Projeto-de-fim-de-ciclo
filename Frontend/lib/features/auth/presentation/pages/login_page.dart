@@ -128,14 +128,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Scaffold(
       appBar: const CustomAppBar(fallbackRoute: '/home'),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 24),
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                 Text(
                   _role == 'host' ? 'Acesso Anfitrião' : 'Acesse Agora',
                   style: TextStyle(
@@ -185,7 +189,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   },
                 ),
                 const SizedBox(height: 24),
-              ],
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),

@@ -72,6 +72,7 @@ const sampleHotel: AdminHotelDTO = {
   numero:           '1000',
   complemento:      null,
   capaUrl:          null,
+  fotoUrl:          null,
   status:           'ativo',
   totalQuartos:     null,
   criadoEm:         '2026-01-01T00:00:00.000Z',

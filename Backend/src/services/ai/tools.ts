@@ -190,9 +190,9 @@ export const buildAgentTools = (context: ChatContext | null) => {
     },
     {
       name: 'selecionar_hotel',
-      description: 'Seleciona e "trava" o contexto do chat em um hotel específico. Chame esta ferramenta APÓS o usuário confirmar o hotel que deseja ver ou reservar. IMPORTANTE: use o campo hotel_id (UUID, ex: "a1b2c3d4-...") retornado por buscar_hoteis — NUNCA o nome do hotel.',
+      description: 'Seleciona e "trava" o contexto do chat em um hotel específico. Chame esta ferramenta APÓS o usuário confirmar o hotel que deseja ver ou reservar. IMPORTANTE: use SOMENTE um valor literal do campo hotel_id retornado por buscar_hoteis nesta mesma conversa. NUNCA invente um UUID, NUNCA copie o formato de um exemplo, NUNCA use o nome do hotel.',
       schema: z.object({
-        hotelIdSelecionado: z.string().describe('O hotel_id UUID retornado por buscar_hoteis (ex: "a1b2c3d4-e5f6-..."). NUNCA use o nome do hotel aqui.'),
+        hotelIdSelecionado: z.string().uuid().describe('Cole literalmente o valor do campo hotel_id retornado por buscar_hoteis nesta conversa. Se você não tem um hotel_id real disponível, NÃO chame esta ferramenta — chame buscar_hoteis primeiro.'),
       }),
     }
   );

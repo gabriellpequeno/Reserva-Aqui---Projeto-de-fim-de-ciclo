@@ -8,8 +8,9 @@ class NotificacoesHostService {
   final Dio _dio;
 
   Future<List<AppNotification>> fetchAll() async {
-    final response = await _dio.get<List<dynamic>>('/hotel/notificacoes');
-    return (response.data ?? [])
+    final response = await _dio.get<Map<String, dynamic>>('/hotel/notificacoes');
+    final list = (response.data?['data'] as List<dynamic>?) ?? [];
+    return list
         .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
         .toList();
   }

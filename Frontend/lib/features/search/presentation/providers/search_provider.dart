@@ -59,6 +59,54 @@ class SearchState {
   }
 }
 
+const _estadoParaUF = <String, String>{
+  'acre': 'AC',
+  'alagoas': 'AL',
+  'amapa': 'AP',
+  'amazonas': 'AM',
+  'bahia': 'BA',
+  'ceara': 'CE',
+  'distrito federal': 'DF',
+  'espirito santo': 'ES',
+  'goias': 'GO',
+  'maranhao': 'MA',
+  'mato grosso': 'MT',
+  'mato grosso do sul': 'MS',
+  'minas gerais': 'MG',
+  'para': 'PA',
+  'paraiba': 'PB',
+  'parana': 'PR',
+  'pernambuco': 'PE',
+  'piaui': 'PI',
+  'rio de janeiro': 'RJ',
+  'rio grande do norte': 'RN',
+  'rio grande do sul': 'RS',
+  'rondonia': 'RO',
+  'roraima': 'RR',
+  'santa catarina': 'SC',
+  'sao paulo': 'SP',
+  'sergipe': 'SE',
+  'tocantins': 'TO',
+};
+
+/// Normaliza removendo acentos e convertendo para minúsculo.
+String _normalize(String s) {
+  const accents = 'àáâãäåèéêëìíîïòóôõöùúûüýÿñçÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝŸÑÇ';
+  const plain   = 'aaaaaaeeeeiiiioooooouuuuyynnccAAAAAAEEEEIIIIOOOOOUUUUYYNNCC';
+  var result = s.toLowerCase();
+  for (var i = 0; i < accents.length; i++) {
+    result = result.replaceAll(accents[i], plain[i]);
+  }
+  return result.trim();
+}
+
+/// Se o termo digitado for um nome de estado completo, retorna a sigla UF.
+/// Caso contrário devolve o termo original.
+String _resolveSearchTerm(String q) {
+  final uf = _estadoParaUF[_normalize(q)];
+  return uf ?? q;
+}
+
 class SearchNotifier extends Notifier<SearchState> {
   late final SearchService _service;
 
@@ -78,7 +126,7 @@ class SearchNotifier extends Notifier<SearchState> {
       return;
     }
 
-    final q = state.destination.trim();
+    final q = _resolveSearchTerm(state.destination.trim());
 
     try {
       final results = await _service.searchRooms(q: q);
@@ -145,7 +193,7 @@ class SearchNotifier extends Notifier<SearchState> {
   }
 
   Future<void> performSearch() async {
-    final q = state.destination.trim();
+    final q = _resolveSearchTerm(state.destination.trim());
     final dateRange = state.dateRange;
 
     state = state.copyWith(isLoading: true, clearError: true);

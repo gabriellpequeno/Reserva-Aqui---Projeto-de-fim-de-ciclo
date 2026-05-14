@@ -341,11 +341,11 @@ async function _verificarDisponibilidade(
          cq.preco_base::TEXT           AS valor_diaria,
          cq.capacidade_pessoas,
          COALESCE(total.cnt,  0)::INT  AS total_quartos,
-         GREATEST(0, COALESCE(total.cnt, 0) - COALESCE(ocupados.cnt, 0))::INT AS quartos_disponiveis,
-         (GREATEST(0, COALESCE(total.cnt, 0) - COALESCE(ocupados.cnt, 0)) > 0) AS disponivel,
+         COALESCE(livres.cnt, 0)::INT  AS quartos_disponiveis,
+         (COALESCE(livres.cnt, 0) > 0) AS disponivel,
          CASE
            WHEN COALESCE(total.cnt, 0) > 0
-            AND COALESCE(total.cnt, 0) <= COALESCE(ocupados.cnt, 0)
+            AND COALESCE(livres.cnt, 0) = 0
            THEN (
              SELECT MIN(r2.data_checkout)::TEXT
              FROM reserva r2
@@ -367,16 +367,20 @@ async function _verificarDisponibilidade(
          GROUP BY categoria_quarto_id
        ) total ON total.categoria_quarto_id = cq.id
 
-       -- quartos com reservas ativas sobrepostas ao período
+       -- quartos sem reserva conflitante no período (mesma lógica do INSERT-time check)
        LEFT JOIN (
-         SELECT q.categoria_quarto_id, COUNT(DISTINCT q.id) AS cnt
-         FROM reserva r
-         JOIN quarto  q ON q.id = r.quarto_id
-         WHERE r.status       NOT IN ('CANCELADA')
-           AND r.data_checkin  < $2
-           AND r.data_checkout > $1
+         SELECT q.categoria_quarto_id, COUNT(*) AS cnt
+         FROM quarto q
+         WHERE q.deleted_at IS NULL
+           AND NOT EXISTS (
+             SELECT 1 FROM reserva r
+             WHERE r.quarto_id    = q.id
+               AND r.status       NOT IN ('CANCELADA')
+               AND r.data_checkin  < $2
+               AND r.data_checkout > $1
+           )
          GROUP BY q.categoria_quarto_id
-       ) ocupados ON ocupados.categoria_quarto_id = cq.id
+       ) livres ON livres.categoria_quarto_id = cq.id
 
        WHERE cq.deleted_at IS NULL
        ORDER BY cq.nome`,

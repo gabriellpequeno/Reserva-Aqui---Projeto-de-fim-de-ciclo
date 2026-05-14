@@ -8,7 +8,6 @@ import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/smart_network_image.dart';
 import '../../domain/models/room.dart';
 import '../notifiers/room_details_notifier.dart';
-import '../widgets/availability_checker.dart';
 import '../../../favorites/presentation/providers/favorites_provider.dart';
 import '../../../favorites/presentation/widgets/favorite_dialogs.dart';
 
@@ -29,10 +28,6 @@ class RoomDetailsPage extends ConsumerStatefulWidget {
 class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   late PageController _photoController;
   int _currentPhotoIndex = 0;
-
-  // Datas escolhidas no AvailabilityChecker — propagadas ao checkout via queryParam
-  DateTime? _checkInDate;
-  DateTime? _checkOutDate;
 
   @override
   void initState() {
@@ -101,10 +96,8 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                   ),
                 )
               : isDesktop
-                  ? _buildDesktopLayout(
-                      context, roomState.room!, isFavorite, roomState.categoriaId)
-                  : _buildMobileLayout(
-                      context, roomState.room!, isFavorite, roomState.categoriaId),
+                  ? _buildDesktopLayout(context, roomState.room!, isFavorite)
+                  : _buildMobileLayout(context, roomState.room!, isFavorite),
     );
   }
 
@@ -113,7 +106,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   // ──────────────────────────────────────────────────────────────────────────
 
   Widget _buildDesktopLayout(
-      BuildContext context, Room room, bool isFavorite, int categoriaId) {
+      BuildContext context, Room room, bool isFavorite) {
     final colorScheme = Theme.of(context).colorScheme;
     final galleryUrls = room.imageUrls.isNotEmpty
         ? room.imageUrls
@@ -271,17 +264,6 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                       _sectionTitle('Comodidades'),
                       const SizedBox(height: 12),
                       _buildAmenitiesGrid(room.amenities),
-                      if (categoriaId > 0) ...[
-                        const SizedBox(height: 24),
-                        AvailabilityChecker(
-                          hotelId: widget.hotelId,
-                          categoriaId: categoriaId,
-                          onDatesChanged: (ci, co) => setState(() {
-                            _checkInDate = ci;
-                            _checkOutDate = co;
-                          }),
-                        ),
-                      ],
                       const SizedBox(height: 28),
                       _sectionTitle('Detalhes'),
                       const SizedBox(height: 12),
@@ -351,15 +333,8 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
 
   void _goToCheckout(Room room) {
     final roomState = ref.read(roomDetailsNotifierProvider);
-    final base =
-        '/booking/checkout/${widget.hotelId}/${roomState.categoriaId}/${room.id}';
-    String url = base;
-    if (_checkInDate != null && _checkOutDate != null) {
-      final ci = _fmtDateIso(_checkInDate!);
-      final co = _fmtDateIso(_checkOutDate!);
-      url = '$base?checkin=$ci&checkout=$co';
-    }
-    context.push(url);
+    context.push(
+        '/booking/checkout/${widget.hotelId}/${roomState.categoriaId}/${room.id}');
   }
 
   Widget _sectionTitle(String text) {
@@ -379,7 +354,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
   // ──────────────────────────────────────────────────────────────────────────
 
   Widget _buildMobileLayout(
-      BuildContext context, Room room, bool isFavorite, int categoriaId) {
+      BuildContext context, Room room, bool isFavorite) {
     final colorScheme = Theme.of(context).colorScheme;
     return Stack(
       children: [
@@ -432,15 +407,6 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
                       ),
                       const SizedBox(height: 12),
                       _buildAmenitiesGrid(room.amenities),
-                      if (categoriaId > 0)
-                        AvailabilityChecker(
-                          hotelId: widget.hotelId,
-                          categoriaId: categoriaId,
-                          onDatesChanged: (ci, co) => setState(() {
-                            _checkInDate = ci;
-                            _checkOutDate = co;
-                          }),
-                        ),
                       const SizedBox(height: 32),
                       Text(
                         'Detalhes',
@@ -849,17 +815,7 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {
-                  final roomState = ref.read(roomDetailsNotifierProvider);
-                  final base = '/booking/checkout/${widget.hotelId}/${roomState.categoriaId}/${room.id}';
-                  String url = base;
-                  if (_checkInDate != null && _checkOutDate != null) {
-                    final ci = _fmtDateIso(_checkInDate!);
-                    final co = _fmtDateIso(_checkOutDate!);
-                    url = '$base?checkin=$ci&checkout=$co';
-                  }
-                  context.push(url);
-                },
+                onPressed: () => _goToCheckout(room),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.secondary,
                   foregroundColor: Colors.white,
@@ -881,6 +837,4 @@ class _RoomDetailsPageState extends ConsumerState<RoomDetailsPage> {
     );
   }
 
-  String _fmtDateIso(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 }

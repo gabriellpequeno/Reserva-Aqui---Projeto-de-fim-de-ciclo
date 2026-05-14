@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/smart_network_image.dart';
 import '../../domain/models/favorite_hotel.dart';
 import '../providers/favorites_provider.dart';
@@ -55,133 +56,145 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard>
   Future<void> _handleRemove() async {
     final confirmed = await showUnfavoriteConfirmationDialog(context);
     if (!confirmed) return;
-
     await ref
         .read(favoritesProvider.notifier)
         .removeFavorite(widget.hotel.hotelId);
-
     _heartController.forward(from: 0);
-
-    if (mounted) {
-      await showFavoriteRemovedDialog(context);
-    }
+    if (mounted) await showFavoriteRemovedDialog(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final coverUrl = _buildCoverUrl();
-    final colorScheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
       onTap: () => context.push('/hotel_details/${widget.hotel.hotelId}'),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(15),
+          color: AppColors.primary.withValues(alpha: 0.15),
         ),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  bottomLeft: Radius.circular(16),
-                ),
-                child: SmartNetworkImage(
-                  url: coverUrl,
-                  fallback: fallbackForHotel(widget.hotel.hotelId),
-                  width: 120,
-                  height: double.infinity,
-                  fit: BoxFit.cover,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // ── Imagem de fundo ─────────────────────────────────────────
+            SmartNetworkImage(
+              url: coverUrl,
+              fallback: fallbackForHotel(widget.hotel.hotelId),
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+            // ── Gradiente (cópia exata do RoomCard) ──────────────────────
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    AppColors.primary.withValues(alpha: 0.85),
+                  ],
                 ),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.hotel.nomeHotel,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: colorScheme.onSurface,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.location_on,
-                              size: 12, color: colorScheme.onSurfaceVariant),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              '${widget.hotel.bairro}, ${widget.hotel.cidade} - ${widget.hotel.uf}',
-                              style: TextStyle(
-                                  color: colorScheme.onSurfaceVariant,
-                                  fontSize: 11),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 32,
-                              child: ElevatedButton(
-                                onPressed: () => context.push(
-                                    '/hotel_details/${widget.hotel.hotelId}'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: colorScheme.primary,
-                                  foregroundColor: colorScheme.onPrimary,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                ),
-                                child: const Text('VER MAIS',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          ScaleTransition(
-                            scale: _heartScale,
-                            child: IconButton(
-                              onPressed: _handleRemove,
-                              icon: const Icon(Icons.favorite, color: Colors.red),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+            ),
+            // ── Coração (top-right) ──────────────────────────────────────
+            Positioned(
+              top: 10,
+              right: 10,
+              child: ScaleTransition(
+                scale: _heartScale,
+                child: GestureDetector(
+                  onTap: _handleRemove,
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.favorite,
+                        color: Colors.red, size: 17),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+            // ── Info box (cópia do RoomCard) ─────────────────────────────
+            Positioned(
+              bottom: 16,
+              left: 12,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.hotel.nomeHotel.toUpperCase(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                        height: 1.25,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on,
+                            size: 13, color: AppColors.secondary),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            '${widget.hotel.bairro}, ${widget.hotel.cidade} — ${widget.hotel.uf}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => context.push(
+                            '/hotel_details/${widget.hotel.hotelId}'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.secondary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        child: const Text('Ver mais'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

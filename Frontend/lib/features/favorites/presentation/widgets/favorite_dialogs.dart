@@ -20,6 +20,18 @@ TextStyle _bodyStyle(BuildContext context) => TextStyle(
 
 Widget _dialogLogo() => SvgPicture.asset(_logoPath, width: _logoWidth);
 
+/// Constrains all favorite dialogs to a comfortable max width on desktop
+/// so they don't stretch across wide screens.
+Widget _dialogShell({required Widget child}) {
+  return Dialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420),
+      child: Padding(padding: _dialogPadding, child: child),
+    ),
+  );
+}
+
 /// Cor do botão de ação dos dialogs de favorito.
 /// No modo claro mantém o azul-marinho da marca; no escuro usa o laranja
 /// (AppColors.secondary) para ter contraste suficiente contra o fundo escuro.
@@ -32,61 +44,57 @@ Future<bool> showUnfavoriteConfirmationDialog(BuildContext context) async {
   final result = await showDialog<bool>(
     context: context,
     barrierDismissible: true,
-    builder: (ctx) => Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: _dialogPadding,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _dialogLogo(),
-            const SizedBox(height: 20),
-            Text('Desfavoritar hotel', style: _titleStyle(ctx)),
-            const SizedBox(height: 12),
-            Text(
-              'Você tem certeza que deseja desfavoritar este hotel?',
-              style: _bodyStyle(ctx),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(ctx).colorScheme.onSurface,
-                      side: BorderSide(color: Theme.of(ctx).colorScheme.outline),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+    builder: (ctx) => _dialogShell(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _dialogLogo(),
+          const SizedBox(height: 20),
+          Text('Desfavoritar hotel', style: _titleStyle(ctx)),
+          const SizedBox(height: 12),
+          Text(
+            'Você tem certeza que deseja desfavoritar este hotel?',
+            style: _bodyStyle(ctx),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 28),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(ctx).colorScheme.onSurface,
+                    side: BorderSide(color: Theme.of(ctx).colorScheme.outline),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text('Cancelar',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
+                  child: const Text('Cancelar',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(ctx, true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _actionButtonColor(ctx),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _actionButtonColor(ctx),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text('Desfavoritar',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
+                  child: const Text('Desfavoritar',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     ),
   );
@@ -97,42 +105,38 @@ Future<void> showFavoriteAddedDialog(BuildContext context) {
   return showDialog<void>(
     context: context,
     barrierDismissible: true,
-    builder: (ctx) => Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: _dialogPadding,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _dialogLogo(),
-            const SizedBox(height: 20),
-            Text('Favorito adicionado!', style: _titleStyle(ctx)),
-            const SizedBox(height: 12),
-            Text(
-              'Hotel adicionado aos favoritos com sucesso.',
-              style: _bodyStyle(ctx),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _actionButtonColor(ctx),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+    builder: (ctx) => _dialogShell(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _dialogLogo(),
+          const SizedBox(height: 20),
+          Text('Favorito adicionado!', style: _titleStyle(ctx)),
+          const SizedBox(height: 12),
+          Text(
+            'Hotel adicionado aos favoritos com sucesso.',
+            style: _bodyStyle(ctx),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _actionButtonColor(ctx),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text('Entendido',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
               ),
+              child: const Text('Entendido',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     ),
   );
@@ -142,42 +146,38 @@ Future<void> showFavoriteRemovedDialog(BuildContext context) {
   return showDialog<void>(
     context: context,
     barrierDismissible: true,
-    builder: (ctx) => Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: _dialogPadding,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _dialogLogo(),
-            const SizedBox(height: 20),
-            Text('Favorito removido!', style: _titleStyle(ctx)),
-            const SizedBox(height: 12),
-            Text(
-              'Hotel removido dos favoritos com sucesso.',
-              style: _bodyStyle(ctx),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _actionButtonColor(ctx),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+    builder: (ctx) => _dialogShell(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _dialogLogo(),
+          const SizedBox(height: 20),
+          Text('Favorito removido!', style: _titleStyle(ctx)),
+          const SizedBox(height: 12),
+          Text(
+            'Hotel removido dos favoritos com sucesso.',
+            style: _bodyStyle(ctx),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _actionButtonColor(ctx),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text('Entendido',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
               ),
+              child: const Text('Entendido',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     ),
   );

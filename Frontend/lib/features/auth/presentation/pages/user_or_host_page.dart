@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/primary_button.dart';
 
 class UserOrHostPage extends StatelessWidget {
@@ -11,7 +12,9 @@ class UserOrHostPage extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: SafeArea(
-        child: Padding(
+        child: ResponsiveCenter(
+          maxWidth: ContentMaxWidth.form,
+          child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -76,6 +79,7 @@ class UserOrHostPage extends StatelessWidget {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

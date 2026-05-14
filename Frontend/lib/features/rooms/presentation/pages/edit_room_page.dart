@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../domain/models/catalogo_item.dart';
 import '../../domain/models/foto_existente.dart';
@@ -143,11 +144,12 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
       }
     });
 
+    final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            if (!isDesktop) _buildHeader(),
             if (state.saving) _buildProgressBar(state),
             Expanded(
               child: _buildBody(state),
@@ -192,7 +194,10 @@ class _EditRoomPageState extends ConsumerState<EditRoomPage> {
       );
     }
 
-    return _buildForm(state);
+    return ResponsiveCenter(
+      maxWidth: ContentMaxWidth.editForm,
+      child: _buildForm(state),
+    );
   }
 
   Widget _buildForm(EditRoomState state) {

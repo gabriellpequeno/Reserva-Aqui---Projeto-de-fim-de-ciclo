@@ -14,6 +14,8 @@ class AuthTextField extends StatefulWidget {
   final Widget? suffixIcon;
   final void Function(String)? onChanged;
   final int? maxLength;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onFieldSubmitted;
 
   const AuthTextField({
     super.key,
@@ -28,6 +30,8 @@ class AuthTextField extends StatefulWidget {
     this.suffixIcon,
     this.onChanged,
     this.maxLength,
+    this.textInputAction,
+    this.onFieldSubmitted,
   });
 
   @override
@@ -73,6 +77,8 @@ class _AuthTextFieldState extends State<AuthTextField> {
       keyboardType: widget.keyboardType,
       inputFormatters: formatters.isEmpty ? null : formatters,
       onChanged: widget.onChanged,
+      textInputAction: widget.textInputAction,
+      onFieldSubmitted: widget.onFieldSubmitted,
       style: TextStyle(
         color: colorScheme.onSurface,
         fontSize: 16,

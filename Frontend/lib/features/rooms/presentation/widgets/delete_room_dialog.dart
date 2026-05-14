@@ -32,11 +32,14 @@ class _DeleteRoomDialogState extends State<DeleteRoomDialog> {
     return Dialog(
       backgroundColor: colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: _buildStep(),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 460),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: _buildStep(),
+          ),
         ),
       ),
     );

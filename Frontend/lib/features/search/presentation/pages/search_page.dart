@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../home/presentation/widgets/room_card.dart';
 import '../providers/search_provider.dart';
 
@@ -74,7 +75,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     return GestureDetector(
       onTap: () => ref.read(searchProvider.notifier).hideAllPickers(),
       child: Scaffold(
-        body: Column(
+        body: ResponsiveCenter(
+          maxWidth: ContentMaxWidth.content,
+          child: Column(
           children: [
             _buildSearchHeader(context, searchState),
             Container(
@@ -121,6 +124,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                         ),
             ),
           ],
+        ),
         ),
       ),
     );

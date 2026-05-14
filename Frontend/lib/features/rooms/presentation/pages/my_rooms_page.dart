@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../domain/models/room_category_card.dart';
 import '../notifiers/my_rooms_notifier.dart';
@@ -37,12 +38,15 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(myRoomsNotifierProvider);
 
+    final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Meus Quartos',
-        showNotificationIcon: true,
-        fallbackRoute: '/profile/host',
-      ),
+      appBar: isDesktop
+          ? null
+          : const CustomAppBar(
+              title: 'Meus Quartos',
+              showNotificationIcon: true,
+              fallbackRoute: '/profile/host',
+            ),
       body: Stack(
         children: [
           Column(
@@ -160,20 +164,47 @@ class _MyRoomsPageState extends ConsumerState<MyRoomsPage> {
     if (cards.isEmpty && state.cards.isEmpty) return _buildEmpty();
     if (cards.isEmpty) return _buildEmptyFilter();
 
-    return RefreshIndicator(
-      onRefresh: () =>
-          ref.read(myRoomsNotifierProvider.notifier).refresh(),
-      color: AppColors.secondary,
-      child: ListView.builder(
-        padding: const EdgeInsets.only(
-            top: 16, bottom: 100, left: 16, right: 16),
-        itemCount: cards.length,
-        itemBuilder: (context, index) {
-          final card = cards[index];
-          return card.disponivel
-              ? _buildCardAtivo(state, card)
-              : _buildCardInativo(state, card);
-        },
+    return ResponsiveCenter(
+      maxWidth: ContentMaxWidth.content,
+      child: RefreshIndicator(
+        onRefresh: () =>
+            ref.read(myRoomsNotifierProvider.notifier).refresh(),
+        color: AppColors.secondary,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final useGrid = constraints.maxWidth >= 1024;
+            if (useGrid) {
+              return GridView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                gridDelegate:
+                    const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 540,
+                  mainAxisExtent: 220,
+                  mainAxisSpacing: 0,
+                  crossAxisSpacing: 16,
+                ),
+                itemCount: cards.length,
+                itemBuilder: (context, index) {
+                  final card = cards[index];
+                  return card.disponivel
+                      ? _buildCardAtivo(state, card)
+                      : _buildCardInativo(state, card);
+                },
+              );
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.only(
+                  top: 16, bottom: 100, left: 16, right: 16),
+              itemCount: cards.length,
+              itemBuilder: (context, index) {
+                final card = cards[index];
+                return card.disponivel
+                    ? _buildCardAtivo(state, card)
+                    : _buildCardInativo(state, card);
+              },
+            );
+          },
+        ),
       ),
     );
   }

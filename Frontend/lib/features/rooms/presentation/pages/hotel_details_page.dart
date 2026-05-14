@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/smart_network_image.dart';
 import '../../../favorites/presentation/providers/favorites_provider.dart';
 import '../../../favorites/presentation/widgets/favorite_dialogs.dart';
@@ -86,6 +87,8 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
             ?.any((h) => h.hotelId == widget.hotelId) ??
         false;
 
+    final isDesktop = Breakpoints.isDesktop(context);
+
     return Scaffold(
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -94,7 +97,8 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error, size: 48, color: colorScheme.onSurfaceVariant),
+                      Icon(Icons.error,
+                          size: 48, color: colorScheme.onSurfaceVariant),
                       const SizedBox(height: 12),
                       Text(
                         'Erro ao carregar detalhes do hotel',
@@ -110,132 +114,425 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
                     ],
                   ),
                 )
-              : CustomScrollView(
-                  slivers: [
-                    _buildSliverAppBar(context, state, isFavorited),
-                    SliverToBoxAdapter(
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 800),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 15),
-                              Center(
-                                child: Container(
-                                  width: 80,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: colorScheme.surface, width: 4),
-                                  ),
-                                  child: ClipOval(
-                                    child: SmartNetworkImage(
-                                      url: state.avatarUrl,
-                                      fallback: fallbackForHotel(widget.hotelId),
-                                      width: 80,
-                                      height: 80,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
+              : isDesktop
+                  ? _buildDesktopLayout(context, state, isFavorited)
+                  : _buildMobileLayout(context, state, isFavorited),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // DESKTOP — 2-col: imagem à esquerda, info à direita
+  // ──────────────────────────────────────────────────────────────────────────
+
+  Widget _buildDesktopLayout(
+      BuildContext context, HotelDetailsState state, bool isFavorited) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final coverUrl =
+        state.coverUrls.isNotEmpty ? state.coverUrls[0] : null;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1320),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(48, 32, 48, 48),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // — Coluna esquerda: imagem + avatar —
+              Expanded(
+                flex: 5,
+                child: Column(
+                  children: [
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: AspectRatio(
+                            aspectRatio: 4 / 3,
+                            child: SmartNetworkImage(
+                              url: coverUrl,
+                              fallback:
+                                  fallbackForHotel(widget.hotelId),
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        // Avatar sobreposto no canto inf-esquerdo
+                        if (state.avatarUrl != null)
+                          Positioned(
+                            bottom: 16,
+                            left: 16,
+                            child: Container(
+                              width: 64,
+                              height: 64,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: colorScheme.surface, width: 3),
+                              ),
+                              child: ClipOval(
+                                child: SmartNetworkImage(
+                                  url: state.avatarUrl,
+                                  fallback:
+                                      fallbackForHotel(widget.hotelId),
+                                  width: 64,
+                                  height: 64,
+                                  fit: BoxFit.cover,
                                 ),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildHeader(state),
-                                    Divider(height: 48, color: colorScheme.outline),
-                                    Center(child: _buildSectionTitle('Descrição')),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      state.descricao ?? 'Sem descrição disponível',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: colorScheme.onSurface,
-                                        fontSize: 14,
-                                        height: 1.5,
-                                      ),
-                                    ),
-                                    if (state.politicas != null) ...[
-                                      const SizedBox(height: 12),
-                                      Center(
-                                        child: GestureDetector(
-                                          onTap: () => _showPoliticasModal(context, state.politicas!),
-                                          child: const Text(
-                                            'Ver políticas do hotel',
-                                            style: TextStyle(
-                                              color: AppColors.secondary,
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w500,
-                                              decoration: TextDecoration.underline,
-                                              decorationColor: AppColors.secondary,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                    if (state.comodidades.isNotEmpty) ...[
-                                      Divider(height: 48, color: colorScheme.outline),
-                                      _buildSectionTitle('Comodidades'),
-                                      const SizedBox(height: 16),
-                                      _buildComodidades(state.comodidades),
-                                    ],
-                                    Divider(height: 48, color: colorScheme.outline),
-                                    _buildRichSectionTitle('Quartos ', 'Disponíveis'),
-                                    const SizedBox(height: 16),
-                                    _buildBedFilter(state.categorias),
-                                    const SizedBox(height: 16),
-                                    _buildCategorias(state.categorias, _selectedCapacidades),
-                                    Divider(height: 48, color: colorScheme.outline),
-                                    _buildSectionTitle('Avaliações'),
-                                    const SizedBox(height: 16),
-                                    Center(
-                                      child: Text(
-                                        state.notaMedia.toStringAsFixed(1),
-                                        style: const TextStyle(
-                                          color: AppColors.secondary,
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.w300,
-                                        ),
-                                      ),
-                                    ),
-                                    Center(
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: List.generate(5, (index) {
-                                          return Icon(
-                                            index < state.notaMedia.toInt()
-                                                ? Icons.star
-                                                : Icons.star_border,
-                                            color: AppColors.secondary,
-                                            size: 20,
-                                          );
-                                        }),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    if (state.avaliacoes.isNotEmpty)
-                                      _buildAvaliacoes(state.avaliacoes)
-                                    else
-                                      Center(
-                                        child: Text(
-                                          'Nenhuma avaliação ainda',
-                                          style: TextStyle(color: colorScheme.onSurfaceVariant),
-                                        ),
-                                      ),
-                                    const SizedBox(height: 48),
-                                  ],
-                                ),
-                              ),
-                            ],
+                            ),
+                          ),
+                      ],
+                    ),
+                    // Cover images extras
+                    if (state.coverUrls.length > 1) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 80,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: state.coverUrls.length.clamp(0, 6),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 8),
+                          itemBuilder: (ctx, i) => ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: SmartNetworkImage(
+                              url: state.coverUrls[i],
+                              fallback: fallbackForHotel(widget.hotelId),
+                              width: 110,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
+              ),
+              const SizedBox(width: 40),
+              // — Coluna direita: info —
+              Expanded(
+                flex: 6,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Nome + localização + favoritar
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  state.nome ?? 'Hotel',
+                                  style: TextStyle(
+                                    color: colorScheme.onSurface,
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
+                                    height: 1.1,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(Icons.location_on,
+                                        size: 15,
+                                        color: colorScheme.onSurfaceVariant),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${state.cidade ?? ''}, ${state.uf ?? ''}',
+                                      style: TextStyle(
+                                        color: colorScheme.onSurfaceVariant,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Botão favoritar
+                          IconButton(
+                            onPressed: _handleFavoriteTap,
+                            icon: Icon(
+                              isFavorited
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: isFavorited
+                                  ? Colors.red
+                                  : colorScheme.onSurfaceVariant,
+                              size: 26,
+                            ),
+                            tooltip: isFavorited
+                                ? 'Remover dos favoritos'
+                                : 'Adicionar aos favoritos',
+                          ),
+                        ],
+                      ),
+                      // Rating
+                      if (state.notaMedia > 0) ...[
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            ...List.generate(
+                              5,
+                              (i) => Icon(
+                                i < state.notaMedia.toInt()
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                color: AppColors.secondary,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              state.notaMedia.toStringAsFixed(1),
+                              style: const TextStyle(
+                                color: AppColors.secondary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 28),
+                      Divider(height: 1, color: colorScheme.outline),
+                      const SizedBox(height: 24),
+                      // Descrição
+                      _desktopSectionTitle('Sobre o hotel'),
+                      const SizedBox(height: 10),
+                      Text(
+                        state.descricao ?? 'Sem descrição disponível',
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontSize: 14,
+                          height: 1.6,
+                        ),
+                      ),
+                      if (state.politicas != null) ...[
+                        const SizedBox(height: 12),
+                        GestureDetector(
+                          onTap: () => _showPoliticasModal(context, state.politicas!),
+                          child: const MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: Text(
+                              'Ver políticas do hotel →',
+                              style: TextStyle(
+                                color: AppColors.secondary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.secondary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (state.comodidades.isNotEmpty) ...[
+                        const SizedBox(height: 28),
+                        Divider(height: 1, color: colorScheme.outline),
+                        const SizedBox(height: 24),
+                        _desktopSectionTitle('Comodidades'),
+                        const SizedBox(height: 14),
+                        _buildComodidades(state.comodidades),
+                      ],
+                      const SizedBox(height: 28),
+                      Divider(height: 1, color: colorScheme.outline),
+                      const SizedBox(height: 24),
+                      Text.rich(
+                        TextSpan(
+                          text: 'Quartos ',
+                          style: TextStyle(
+                            color: colorScheme.onSurface,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          children: const [
+                            TextSpan(
+                              text: 'Disponíveis',
+                              style: TextStyle(color: AppColors.secondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _buildBedFilter(state.categorias),
+                      const SizedBox(height: 14),
+                      _buildCategorias(
+                          state.categorias, _selectedCapacidades),
+                      if (state.avaliacoes.isNotEmpty) ...[
+                        const SizedBox(height: 28),
+                        Divider(height: 1, color: colorScheme.outline),
+                        const SizedBox(height: 24),
+                        _desktopSectionTitle('Avaliações'),
+                        const SizedBox(height: 14),
+                        _buildAvaliacoes(state.avaliacoes),
+                      ],
+                      const SizedBox(height: 48),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _desktopSectionTitle(String text) {
+    return Text(
+      text,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // MOBILE — layout original com SliverAppBar
+  // ──────────────────────────────────────────────────────────────────────────
+
+  Widget _buildMobileLayout(
+      BuildContext context, HotelDetailsState state, bool isFavorited) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return CustomScrollView(
+      slivers: [
+        _buildSliverAppBar(context, state, isFavorited),
+        SliverToBoxAdapter(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 15),
+                  Center(
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: colorScheme.surface, width: 4),
+                      ),
+                      child: ClipOval(
+                        child: SmartNetworkImage(
+                          url: state.avatarUrl,
+                          fallback: fallbackForHotel(widget.hotelId),
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(state),
+                        Divider(height: 48, color: colorScheme.outline),
+                        Center(child: _buildSectionTitle('Descrição')),
+                        const SizedBox(height: 12),
+                        Text(
+                          state.descricao ?? 'Sem descrição disponível',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: colorScheme.onSurface,
+                            fontSize: 14,
+                            height: 1.5,
+                          ),
+                        ),
+                        if (state.politicas != null) ...[
+                          const SizedBox(height: 12),
+                          Center(
+                            child: GestureDetector(
+                              onTap: () => _showPoliticasModal(
+                                  context, state.politicas!),
+                              child: const Text(
+                                'Ver políticas do hotel',
+                                style: TextStyle(
+                                  color: AppColors.secondary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: AppColors.secondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (state.comodidades.isNotEmpty) ...[
+                          Divider(height: 48, color: colorScheme.outline),
+                          _buildSectionTitle('Comodidades'),
+                          const SizedBox(height: 16),
+                          _buildComodidades(state.comodidades),
+                        ],
+                        Divider(height: 48, color: colorScheme.outline),
+                        _buildRichSectionTitle('Quartos ', 'Disponíveis'),
+                        const SizedBox(height: 16),
+                        _buildBedFilter(state.categorias),
+                        const SizedBox(height: 16),
+                        _buildCategorias(
+                            state.categorias, _selectedCapacidades),
+                        Divider(height: 48, color: colorScheme.outline),
+                        _buildSectionTitle('Avaliações'),
+                        const SizedBox(height: 16),
+                        Center(
+                          child: Text(
+                            state.notaMedia.toStringAsFixed(1),
+                            style: const TextStyle(
+                              color: AppColors.secondary,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                        ),
+                        Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: List.generate(
+                              5,
+                              (index) => Icon(
+                                index < state.notaMedia.toInt()
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                color: AppColors.secondary,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        if (state.avaliacoes.isNotEmpty)
+                          _buildAvaliacoes(state.avaliacoes)
+                        else
+                          Center(
+                            child: Text(
+                              'Nenhuma avaliação ainda',
+                              style: TextStyle(
+                                  color: colorScheme.onSurfaceVariant),
+                            ),
+                          ),
+                        const SizedBox(height: 48),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -245,6 +542,7 @@ class _HotelDetailsPageState extends ConsumerState<HotelDetailsPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: colorScheme.surface,
+      constraints: const BoxConstraints(maxWidth: 560),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

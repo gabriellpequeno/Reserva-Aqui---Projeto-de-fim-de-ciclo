@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 
 /// Tela de confirmação mostrada após o pagamento. Duas variantes:
 ///
@@ -25,7 +26,9 @@ class ReservationSuccessPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: SafeArea(
-        child: Padding(
+        child: ResponsiveCenter(
+          maxWidth: ContentMaxWidth.form,
+          child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
@@ -132,6 +135,7 @@ class ReservationSuccessPage extends StatelessWidget {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

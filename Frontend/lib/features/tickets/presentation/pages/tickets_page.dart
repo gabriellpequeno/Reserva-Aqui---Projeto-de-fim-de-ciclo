@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../domain/models/ticket.dart';
 import '../notifiers/tickets_notifier.dart';
@@ -44,25 +45,39 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
   Widget build(BuildContext context) {
     final ticketsAsync = ref.watch(ticketsNotifierProvider);
 
+    final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Minhas Reservas',
-        showNotificationIcon: true,
-        fallbackRoute: '/profile/user',
-      ),
+      appBar: isDesktop
+          ? null
+          : const CustomAppBar(
+              title: 'Minhas Reservas',
+              showNotificationIcon: true,
+              fallbackRoute: '/profile/user',
+            ),
       body: Column(
         children: [
-          _buildSearchBar(),
-          _buildFilterTabs(),
           Expanded(
-            child: ticketsAsync.when(
-              skipLoadingOnReload: true,
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => _buildErrorState(e.toString()),
-              data: (tickets) => RefreshIndicator(
-                onRefresh: () =>
-                    ref.read(ticketsNotifierProvider.notifier).reload(),
-                child: _buildList(_filtered(tickets)),
+            child: ResponsiveCenter(
+              maxWidth: ContentMaxWidth.content,
+              child: Column(
+                children: [
+                  _buildSearchBar(),
+                  _buildFilterTabs(),
+                  Expanded(
+                    child: ticketsAsync.when(
+                      skipLoadingOnReload: true,
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (e, _) => _buildErrorState(e.toString()),
+                      data: (tickets) => RefreshIndicator(
+                        onRefresh: () => ref
+                            .read(ticketsNotifierProvider.notifier)
+                            .reload(),
+                        child: _buildList(_filtered(tickets)),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

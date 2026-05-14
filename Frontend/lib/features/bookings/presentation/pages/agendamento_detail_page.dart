@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../tickets/data/services/tickets_service.dart';
 import '../../../tickets/domain/models/ticket.dart';
@@ -92,16 +95,22 @@ class _AgendamentoDetailPageState extends ConsumerState<AgendamentoDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Detalhe do Agendamento',
-        fallbackRoute: '/host/agendamentos',
+      appBar: isDesktop
+          ? null
+          : const CustomAppBar(
+              title: 'Detalhe do Agendamento',
+              fallbackRoute: '/host/agendamentos',
+            ),
+      body: ResponsiveCenter(
+        maxWidth: ContentMaxWidth.reading,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? _buildError()
+                : _buildContent(),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _buildError()
-              : _buildContent(),
     );
   }
 

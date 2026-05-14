@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../data/services/booking_service.dart';
 
 /// Visualização pública (sem login) do ticket de uma reserva.
@@ -40,20 +41,25 @@ class _PublicTicketPageState extends ConsumerState<PublicTicketPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        title: const Text('Minha reserva'),
-        leading: IconButton(
-          icon: const Icon(Icons.home),
-          onPressed: () => context.go('/home'),
-        ),
+      appBar: Breakpoints.isDesktop(context)
+          ? null
+          : AppBar(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              title: const Text('Minha reserva'),
+              leading: IconButton(
+                icon: const Icon(Icons.home),
+                onPressed: () => context.go('/home'),
+              ),
+            ),
+      body: ResponsiveCenter(
+        maxWidth: ContentMaxWidth.reading,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? _buildErrorState()
+                : _buildTicket(_data!),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _buildErrorState()
-              : _buildTicket(_data!),
     );
   }
 

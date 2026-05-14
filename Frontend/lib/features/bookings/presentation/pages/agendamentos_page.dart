@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../tickets/domain/models/ticket.dart';
 import '../notifiers/agendamentos_notifier.dart';
@@ -47,25 +48,41 @@ class _AgendamentosPageState extends ConsumerState<AgendamentosPage> {
     final notifier = ref.read(agendamentosNotifierProvider.notifier);
     final activeDate = notifier.activeDateFilter;
 
+    final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Agendamentos',
-        showNotificationIcon: true,
-        fallbackRoute: '/host/dashboard',
-      ),
+      appBar: isDesktop
+          ? null
+          : const CustomAppBar(
+              title: 'Agendamentos',
+              showNotificationIcon: true,
+              fallbackRoute: '/host/dashboard',
+            ),
       body: Column(
         children: [
-          _buildSearchAndCalendar(context, agendamentosAsync, activeDate, notifier),
-          _buildFilterTabs(notifier),
-          if (activeDate != null) _buildActiveDateChip(activeDate, notifier),
           Expanded(
-            child: agendamentosAsync.when(
-              skipLoadingOnReload: true,
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => _buildErrorState(e.toString(), notifier),
-              data: (tickets) => RefreshIndicator(
-                onRefresh: notifier.reload,
-                child: _buildList(_filtered(tickets)),
+            child: ResponsiveCenter(
+              maxWidth: ContentMaxWidth.content,
+              child: Column(
+                children: [
+                  _buildSearchAndCalendar(
+                      context, agendamentosAsync, activeDate, notifier),
+                  _buildFilterTabs(notifier),
+                  if (activeDate != null)
+                    _buildActiveDateChip(activeDate, notifier),
+                  Expanded(
+                    child: agendamentosAsync.when(
+                      skipLoadingOnReload: true,
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (e, _) =>
+                          _buildErrorState(e.toString(), notifier),
+                      data: (tickets) => RefreshIndicator(
+                        onRefresh: notifier.reload,
+                        child: _buildList(_filtered(tickets)),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

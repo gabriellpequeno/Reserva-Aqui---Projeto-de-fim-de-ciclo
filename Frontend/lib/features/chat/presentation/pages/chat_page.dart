@@ -116,7 +116,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Assistente ReservAqui',
+              'Bene, Assistente ReservAqui',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -279,7 +279,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Assistente ReservAqui',
+                    'Bene, Assistente ReservAqui',
                     style: TextStyle(
                       color: AppColors.secondary,
                       fontSize: 16,

@@ -137,7 +137,7 @@ export const buildAgentTools = (context: ChatContext | null) => {
         dataCheckin: z.string().describe('Data de check-in (formato YYYY-MM-DD).'),
         dataCheckout: z.string().describe('Data de check-out (formato YYYY-MM-DD).'),
         walkInNome: z.string().optional().describe('Nome completo do hóspede. OBRIGATÓRIO se o usuário não estiver logado.'),
-        walkInEmail: z.string().optional().describe('Email do hóspede. OBRIGATÓRIO se o usuário não estiver logado. Será usado para enviar a confirmação e o link de pagamento.'),
+        walkInEmail: z.string().email('walkInEmail deve ser um endereço de email válido (ex.: nome@dominio.com).').optional().describe('Email do hóspede. OBRIGATÓRIO se o usuário não estiver logado. Será usado para enviar a confirmação e o link de pagamento. Deve ser um endereço válido (nome@dominio.com) — nunca passe a palavra "email" literalmente.'),
         walkInTelefone: z.string().optional().describe('Telefone ou WhatsApp do hóspede (apenas números). OBRIGATÓRIO se o usuário não estiver logado.'),
       }),
     }

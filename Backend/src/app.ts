@@ -38,6 +38,12 @@ import { UPLOAD_DIR, ensureDir } from './services/storage.service';
 
 const app = express();
 
+// Confia no primeiro proxy à frente (nginx do servidor remoto). Sem isso o
+// express-rate-limit recusa operar quando o X-Forwarded-For está presente
+// (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR), bloqueando reservas guest e pagamentos.
+// Também garante que req.ip reflita o cliente real, não o loopback do nginx.
+app.set('trust proxy', 1);
+
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

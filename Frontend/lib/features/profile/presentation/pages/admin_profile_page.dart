@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart' show launchUrl;
 import '../../../../core/auth/auth_notifier.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/string_extensions.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -66,7 +69,34 @@ class AdminProfilePage extends ConsumerWidget {
                     ProfileMenuItem(
                       title: 'Suporte',
                       icon: Icons.headset_mic_outlined,
-                      onTap: () {},
+                      onTap: () async {
+                        final uri = Uri(
+                          scheme: 'mailto',
+                          path: AppConstants.supportEmail,
+                          queryParameters: {
+                            'subject': 'Suporte ReservAqui',
+                            'body': 'Olá, preciso de ajuda com...',
+                          },
+                        );
+                        try {
+                          await launchUrl(uri);
+                        } catch (_) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  'Copie o email: ${AppConstants.supportEmail}'),
+                              action: SnackBarAction(
+                                label: 'Copiar',
+                                onPressed: () => Clipboard.setData(
+                                  ClipboardData(
+                                      text: AppConstants.supportEmail),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      },
                       showDivider: false,
                     ),
                   ],

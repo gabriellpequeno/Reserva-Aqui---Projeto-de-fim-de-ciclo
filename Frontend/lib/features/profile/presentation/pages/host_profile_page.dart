@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart' show launchUrl;
 import '../../../../core/auth/auth_notifier.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/utils/string_extensions.dart';
@@ -23,7 +26,9 @@ class HostProfilePage extends ConsumerWidget {
     return Scaffold(
       body: SafeArea(
         child: profileState.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(
+            child: CircularProgressIndicator(),
+          ),
           error: (error, stack) => Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -125,7 +130,34 @@ class HostProfilePage extends ConsumerWidget {
               icon: Icons.headset_mic_outlined,
               title: 'Suporte',
               subtitle: 'Fale com a equipe',
-              onTap: () {},
+              onTap: () async {
+                final uri = Uri(
+                  scheme: 'mailto',
+                  path: AppConstants.supportEmail,
+                  queryParameters: {
+                    'subject': 'Suporte ReservAqui',
+                    'body': 'Olá, preciso de ajuda com...',
+                  },
+                );
+                try {
+                  await launchUrl(uri);
+                } catch (_) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          'Copie o email: ${AppConstants.supportEmail}'),
+                      action: SnackBarAction(
+                        label: 'Copiar',
+                        onPressed: () => Clipboard.setData(
+                          ClipboardData(
+                              text: AppConstants.supportEmail),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+              },
             ),
           ],
         ),
@@ -187,7 +219,34 @@ class HostProfilePage extends ConsumerWidget {
                 ProfileMenuItem(
                   title: 'Suporte',
                   icon: Icons.headset_mic_outlined,
-                  onTap: () {},
+                  onTap: () async {
+                    final uri = Uri(
+                      scheme: 'mailto',
+                      path: AppConstants.supportEmail,
+                      queryParameters: {
+                        'subject': 'Suporte ReservAqui',
+                        'body': 'Olá, preciso de ajuda com...',
+                      },
+                    );
+                    try {
+                      await launchUrl(uri);
+                    } catch (_) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              'Copie o email: ${AppConstants.supportEmail}'),
+                          action: SnackBarAction(
+                            label: 'Copiar',
+                            onPressed: () => Clipboard.setData(
+                              ClipboardData(
+                                  text: AppConstants.supportEmail),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                  },
                   showDivider: false,
                 ),
               ],

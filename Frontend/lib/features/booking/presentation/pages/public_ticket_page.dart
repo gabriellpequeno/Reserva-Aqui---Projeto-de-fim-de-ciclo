@@ -48,7 +48,7 @@ class _PublicTicketPageState extends ConsumerState<PublicTicketPage> {
               foregroundColor: Colors.white,
               title: const Text('Minha reserva'),
               leading: IconButton(
-                icon: const Icon(Icons.home),
+                icon: const Icon(Icons.home, color: Colors.white),
                 onPressed: () => context.go('/home'),
               ),
             ),

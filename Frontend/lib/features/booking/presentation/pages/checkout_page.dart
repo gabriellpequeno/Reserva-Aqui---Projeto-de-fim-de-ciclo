@@ -129,10 +129,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                           child: Column(
                                             children: [
                                               _buildFinancialCard(state),
-                                              if (state.politicas != null) ...[
-                                                const SizedBox(height: 14),
-                                                _buildPoliciesCard(state),
-                                              ],
                                               const SizedBox(height: 14),
                                               _buildFinalizeButton(
                                                   context, state),
@@ -153,10 +149,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                   _buildHospedeCard(state),
                                   const SizedBox(height: 14),
                                   _buildFinancialCard(state),
-                                  if (state.politicas != null) ...[
-                                    const SizedBox(height: 14),
-                                    _buildPoliciesCard(state),
-                                  ],
                                   const SizedBox(height: 14),
                                   _buildFinalizeButton(context, state),
                                 ],
@@ -624,39 +616,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               fontWeight: isTotal ? FontWeight.w700 : FontWeight.w400,
             )),
       ],
-    );
-  }
-
-  // ── Card de políticas ───────────────────────────────────────────────────
-  Widget _buildPoliciesCard(CheckoutState state) {
-    final p = state.politicas!;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(20)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Políticas do Hotel',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 10),
-          if (p.politicaCancelamento != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.cancel_outlined, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(p.politicaCancelamento!,
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, height: 1.5)),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
     );
   }
 

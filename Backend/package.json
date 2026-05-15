@@ -27,6 +27,7 @@
     "@langchain/core": "^1.1.41",
     "@langchain/google-genai": "^2.1.28",
     "@langchain/groq": "^1.2.0",
+    "@langchain/openai": "^1.4.5",
     "@types/multer": "^2.1.0",
     "@types/nodemailer": "^8.0.0",
     "argon2": "^0.44.0",

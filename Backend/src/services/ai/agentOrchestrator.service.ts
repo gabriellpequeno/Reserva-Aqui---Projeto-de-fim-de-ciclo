@@ -173,21 +173,6 @@ ${ragContext}
   }
 
   private static async handleReserva(userMessage: string, context: ChatContext, history: any[]): Promise<string> {
-    // Resolve hotel pelo histórico recente quando a sessão ainda não está travada —
-    // simétrico ao handleDuvida. Sem isso, o LLM tenta chutar o UUID em
-    // selecionar_hotel a partir do texto do histórico (os UUIDs do buscar_hoteis
-    // não voltam no getChatHistory, que só carrega texto puro) e o Groq rejeita
-    // por pattern mismatch — tool_use_failed em cascata por todas as chaves do
-    // round-robin (RES-111).
-    if (!context.hotelId) {
-      const resolved = await this.tryResolveHotelFromHistory(context.sessionId, history);
-      if (resolved) {
-        context.hotelId = resolved.hotelId;
-        context.schemaName = resolved.schemaName;
-        console.log(`[AgentOrchestrator] Hotel resolvido pelo histórico (RESERVA): ${resolved.hotelId}`);
-      }
-    }
-
     const tools = buildAgentTools(context);
     const cidadesDisponiveis = await this.getCidadesDisponiveis();
 

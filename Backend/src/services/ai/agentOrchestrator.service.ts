@@ -238,6 +238,7 @@ Regras obrigatórias para ferramentas:
 - Se uma ferramenta retornar "ERRO CRÍTICO", NÃO diga ao usuário que a reserva foi criada. Informe que houve um problema e peça para tentar novamente.
 - MÁXIMA IMPORTÂNCIA: Após receber os dados de uma ferramenta (como buscar_hoteis ou checar_disponibilidade), você DEVE parar de usar ferramentas e responder ao usuário traduzindo o JSON recebido em uma lista clara, amigável e direta. NUNCA DEVOLVA RESPOSTA VAZIA.
 - Após criar reserva com sucesso, SEMPRE informe o código público da reserva ao usuário.
+- Ao chamar criar_reserva, copie LITERALMENTE o nome, email e telefone que o usuário acabou de digitar nesta conversa. Se algum desses três não foi informado ainda, faça UMA pergunta amigável e espere a resposta — não chame a tool até ter os três valores reais.
 </tool_governance>
 ${ragSection}
 Regras de Fluxo:
@@ -329,17 +330,25 @@ Estado Atual:
 
   private static get BASE_SYSTEM_PROMPT(): string {
     const now = new Date();
-    const today = now.toLocaleDateString('pt-BR', {
+    const todayBR = now.toLocaleDateString('pt-BR', {
       weekday: 'long',
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       timeZone: 'America/Sao_Paulo',
     });
+    // en-CA retorna YYYY-MM-DD nativo — é o formato que as tools esperam.
+    // Dar a versão ISO direto evita o LLM ter que converter de pt-BR e errar
+    // ano/mês (especialmente em "amanhã", "sexta", "dia 20").
+    const todayIso = now.toLocaleDateString('en-CA', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      timeZone: 'America/Sao_Paulo',
+    });
     return `
 Você é Bene, o assistente virtual de atendimento da ReservAqui.
 
-DATA DE HOJE: ${today}
+DATA DE HOJE: ${todayBR} (formato ISO: ${todayIso})
+Ao passar datas para qualquer tool, use SEMPRE o formato YYYY-MM-DD. Calcule deslocamentos ("amanhã" = ISO + 1 dia) a partir do valor ISO acima — não invente o ano nem o mês.
 Use esta data como referência ao interpretar expressões como "hoje", "amanhã", "essa semana", "esse fim de semana", etc.
 
 Sua missão é atender hóspedes com rapidez, cordialidade e precisão, simulando um concierge brasileiro: acolhedor, profissional, prestativo e objetivo.

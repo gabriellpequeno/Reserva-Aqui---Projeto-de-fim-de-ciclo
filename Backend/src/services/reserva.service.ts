@@ -771,15 +771,7 @@ async function _getReservaByCodigoPublico(codigoPublico: string): Promise<Reserv
       [codigoPublico],
     );
     if (!rows[0]) throw new Error('Reserva não encontrada');
-    const reserva = rows[0];
-
-    // Reservas criadas pelo chat/IA e algumas antigas chegam com tipo_quarto NULL.
-    // Resolve via JOIN com categoria_quarto pra UI não mostrar "—" (RES-107).
-    if (!reserva.tipo_quarto && reserva.quarto_id) {
-      reserva.tipo_quarto = await _resolveTipoQuarto(client, reserva.quarto_id, null);
-    }
-
-    return reserva;
+    return rows[0];
   });
 }
 

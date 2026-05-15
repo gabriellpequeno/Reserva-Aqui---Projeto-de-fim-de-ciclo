@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart' show launchUrl;
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/breakpoints.dart';
 
 class SupportPage extends StatelessWidget {
   const SupportPage({super.key});
@@ -39,12 +40,16 @@ class SupportPage extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Suporte'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
+      appBar: Breakpoints.isDesktop(context)
+          ? null
+          : AppBar(
+              title: const Text('Suporte'),
+            ),
+      body: ResponsiveCenter(
+        maxWidth: ContentMaxWidth.reading,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -109,6 +114,7 @@ class SupportPage extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/ui_providers.dart';
+import '../utils/breakpoints.dart';
 import '../widgets/custom_bottom_nav.dart';
 import '../widgets/custom_app_bar.dart';
+import '../widgets/desktop_top_bar.dart';
 import '../auth/auth_notifier.dart';
 import '../auth/auth_state.dart';
+import '../../features/auth/presentation/widgets/auth_dialogs.dart';
 
 class MainLayout extends ConsumerWidget {
   const MainLayout({super.key, required this.child});
@@ -37,6 +40,8 @@ class MainLayout extends ConsumerWidget {
         case null:
           context.go('/profile/user');
       }
+    } else if (Breakpoints.isDesktop(context)) {
+      showLoginDialog(context);
     } else {
       context.go('/auth/login');
     }
@@ -57,114 +62,91 @@ class MainLayout extends ConsumerWidget {
     }
   }
 
+  bool _wasOutsideShellOriginally(String location) {
+    return location.startsWith('/room_details') ||
+        location.startsWith('/hotel_details') ||
+        location == '/add_room' ||
+        location == '/my_rooms' ||
+        location.startsWith('/edit_room') ||
+        location.startsWith('/tickets/details') ||
+        location.startsWith('/booking/') ||
+        location.startsWith('/reservas/') ||
+        location.startsWith('/pagamento/') ||
+        location == '/profile/terms' ||
+        location == '/profile/privacy' ||
+        location == '/profile/about' ||
+        location.startsWith('/host/') ||
+        location.startsWith('/admin/');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final String location = GoRouterState.of(context).uri.path;
     final currentIndex = _calculateSelectedIndex(location);
     final isNavbarVisible = ref.watch(navbarVisibleProvider);
-    final bool hideAppBar = location == '/' ||
-        location == '/home' ||
-        location == '/chat' ||
-        location == '/favorites' ||
-        location == '/notifications' ||
-        location == '/search' ||
-        location.startsWith('/tickets') ||
-        location.startsWith('/room_details') ||
-        location.startsWith('/auth/login');
-    final bool hideBottomNav = location.startsWith('/room_details');
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 600;
+        final double w = constraints.maxWidth;
+        final bool isDesktop = w >= Breakpoints.desktop;
+        final bool wasOutside = _wasOutsideShellOriginally(location);
+
+        if (wasOutside) {
+          if (!isDesktop) return child;
+
+          return Scaffold(
+            appBar: DesktopTopBar(
+              currentIndex: currentIndex,
+              onTap: (i) => _onItemTapped(i, context, ref),
+            ),
+            body: child,
+          );
+        }
+
+        final bool isRoot = location == '/' ||
+            location == '/home' ||
+            location == '/chat' ||
+            location == '/favorites' ||
+            location == '/notifications' ||
+            location == '/search' ||
+            location.startsWith('/tickets') ||
+            location.startsWith('/auth/login');
+        final bool hideBottomNav = false;
+
+        final PreferredSizeWidget? appBar = isDesktop
+            ? DesktopTopBar(
+                currentIndex: currentIndex,
+                onTap: (i) => _onItemTapped(i, context, ref),
+              )
+            : (isRoot
+                ? null
+                : CustomAppBar(
+                    fallbackRoute:
+                        location.startsWith('/profile') ? '/home' : null,
+                  ));
+
+        final Widget? bottomNav = (isDesktop || hideBottomNav)
+            ? null
+            : AnimatedSlide(
+                offset: (isNavbarVisible ||
+                        (isRoot && location != '/home' && location != '/'))
+                    ? Offset.zero
+                    : const Offset(0, 1),
+                duration: const Duration(milliseconds: 300),
+                child: CustomBottomNavBar(
+                  currentIndex: currentIndex,
+                  onTap: (index) => _onItemTapped(index, context, ref),
+                ),
+              );
 
         return Scaffold(
-          extendBody: true,
-          extendBodyBehindAppBar: true,
-          appBar: hideAppBar ? null : CustomAppBar(
-            fallbackRoute: location.startsWith('/profile') ? '/home' : null,
-          ),
-          drawer: isMobile ? null : _buildDrawer(context, ref),
+          extendBody: !isDesktop,
+          extendBodyBehindAppBar: !isDesktop,
+          appBar: appBar,
           body: child,
-          bottomNavigationBar: hideBottomNav
-              ? null
-              : isMobile
-                  ? AnimatedSlide(
-                      offset: (isNavbarVisible ||
-                              hideAppBar &&
-                                  location != '/home' &&
-                                  location != '/')
-                          ? Offset.zero
-                          : const Offset(0, 1),
-                      duration: const Duration(milliseconds: 300),
-                      child: CustomBottomNavBar(
-                        currentIndex: currentIndex,
-                        onTap: (index) => _onItemTapped(index, context, ref),
-                      ),
-                    )
-                  : null,
+          bottomNavigationBar: bottomNav,
         );
       },
-    );
-  }
-
-  Widget _buildDrawer(BuildContext context, WidgetRef ref) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(color: Theme.of(context).primaryColor),
-            child: const Text(
-              'Menu',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('Início'),
-            onTap: () {
-              context.go('/');
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.search),
-            title: const Text('Buscar Quartos'),
-            onTap: () {
-              context.go('/home');
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.favorite),
-            title: const Text('Favoritos'),
-            onTap: () {
-              context.go('/favorites');
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.confirmation_number),
-            title: const Text('Meus Tickets'),
-            onTap: () {
-              context.go('/chat');
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Perfil'),
-            onTap: () {
-              _navigateToProfile(context, ref);
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
     );
   }
 }

@@ -7,7 +7,7 @@ import { setQuartoDisponivel } from './quarto.service';
 import { _ensureReservaFluxoColumns } from './reserva.service';
 import { sendApprovedReservationConfirmation } from './whatsappReservation.service';
 import { sendEmail } from './email.service';
-import { reservaConfirmadaTemplate } from './emailTemplates';
+import { reservaConfirmadaTemplate, reservaPendentePagamentoTemplate } from './emailTemplates';
 import {
   PagamentoReserva,
   PagamentoReservaSafe,
@@ -92,6 +92,74 @@ export async function cancelarPagamentoFake(
   pagamentoId:   number,
 ): Promise<PagamentoFakeResumo> {
   return _cancelarPagamentoFake(codigoPublico, pagamentoId);
+}
+
+/**
+ * Dispara o email "pagamento pendente" com o link de checkout.
+ * Compartilhado entre o fluxo do bot (WhatsApp/chat) e o do app — garante que
+ * o hóspede sempre receba o link após gerar o pagamento, independente do canal.
+ * Fire-and-forget: erros são apenas logados, nunca propagam.
+ */
+export async function sendPaymentPendingEmail(input: {
+  codigoPublico: string;
+  pagamentoId:   number;
+  expiresAt?:    string | null;
+}): Promise<void> {
+  try {
+    const { schema_name, nome_hotel } = await _resolveTenantByCodigoPublico(input.codigoPublico);
+
+    const row = await withTenant(schema_name, async (client) => {
+      await _ensureReservaFluxoColumns(client);
+      const { rows } = await client.query<{
+        email_hospede: string | null;
+        user_email:    string | null;
+        nome_hospede:  string | null;
+        user_nome:     string | null;
+        tipo_quarto:   string | null;
+        data_checkin:  string;
+        data_checkout: string;
+        num_hospedes:  number;
+        valor_total:   string;
+      }>(
+        `SELECT r.email_hospede, u.email AS user_email,
+                r.nome_hospede, u.nome_completo AS user_nome,
+                r.tipo_quarto, r.data_checkin, r.data_checkout,
+                r.num_hospedes, r.valor_total
+         FROM reserva r
+         LEFT JOIN public.usuario u ON u.user_id = r.user_id
+         WHERE r.codigo_publico = $1`,
+        [input.codigoPublico],
+      );
+      return rows[0] ?? null;
+    });
+
+    if (!row) return;
+
+    const destinoEmail = row.email_hospede ?? row.user_email ?? null;
+    if (!destinoEmail) return;
+
+    const frontend     = (process.env.FRONTEND_URL ?? 'http://localhost:8080').replace(/\/+$/, '');
+    const pagamentoUrl = `${frontend}/pagamento/${input.codigoPublico}/${input.pagamentoId}`;
+
+    const { subject, html } = reservaPendentePagamentoTemplate({
+      nomeHospede:   row.nome_hospede ?? row.user_nome ?? 'Hóspede',
+      codigoPublico: input.codigoPublico,
+      pagamentoUrl,
+      expiresAt:     input.expiresAt ?? null,
+      resumo: {
+        nomeHotel:    nome_hotel,
+        tipoQuarto:   row.tipo_quarto ?? 'Quarto',
+        dataCheckin:  row.data_checkin,
+        dataCheckout: row.data_checkout,
+        numHospedes:  row.num_hospedes,
+        valorTotal:   row.valor_total,
+      },
+    });
+
+    sendEmail({ to: destinoEmail, subject, html }).catch(() => {});
+  } catch (err) {
+    console.warn('[pagamento] sendPaymentPendingEmail falhou:', (err as Error).message);
+  }
 }
 
 // ── Helpers Privados ──────────────────────────────────────────────────────────

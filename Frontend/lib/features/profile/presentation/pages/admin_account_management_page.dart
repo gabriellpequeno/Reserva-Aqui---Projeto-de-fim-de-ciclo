@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../data/services/admin_accounts_service.dart';
 import '../../domain/models/admin_hotel_model.dart';
@@ -75,12 +76,15 @@ class _AdminAccountManagementPageState
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = Breakpoints.isDesktop(context);
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Gerenciamento de Contas',
-        fallbackRoute: '/profile/admin',
-      ),
+      appBar: isDesktop
+          ? null
+          : const CustomAppBar(
+              title: 'Gerenciamento de Contas',
+              fallbackRoute: '/profile/admin',
+            ),
       body: Column(
         children: [
           _buildSearchBar(colorScheme),

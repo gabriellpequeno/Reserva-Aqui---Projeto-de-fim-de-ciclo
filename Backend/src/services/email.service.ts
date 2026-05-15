@@ -81,32 +81,44 @@ function resolveFromHeader(): string {
 
 // ── API Pública ───────────────────────────────────────────────────────────────
 
+/** Regex simples de email — mesma usada em Reserva.validateEmail e Usuario. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
  * Envia um email. Fire-and-forget seguro: erros são logados mas nunca propagam.
  * Chamadores devem usar .catch(() => {}) se quiserem ignorar a Promise.
  */
 export async function sendEmail(input: SendEmailInput): Promise<void> {
+  // Guard: rejeita destinatário inválido antes de qualquer trabalho.
+  // Sem isso, o Nodemailer estoura "No recipients defined" e polui o log
+  // — pior, esconde a causa raiz (dado ruim entrando no campo).
+  const to = typeof input.to === 'string' ? input.to.trim() : '';
+  if (!to || !EMAIL_RE.test(to)) {
+    console.warn(`[email] destinatário inválido (ignorado): to="${input.to}" subject="${input.subject}"`);
+    return;
+  }
+
   const transporter = getTransporter();
 
   if (!transporter) {
-    console.warn(`[email] (no-op) Para ${input.to}: ${input.subject}`);
+    console.warn(`[email] (no-op) Para ${to}: ${input.subject}`);
     return;
   }
 
   const from = resolveFromHeader();
 
-  console.log(`[email] enviando from="${from}" to=${input.to} assunto="${input.subject}"`);
+  console.log(`[email] enviando from="${from}" to=${to} assunto="${input.subject}"`);
   try {
     const info = await transporter.sendMail({
       from,
-      to:      input.to,
+      to,
       subject: input.subject,
       html:    input.html,
       text:    input.text ?? stripHtml(input.html),
     });
-    console.log(`[email] OK to=${input.to} messageId=${info.messageId} accepted=${JSON.stringify(info.accepted)} rejected=${JSON.stringify(info.rejected)} response="${info.response}"`);
+    console.log(`[email] OK to=${to} messageId=${info.messageId} accepted=${JSON.stringify(info.accepted)} rejected=${JSON.stringify(info.rejected)} response="${info.response}"`);
   } catch (err) {
-    console.warn(`[email] FALHA to=${input.to}:`, (err as Error).message);
+    console.warn(`[email] FALHA to=${to}:`, (err as Error).message);
     if ((err as Error).stack) console.warn((err as Error).stack);
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../tickets/presentation/notifiers/tickets_notifier.dart';
 import '../notifiers/checkout_notifier.dart';
 import '../widgets/hospede_info_form.dart';
@@ -58,30 +59,110 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(checkoutNotifierProvider);
 
+    final isDesktop = Breakpoints.isDesktop(context);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
-          _buildHeader(context),
+          if (!isDesktop) _buildHeader(context),
           Expanded(
             child: state.isLoadingData
                 ? const Center(child: CircularProgressIndicator())
                 : state.errorMessage != null && state.categoria == null
                     ? _buildErrorState(state.errorMessage!)
-                    : SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
-                        child: Column(
-                          children: [
-                            if (state.errorMessage != null)
-                              _buildErrorBanner(state.errorMessage!),
-                            _buildMainCard(context, state),
-                            const SizedBox(height: 14),
-                            _buildHospedeCard(state),
-                            const SizedBox(height: 14),
-                            _buildFinancialCard(state),
-                            const SizedBox(height: 14),
-                            _buildFinalizeButton(context, state),
-                          ],
+                    : ResponsiveCenter(
+                        maxWidth: ContentMaxWidth.content,
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.fromLTRB(
+                              isDesktop ? 0 : 18,
+                              isDesktop ? 32 : 16,
+                              isDesktop ? 0 : 18,
+                              isDesktop ? 48 : 24),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final isWide = constraints.maxWidth >= 1024;
+                              if (isWide) {
+                                final colorScheme =
+                                    Theme.of(context).colorScheme;
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Finalize sua reserva',
+                                      style: TextStyle(
+                                        color: colorScheme.onSurface,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Confira os detalhes e confirme abaixo.',
+                                      style: TextStyle(
+                                        color: colorScheme.onSurfaceVariant,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 28),
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          flex: 3,
+                                          child: Column(
+                                            children: [
+                                              if (state.errorMessage != null)
+                                                _buildErrorBanner(
+                                                    state.errorMessage!),
+                                              _buildMainCard(context, state),
+                                              const SizedBox(height: 14),
+                                              _buildHospedeCard(state),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 24),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Column(
+                                            children: [
+                                              _buildFinancialCard(state),
+                                              if (state.politicas != null) ...[
+                                                const SizedBox(height: 14),
+                                                _buildPoliciesCard(state),
+                                              ],
+                                              const SizedBox(height: 14),
+                                              _buildFinalizeButton(
+                                                  context, state),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                );
+                              }
+                              return Column(
+                                children: [
+                                  if (state.errorMessage != null)
+                                    _buildErrorBanner(state.errorMessage!),
+                                  _buildMainCard(context, state),
+                                  const SizedBox(height: 14),
+                                  _buildHospedeCard(state),
+                                  const SizedBox(height: 14),
+                                  _buildFinancialCard(state),
+                                  if (state.politicas != null) ...[
+                                    const SizedBox(height: 14),
+                                    _buildPoliciesCard(state),
+                                  ],
+                                  const SizedBox(height: 14),
+                                  _buildFinalizeButton(context, state),
+                                ],
+                              );
+                            },
+                          ),
                         ),
                       ),
           ),
@@ -92,50 +173,62 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
   // ── Header ──────────────────────────────────────────────────────────────
   Widget _buildHeader(BuildContext context) {
+    final isDesktop = Breakpoints.isDesktop(context);
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(27),
-          bottomRight: Radius.circular(27),
-        ),
+        borderRadius: isDesktop
+            ? BorderRadius.zero
+            : const BorderRadius.only(
+                bottomLeft: Radius.circular(27),
+                bottomRight: Radius.circular(27),
+              ),
       ),
       child: Padding(
         padding: EdgeInsets.only(
           top: MediaQuery.of(context).padding.top + 50,
-          left: 24,
-          right: 24,
           bottom: 20,
         ),
-        child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Center(
+          child: ConstrainedBox(
+            constraints:
+                const BoxConstraints(maxWidth: ContentMaxWidth.content),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
                 children: [
-                  _headerButton(
-                    icon: Icons.chevron_left,
-                    onTap: () => context.pop(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _headerButton(
+                        icon: Icons.chevron_left,
+                        onTap: () => context.pop(),
+                      ),
+                      SvgPicture.asset(
+                          'lib/assets/icons/logo/logoDark.svg',
+                          height: 32),
+                      _headerButton(
+                        icon: Icons.notifications_none,
+                        onTap: () => context.go('/notifications'),
+                      ),
+                    ],
                   ),
-                  SvgPicture.asset('lib/assets/icons/logo/logoDark.svg', height: 32),
-                  _headerButton(
-                    icon: Icons.notifications_none,
-                    onTap: () => context.go('/notifications'),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Reserva',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Reserva',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
+      ),
     );
   }
 
@@ -531,6 +624,39 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               fontWeight: isTotal ? FontWeight.w700 : FontWeight.w400,
             )),
       ],
+    );
+  }
+
+  // ── Card de políticas ───────────────────────────────────────────────────
+  Widget _buildPoliciesCard(CheckoutState state) {
+    final p = state.politicas!;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(20)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Políticas do Hotel',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          if (p.politicaCancelamento != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.cancel_outlined, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(p.politicaCancelamento!,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, height: 1.5)),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 

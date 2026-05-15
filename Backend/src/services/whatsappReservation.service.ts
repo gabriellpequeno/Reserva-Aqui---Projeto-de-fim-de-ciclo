@@ -265,9 +265,7 @@ export async function sendPaymentLinkViaWhatsApp(input: {
   reservaId: number;
 }): Promise<void> {
   // Import dinâmico para evitar ciclo com pagamentoReserva.service
-  const { createPagamentoFake } = await import('./pagamentoReserva.service');
-  const { sendEmail }           = await import('./email.service');
-  const { reservaPendentePagamentoTemplate } = await import('./emailTemplates');
+  const { createPagamentoFake, sendPaymentPendingEmail } = await import('./pagamentoReserva.service');
 
   try {
     const reservation = await getReservationForConfirmation(input.hotelId, input.reservaId);
@@ -318,48 +316,15 @@ export async function sendPaymentLinkViaWhatsApp(input: {
       }
     }
 
-    // Email — usa email_hospede quando presente, cai no user se autenticado
-    const reservaRow = await getReservationEmailRow(input.hotelId, input.reservaId);
-    const destinoEmail = reservaRow?.email_hospede ?? reservaRow?.user_email ?? null;
-    const nomeDestino  = reservation.nome_hospede ?? userContact?.nome_completo ?? 'Hóspede';
-
-    if (destinoEmail) {
-      const { subject, html } = reservaPendentePagamentoTemplate({
-        nomeHospede:   nomeDestino,
-        codigoPublico: reservation.codigo_publico,
-        pagamentoUrl,
-        expiresAt:     pagamento.expires_at,
-        resumo: {
-          nomeHotel:    reservation.nome_hotel,
-          tipoQuarto:   reservation.tipo_quarto ?? 'Quarto',
-          dataCheckin:  reservation.data_checkin,
-          dataCheckout: reservation.data_checkout,
-          numHospedes:  1, // `ReservationRow` não tem num_hospedes; fallback neutro
-          valorTotal:   reservation.valor_total,
-        },
-      });
-      sendEmail({ to: destinoEmail, subject, html }).catch(() => {});
-    }
+    // Email — helper compartilhado com o fluxo do app. Resolve destinatário
+    // (email_hospede ou user_email) e dispara o template "pagamento pendente".
+    await sendPaymentPendingEmail({
+      codigoPublico: reservation.codigo_publico,
+      pagamentoId:   pagamento.pagamento_id,
+      expiresAt:     pagamento.expires_at,
+    });
   } catch (err) {
     console.warn('[wppReservation] sendPaymentLinkViaWhatsApp falhou:', err);
   }
 }
 
-async function getReservationEmailRow(
-  hotelId:   string,
-  reservaId: number,
-): Promise<{ email_hospede: string | null; user_email: string | null } | null> {
-  const hotel = await getHotelInfo(hotelId);
-  const { _ensureReservaFluxoColumns } = await import('./reserva.service');
-  return withTenant(hotel.schema_name, async (client) => {
-    await _ensureReservaFluxoColumns(client);
-    const { rows } = await client.query<{ email_hospede: string | null; user_email: string | null }>(
-      `SELECT r.email_hospede, u.email AS user_email
-       FROM reserva r
-       LEFT JOIN public.usuario u ON u.user_id = r.user_id
-       WHERE r.id = $1`,
-      [reservaId],
-    );
-    return rows[0] ?? null;
-  });
-}

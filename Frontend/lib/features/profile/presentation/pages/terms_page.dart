@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 
 class TermsPage extends StatelessWidget {
@@ -8,7 +9,7 @@ class TermsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: const CustomAppBar(),
+      appBar: Breakpoints.isDesktop(context) ? null : const CustomAppBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
         child: Column(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../domain/models/dashboard/admin_dashboard_state.dart';
 import '../providers/admin_dashboard_provider.dart';
@@ -77,13 +78,17 @@ class AdminDashboardPage extends ConsumerWidget {
   }
 
   Widget _buildBody(BuildContext context, AdminDashboardState data, AdminDashboardNotifier notifier) {
+    final isDesktop = Breakpoints.isDesktop(context);
     return RefreshIndicator(
       color: AppColors.secondary,
       onRefresh: notifier.refresh,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        child: Column(
+        padding: EdgeInsets.fromLTRB(
+            isDesktop ? 48 : 16, isDesktop ? 32 : 16, isDesktop ? 48 : 16, 32),
+        child: ResponsiveCenter(
+          maxWidth: 1320,
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _MetricsGrid(metrics: data.metrics),
@@ -114,6 +119,7 @@ class AdminDashboardPage extends ConsumerWidget {
             const SizedBox(height: 12),
             NovosCadastrosRow(novosCadastros: data.novosCadastros),
           ],
+        ),
         ),
       ),
     );

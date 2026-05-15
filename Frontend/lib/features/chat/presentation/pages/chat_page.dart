@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../widgets/chat_bubble.dart';
 import '../providers/chat_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -86,17 +87,28 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       _scrollToBottom();
     }
 
+    final isDesktop = Breakpoints.isDesktop(context);
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
-          _buildHeader(context),
+          if (!isDesktop) _buildHeader(context),
           Expanded(
-            child: chatState.messages.isEmpty && !chatState.isLoading
-                ? _buildEmptyState()
-                : _buildMessageList(chatState),
+            child: ResponsiveCenter(
+              maxWidth: ContentMaxWidth.reading,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: chatState.messages.isEmpty && !chatState.isLoading
+                        ? _buildEmptyState()
+                        : _buildMessageList(chatState),
+                  ),
+                  _buildInput(),
+                ],
+              ),
+            ),
           ),
-          _buildInput(),
         ],
       ),
     );
@@ -216,6 +228,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final isDesktop = Breakpoints.isDesktop(context);
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 42,
@@ -223,12 +236,14 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         left: 20,
         right: 20,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(27),
-          bottomRight: Radius.circular(27),
-        ),
+        borderRadius: isDesktop
+            ? BorderRadius.zero
+            : const BorderRadius.only(
+                bottomLeft: Radius.circular(27),
+                bottomRight: Radius.circular(27),
+              ),
       ),
       child: Column(
         children: [
@@ -303,41 +318,59 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Widget _buildInput() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline)),
+        color: colorScheme.surface,
       ),
       child: SafeArea(
         top: false,
         child: Row(
           children: [
             Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Theme.of(context).colorScheme.outline),
-                ),
-                child: TextField(
-                  controller: _textController,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _handleSend(),
-                  decoration: const InputDecoration(
-                    hintText: 'Mensagem...',
-                    border: InputBorder.none,
+              child: TextField(
+                controller: _textController,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _handleSend(),
+                style: TextStyle(color: colorScheme.onSurface),
+                decoration: InputDecoration(
+                  hintText: 'Mensagem...',
+                  hintStyle:
+                      TextStyle(color: colorScheme.onSurfaceVariant),
+                  filled: true,
+                  fillColor: colorScheme.surfaceContainer,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: colorScheme.outline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: const BorderSide(
+                        color: AppColors.secondary, width: 1.5),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            CircleAvatar(
-              backgroundColor: AppColors.secondary,
-              child: IconButton(
-                icon: const Icon(Icons.send, color: Colors.white),
-                onPressed: _handleSend,
+            const SizedBox(width: 10),
+            Material(
+              color: AppColors.secondary,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: _handleSend,
+                child: const SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Icon(Icons.send, color: Colors.white, size: 20),
+                ),
               ),
             ),
           ],

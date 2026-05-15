@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/breakpoints.dart';
 import '../../data/services/booking_service.dart';
 import '../../domain/models/pagamento_fake_model.dart';
 
@@ -93,17 +94,22 @@ class _WhatsappPaymentPageState extends ConsumerState<WhatsappPaymentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        title: const Text('Pagamento da reserva'),
-        automaticallyImplyLeading: false,
+      appBar: Breakpoints.isDesktop(context)
+          ? null
+          : AppBar(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              title: const Text('Pagamento da reserva'),
+              automaticallyImplyLeading: false,
+            ),
+      body: ResponsiveCenter(
+        maxWidth: ContentMaxWidth.reading,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _pag == null
+                ? _errorState()
+                : _buildBody(),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _pag == null
-              ? _errorState()
-              : _buildBody(),
     );
   }
 

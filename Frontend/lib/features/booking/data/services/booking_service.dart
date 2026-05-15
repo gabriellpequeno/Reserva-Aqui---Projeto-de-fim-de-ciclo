@@ -118,6 +118,7 @@ class BookingService {
       final data = <String, dynamic>{
         'hotel_id':     hotelId,
         'quarto_id':    quartoId,
+        'tipo_quarto':  tipoQuarto,
         'num_hospedes': numHospedes,
         'data_checkin': dataCheckin,
         'data_checkout': dataCheckout,

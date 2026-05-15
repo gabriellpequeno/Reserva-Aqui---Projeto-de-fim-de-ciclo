@@ -104,6 +104,15 @@ export const buildAgentTools = (context: ChatContext | null) => {
         return "ERRO DE VALIDAÇÃO: O usuário não está autenticado. Você DEVE obrigatoriamente perguntar o NOME COMPLETO, EMAIL e TELEFONE (WhatsApp) do usuário antes de chamar essa ferramenta novamente.";
       }
 
+      // Validação de formato do email em runtime — não no schema Zod, porque
+      // o JSON Schema gerado por z.string().email() usa uma regex com features
+      // que o Groq rejeita (invalid 'regex' format). Mantendo a checagem aqui
+      // dentro, garantimos que dado ruim (ex.: "email" literal) não entre no
+      // banco sem quebrar o registro da tool no provider.
+      if (walkInEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(walkInEmail)) {
+        return `ERRO DE VALIDAÇÃO: "${walkInEmail}" não é um email válido. Pergunte o endereço de email completo (formato nome@dominio.com) e chame a tool novamente com o valor correto.`;
+      }
+
       try {
         const reserva = await createReservaChat({
           hotel_id:       context.hotelId,
@@ -137,7 +146,7 @@ export const buildAgentTools = (context: ChatContext | null) => {
         dataCheckin: z.string().describe('Data de check-in (formato YYYY-MM-DD).'),
         dataCheckout: z.string().describe('Data de check-out (formato YYYY-MM-DD).'),
         walkInNome: z.string().optional().describe('Nome completo do hóspede. OBRIGATÓRIO se o usuário não estiver logado.'),
-        walkInEmail: z.string().optional().describe('Email do hóspede. OBRIGATÓRIO se o usuário não estiver logado. Será usado para enviar a confirmação e o link de pagamento.'),
+        walkInEmail: z.string().optional().describe('Email do hóspede. OBRIGATÓRIO se o usuário não estiver logado. Deve ser um endereço válido no formato nome@dominio.com — nunca passe a palavra "email" literalmente, sempre o endereço real informado pelo usuário. Será usado para enviar a confirmação e o link de pagamento.'),
         walkInTelefone: z.string().optional().describe('Telefone ou WhatsApp do hóspede (apenas números). OBRIGATÓRIO se o usuário não estiver logado.'),
       }),
     }

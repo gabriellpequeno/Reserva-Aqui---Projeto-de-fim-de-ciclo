@@ -1,26 +1,40 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/auth/auth_notifier.dart';
 import '../../../../core/auth/auth_state.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/breakpoints.dart';
-import '../../../../core/widgets/custom_app_bar.dart';
+import '../../../../core/widgets/primary_button.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/models/auth_response.dart';
-import '../../../../core/widgets/primary_button.dart';
-import '../widgets/auth_text_field.dart';
-import '../widgets/login_form.dart';
+import 'auth_text_field.dart';
 
-class LoginPage extends ConsumerStatefulWidget {
-  const LoginPage({super.key});
+class LoginForm extends ConsumerStatefulWidget {
+  const LoginForm({
+    super.key,
+    this.role = 'guest',
+    this.onSuccess,
+    this.onSecondary,
+    this.secondaryLabel = 'Cadastre-se Agora',
+    this.showSecondaryButton = true,
+  });
+
+  final String role;
+
+  /// Called after successful login with the authenticated [AuthRole].
+  final void Function(AuthRole role)? onSuccess;
+
+  /// Called when the secondary button (signup) is tapped.
+  final VoidCallback? onSecondary;
+
+  final String secondaryLabel;
+  final bool showSecondaryButton;
 
   @override
-  ConsumerState<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginForm> createState() => _LoginFormState();
 }
 
-class _LoginPageState extends ConsumerState<LoginPage> {
+class _LoginFormState extends ConsumerState<LoginForm> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
@@ -28,10 +42,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   late String _role;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
-    _role = extra?['role'] as String? ?? 'guest';
+  void initState() {
+    super.initState();
+    _role = widget.role;
   }
 
   @override
@@ -87,10 +100,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           .read(authProvider.notifier)
           .setAuth(response.accessToken, response.refreshToken, role);
 
-      if (mounted) {
-        context.go(role == AuthRole.admin ? '/profile/admin' : '/home');
-      }
-    } catch (e, stack) {
+      if (!mounted) return;
+      widget.onSuccess?.call(role);
+    } catch (e) {
       if (!mounted) return;
 
       String message = 'Erro ao realizar login. Tente novamente.';
@@ -102,16 +114,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         } else {
           message = 'Erro de conexão: ${e.message}';
         }
-      } else {
-        message = 'ERRO INESPERADO: $e';
-        print('STACK TRACE: $stack');
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 10),
+          duration: const Duration(seconds: 8),
         ),
       );
     } finally {
@@ -123,38 +132,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = Breakpoints.isDesktop(context);
-    
-    return Scaffold(
-      appBar: !isDesktop ? const CustomAppBar(fallbackRoute: '/home') : null,
-      body: SafeArea(
-        child: ResponsiveCenter(
-          maxWidth: ContentMaxWidth.form,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24),
-            child: isDesktop
-                ? LoginForm(
-                    role: _role,
-                    onSuccess: (role) {
-                      if (mounted) {
-                        context.go(role == AuthRole.admin ? '/profile/admin' : '/home');
-                      }
-                    },
-                    onSecondary: () => context.push('/auth'),
-                  )
-                : _buildMobileForm(),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMobileForm() {
     final colorScheme = Theme.of(context).colorScheme;
     return Form(
       key: _formKey,
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -171,11 +152,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             controller: _emailController,
             hintText: 'email@domain.com',
             keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
             validator: (value) {
               if (value == null || value.isEmpty) return 'Informe o e-mail';
-              final emailRegex = RegExp(
-                r'^[\w\.\+\-]+@[\w\-]+\.[a-zA-Z]{2,}$',
-              );
+              final emailRegex =
+                  RegExp(r'^[\w\.\+\-]+@[\w\-]+\.[a-zA-Z]{2,}$');
               if (!emailRegex.hasMatch(value)) return 'E-mail inválido';
               return null;
             },
@@ -185,6 +166,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             controller: _senhaController,
             hintText: 'senha',
             isPassword: true,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _submit(),
             validator: (value) {
               if (value == null || value.isEmpty) return 'Informe a senha';
               return null;
@@ -194,14 +177,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : PrimaryButton(text: 'Login', onPressed: _submit),
-          const SizedBox(height: 48),
-          PrimaryButton(
-            text: 'Cadastre-se Agora',
-            color: AppColors.primary,
-            textColor: Colors.white,
-            onPressed: () => context.push('/auth'),
-          ),
-          const SizedBox(height: 24),
+          if (widget.showSecondaryButton) ...[
+            const SizedBox(height: 24),
+            PrimaryButton(
+              text: widget.secondaryLabel,
+              color: AppColors.primary,
+              textColor: Colors.white,
+              onPressed:
+                  widget.onSecondary ?? () => Navigator.of(context).pop(),
+            ),
+          ],
         ],
       ),
     );

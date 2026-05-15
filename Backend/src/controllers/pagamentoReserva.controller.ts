@@ -8,6 +8,7 @@ import {
   getPagamentoPublic,
   confirmarPagamentoFake,
   cancelarPagamentoFake,
+  sendPaymentPendingEmail,
 } from '../services/pagamentoReserva.service';
 import { PagamentoReserva, FormaPagamento } from '../entities/PagamentoReserva';
 
@@ -76,6 +77,16 @@ export async function createPagamentoPublicoController(
     const codigoPublico = req.params.codigo_publico;
     const canal = (req.body?.canal === 'WHATSAPP' ? 'WHATSAPP' : 'APP') as 'APP' | 'WHATSAPP';
     const result = await createPagamentoFake({ codigoPublico, canal });
+
+    // Dispara email pendente com o link de pagamento. O bot já fazia isso via
+    // sendPaymentLinkViaWhatsApp; agora o app também recebe a mesma mensagem.
+    // Fire-and-forget: erro no email não trava a resposta da reserva.
+    sendPaymentPendingEmail({
+      codigoPublico,
+      pagamentoId: result.pagamento_id,
+      expiresAt:   result.expires_at,
+    }).catch(() => {});
+
     res.status(201).json({ data: result });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erro interno';

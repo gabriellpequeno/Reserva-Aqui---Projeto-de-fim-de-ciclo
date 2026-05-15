@@ -1,8 +1,9 @@
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { ChatGroq } from '@langchain/groq';
+import { ChatOpenAI } from '@langchain/openai';
 import { BaseMessage, AIMessage } from '@langchain/core/messages';
 
-export type LLMProvider = 'gemini' | 'groq';
+export type LLMProvider = 'gemini' | 'groq' | 'openrouter';
 
 export interface InvokeOptions {
   temperature?: number;
@@ -14,14 +15,19 @@ function normalizeProvider(raw: string | undefined): LLMProvider | null {
   const v = (raw || '').trim().toLowerCase();
   if (v === 'gemini' || v === 'google') return 'gemini';
   if (v === 'groq' || v === 'llama') return 'groq';
+  if (v === 'openrouter' || v === 'router') return 'openrouter';
   return null;
 }
 
 let geminiKeyIndex = 0;
 let groqKeyIndex = 0;
+let openrouterKeyIndex = 0;
 
 function getKeys(provider: LLMProvider): string[] {
-  const envVar = provider === 'gemini' ? process.env.GEMINI_API_KEY : process.env.GROQ_API_KEY;
+  const envVar =
+    provider === 'gemini'     ? process.env.GEMINI_API_KEY :
+    provider === 'groq'       ? process.env.GROQ_API_KEY :
+    /* openrouter */            process.env.OPENROUTER_API_KEY;
   if (!envVar) return [];
   return envVar.split(',').map(k => k.trim()).filter(k => k.length > 0);
 }
@@ -29,7 +35,9 @@ function getKeys(provider: LLMProvider): string[] {
 function getPrimaryProvider(): LLMProvider {
   const fromEnv = normalizeProvider(process.env.AI_PRIMARY_PROVIDER);
   if (fromEnv) return fromEnv;
-  if (getKeys('gemini').length === 0 && getKeys('groq').length > 0) return 'groq';
+  // Heurística: prefere o provider com chave configurada, na ordem mais resiliente.
+  if (getKeys('openrouter').length > 0) return 'openrouter';
+  if (getKeys('groq').length > 0) return 'groq';
   return 'gemini';
 }
 
@@ -40,27 +48,52 @@ function hasKeyFor(provider: LLMProvider): boolean {
 export function getNextKey(provider: LLMProvider): string {
   const keys = getKeys(provider);
   if (keys.length === 0) throw new Error(`${provider.toUpperCase()}_API_KEY ausente`);
-  
+
+  let idx: number;
   if (provider === 'gemini') {
-    const key = keys[geminiKeyIndex % keys.length];
+    idx = geminiKeyIndex;
     geminiKeyIndex = (geminiKeyIndex + 1) % keys.length;
-    return key;
-  } else {
-    const key = keys[groqKeyIndex % keys.length];
+  } else if (provider === 'groq') {
+    idx = groqKeyIndex;
     groqKeyIndex = (groqKeyIndex + 1) % keys.length;
-    return key;
+  } else {
+    idx = openrouterKeyIndex;
+    openrouterKeyIndex = (openrouterKeyIndex + 1) % keys.length;
   }
+  return keys[idx % keys.length];
 }
 
 function buildLLM(provider: LLMProvider, opts: InvokeOptions) {
   const apiKey = getNextKey(provider);
 
   if (provider === 'gemini') {
+    // 2.5-flash-lite tem cota separada e demanda menor — fallback mais resiliente
+    // a picos de carga ("503: experiencing high demand") do 2.5-flash.
     const llm = new ChatGoogleGenerativeAI({
       apiKey,
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-flash-lite',
       temperature: opts.temperature ?? 0.1,
       maxRetries: 0,
+    });
+    return opts.tools && opts.tools.length ? llm.bindTools(opts.tools) : llm;
+  }
+
+  if (provider === 'openrouter') {
+    // OpenRouter expõe API compatível com OpenAI. Padrão: mesmo Llama 3.3 70B
+    // que o Groq usa — mantém qualidade de tool calling já validada.
+    // Override via OPENROUTER_MODEL no .env se quiser outro modelo.
+    const llm = new ChatOpenAI({
+      apiKey,
+      model: process.env.OPENROUTER_MODEL ?? 'meta-llama/llama-3.3-70b-instruct:free',
+      temperature: opts.temperature ?? 0.1,
+      maxRetries: 0,
+      configuration: {
+        baseURL: 'https://openrouter.ai/api/v1',
+        defaultHeaders: {
+          'HTTP-Referer': process.env.OPENROUTER_REFERER ?? 'https://reservaqui.app',
+          'X-Title': 'ReservAqui Bene',
+        },
+      },
     });
     return opts.tools && opts.tools.length ? llm.bindTools(opts.tools) : llm;
   }
@@ -120,11 +153,15 @@ async function tryInvokeWithKeys(provider: LLMProvider, input: string | BaseMess
     try {
       const llm = buildLLM(provider, opts); // constrói com a próxima chave do round-robin
       return (await llm.invoke(input as any)) as AIMessage;
-    } catch (err) {
+    } catch (err: any) {
       lastErr = err;
-      if (!isRecoverableError(err)) throw err;
-      
-      console.warn(`[llmFactory] ${provider} falhou (chave ${i+1}/${keysCount}). Tentando próxima se houver...`);
+      const status = err?.status ?? err?.statusCode ?? err?.response?.status ?? '?';
+      const msg = String(err?.message ?? err ?? '').slice(0, 240);
+      if (!isRecoverableError(err)) {
+        console.error(`[llmFactory] ${provider} FATAL (chave ${i+1}/${keysCount}) [HTTP ${status}]: ${msg}`);
+        throw err;
+      }
+      console.warn(`[llmFactory] ${provider} falhou (chave ${i+1}/${keysCount}) [HTTP ${status}]: ${msg} — tentando próxima.`);
     }
   }
 
@@ -140,27 +177,36 @@ async function tryInvokeWithKeys(provider: LLMProvider, input: string | BaseMess
   throw lastErr;
 }
 
+// Cadeia padrão de fallback quando o primário falha. Ordem reflete a hierarquia
+// de resiliência observada: OpenRouter (muitos modelos free) → Groq (rate-limit
+// generoso mas com janela curta) → Gemini (503 frequente em horários de pico).
+const PROVIDER_ORDER: LLMProvider[] = ['openrouter', 'groq', 'gemini'];
+
 export async function invokeWithFallback(
   input: string | BaseMessage[],
   opts: InvokeOptions = {},
 ): Promise<AIMessage> {
   const primary = getPrimaryProvider();
-  const fallback: LLMProvider = primary === 'gemini' ? 'groq' : 'gemini';
+  // Tenta o primário primeiro, depois os demais na ordem definida (sem duplicar).
+  const chain: LLMProvider[] = [primary, ...PROVIDER_ORDER.filter(p => p !== primary)];
 
-  // Tenta primário (passando por todas as suas chaves)
-  if (hasKeyFor(primary)) {
+  let lastErr: any = null;
+  let triedAny = false;
+
+  for (const provider of chain) {
+    if (!hasKeyFor(provider)) continue;
+    triedAny = true;
     try {
-      return await tryInvokeWithKeys(primary, input, opts);
+      return await tryInvokeWithKeys(provider, input, opts);
     } catch (err) {
-      if (!hasKeyFor(fallback) || !isRecoverableError(err)) throw err;
-      console.warn(`[llmFactory] ${primary} esgotado; fallback -> ${fallback}.`);
+      lastErr = err;
+      if (!isRecoverableError(err)) throw err;
+      console.warn(`[llmFactory] ${provider} esgotado; tentando próximo provider da cadeia.`);
     }
   }
 
-  if (!hasKeyFor(fallback)) {
-    throw new Error('Nenhum provider de IA configurado (GEMINI_API_KEY ou GROQ_API_KEY).');
+  if (!triedAny) {
+    throw new Error('Nenhum provider de IA configurado (GEMINI_API_KEY, GROQ_API_KEY ou OPENROUTER_API_KEY).');
   }
-
-  // Tenta fallback (passando por todas as suas chaves)
-  return await tryInvokeWithKeys(fallback, input, opts);
+  throw lastErr;
 }

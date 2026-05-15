@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import fs from 'fs';
+import path from 'path';
 import { Pool } from 'pg';
 
 const pool = new Pool({
@@ -8,6 +10,11 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_MASTER_NAME,
 });
+
+const INIT_MASTER_SQL = path.resolve(
+  __dirname,
+  '../../database/scripts/init_master.sql',
+);
 
 const MASTER_TABLES = [
   'saldo_transacao',
@@ -54,6 +61,12 @@ async function reset(): Promise<void> {
       await client.query(`TRUNCATE ${toTruncate} RESTART IDENTITY CASCADE`);
       console.log(`  tabelas limpas: ${existing.map((r) => r.tablename).join(', ')}`);
     }
+
+    // Garante que o schema master está aplicado — idempotente via IF NOT EXISTS,
+    // então roda tanto em banco vazio (cria tudo) quanto em banco populado (no-op).
+    const initSql = fs.readFileSync(INIT_MASTER_SQL, 'utf-8');
+    await client.query(initSql);
+    console.log('  schema master aplicado (init_master.sql)');
 
     await client.query('COMMIT');
     console.log('Banco resetado com sucesso.');

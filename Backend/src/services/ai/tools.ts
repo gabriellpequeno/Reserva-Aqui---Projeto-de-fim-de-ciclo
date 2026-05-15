@@ -113,6 +113,31 @@ export const buildAgentTools = (context: ChatContext | null) => {
         return `ERRO DE VALIDAÇÃO: "${walkInEmail}" não é um email válido. Pergunte o endereço de email completo (formato nome@dominio.com) e chame a tool novamente com o valor correto.`;
       }
 
+      // Placeholders inequívocos que só vêm de alucinação do LLM (nunca de um
+      // usuário real digitando). Lista curta e literal pra zero falso-positivo —
+      // "Teste Silva" e "email@teste.com.br" passam sem problema.
+      const emailLower = walkInEmail?.toLowerCase().trim();
+      const nomeLower  = walkInNome?.toLowerCase().trim();
+      const emailPlaceholders = new Set([
+        'seu_email@example.com',  'seuemail@example.com',
+        'seu_email@dominio.com',  'seuemail@dominio.com',
+        'nome@dominio.com',       'nome@example.com',
+        'email@example.com',      'usuario@example.com',
+        'exemplo@example.com',    'fulano@example.com',
+      ]);
+      const nomePlaceholders = new Set([
+        'seu nome', 'meu nome', 'nome completo',
+        'nome do hospede', 'nome do hóspede',
+        'fulano', 'fulano de tal',
+        'hospede', 'hóspede', 'guest',
+      ]);
+      if (emailLower && emailPlaceholders.has(emailLower)) {
+        return `ERRO DE VALIDAÇÃO: "${walkInEmail}" é um placeholder, não o email real do hóspede. Pergunte ao usuário o email dele e chame a tool de novo com o valor literal que ele informar.`;
+      }
+      if (nomeLower && nomePlaceholders.has(nomeLower)) {
+        return `ERRO DE VALIDAÇÃO: "${walkInNome}" é um placeholder, não o nome real do hóspede. Pergunte ao usuário o nome completo dele e chame a tool de novo com o valor literal que ele informar.`;
+      }
+
       try {
         const reserva = await createReservaChat({
           hotel_id:       context.hotelId,

@@ -79,14 +79,21 @@ async function getOrCreateAppSession(
   );
 
   if (rows[0]) {
-    if (!isSessionActive(rows[0].atualizado_em)) {
-      // Sessão expirada: fechar e criar nova
+    // Troca de identidade entre logins no mesmo deviceId (logout, ou login com
+    // outra conta) precisa abandonar a sessão antiga: o `deviceId` vive no
+    // SharedPreferences do Flutter e não muda, então sem isso o user_id antigo
+    // permaneceria gravado e o chat deslogado herdaria a identidade do user
+    // anterior — fazendo o Bene pular a coleta de nome/email/telefone (RES-108).
+    // Login no meio de uma sessão anônima (null → user) continua enriquecendo.
+    const identityChanged = rows[0].user_id !== null && rows[0].user_id !== userId;
+
+    if (identityChanged || !isSessionActive(rows[0].atualizado_em)) {
       await masterPool.query(
         `UPDATE sessao_chat SET status = 'FECHADA', atualizado_em = NOW() WHERE id = $1`,
         [rows[0].id],
       );
     } else {
-      // Sessão ativa: reutilizar. Enriquecer com userId se necessário.
+      // Sessão ativa, mesma identidade: reutilizar. Enriquecer com userId se necessário.
       if (userId && !rows[0].user_id) {
         await masterPool.query(
           `UPDATE sessao_chat SET user_id = $2, atualizado_em = NOW() WHERE id = $1`,
